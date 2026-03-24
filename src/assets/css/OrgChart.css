@@ -1,0 +1,84 @@
+/* OrgChart.css - Ajouts pour la version compacte */
+
+.org-chart-compact-container {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+}
+
+/* Animation pour les cartes */
+.manager-card-transition {
+  transition: all 0.3s ease;
+}
+
+.manager-card-transition:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.1);
+}
+
+/* Scrollbar personnalisée pour les listes d'employés */
+.employee-list-scroll::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.employee-list-scroll::-webkit-scrollbar-track {
+  background: #f9f1f8;
+  border-radius: 3px;
+}
+
+.employee-list-scroll::-webkit-scrollbar-thumb {
+  background: #e1b2db;
+  border-radius: 3px;
+}
+
+.employee-list-scroll::-webkit-scrollbar-thumb:hover {
+  background: #5c2458;
+}
+
+/* Badge d'employé */
+.employee-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  margin: 2px;
+  background: #f9f1f8;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 11px;
+  border: 1px solid #e1b2db;
+  transition: all 0.2s;
+}
+
+.employee-badge:hover {
+  background: #e1b2db;
+  border-color: #5c2458;
+  transform: translateY(-1px);
+}
+
+/* Animation de chargement */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.department-card {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .org-chart-compact-container {
+    padding: 10px;
+  }
+  
+  .department-card {
+    margin-bottom: 16px;
+  }
+  
+  .statistics-row {
+    flex-direction: column;
+  }
+  
+  .stat-item {
+    margin-bottom: 12px;
+  }
+}

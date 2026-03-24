@@ -1,0 +1,82 @@
+/* Styles pour les cartes de statistiques (neutralisé) */
+.stat-card {
+  padding: 20px;
+  border-radius: 20px;
+  min-width: 220px;
+  max-width: 320px;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  transition: transform 0.2s ease;
+  background: #ffffff;
+  border: 1px solid rgba(0,0,0,0.06);
+  box-shadow: 0 10px 24px rgba(0,0,0,0.04);
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+}
+
+.stat-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: rgba(176, 83, 173, 0.12);
+  color: var(--bg-primary);
+}
+
+.stat-value {
+  font-size: 1.5rem;
+  line-height: 1.2;
+  font-weight: 800;
+  color: #3a1438;
+}
+
+.stat-label {
+  font-size: 0.9rem;
+  color: #5c2458;
+}
+
+.stat-trend {
+  font-size: 0.75rem;
+  color: #5c2458;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .stat-card {
+    min-width: 100%;
+    max-width: 100%;
+  }
+  
+  .d-flex.flex-wrap {
+    flex-direction: column;
+    gap: 1rem;
+  }
+}
+
+/* Styles pour les formulaires de filtre */
+.form-label.small {
+  font-size: 0.8rem;
+  color: #5c2458;
+}
+
+.input-group-sm .form-control,
+.input-group-sm .form-select {
+  font-size: 0.875rem;
+}
+
+.input-group-text {
+  border-right: none;
+}
+
+.form-control:focus,
+.form-select:focus {
+  box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.1);
+  border-color: #86b7fe;
+}

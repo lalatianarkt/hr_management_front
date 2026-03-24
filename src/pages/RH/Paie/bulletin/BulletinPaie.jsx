@@ -1,0 +1,443 @@
+import React, { useState, useEffect } from 'react';
+import {
+  Table,
+  Card,
+  Form,
+  Spinner,
+  Alert,
+  Badge,
+  Button,
+  Row,
+  Col,
+  InputGroup
+} from 'react-bootstrap';
+import {
+  Home,
+  Users,
+  DollarSign,
+  Calendar,
+  Search,
+  FileText,
+  Eye,
+  CheckCircle,
+  Clock,
+  XCircle,
+  List,
+  ArrowRight,
+  RefreshCw
+} from 'react-feather';
+import { useNavigate } from 'react-router-dom';
+import axiosInstance from '../../../utils/AxiosInstance'; 
+
+function BulletinDepartementPage() {
+  const navigate = useNavigate();
+  // États
+  const [departements, setDepartements] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+
+  // Charger les données
+  useEffect(() => {
+    fetchBulletins();
+  }, []);
+
+  const fetchBulletins = async () => {
+    try {
+      setLoading(true);
+      setError('');
+
+      const response = await axiosInstance.get('/api/paie/bulletin');
+      console.log("data : ", response.data);
+      setDepartements(response.data);
+
+    } catch (err) {
+      console.error('Erreur lors du chargement:', err);
+      
+      if (err.response) {
+        setError(`Erreur ${err.response.status}: ${err.response.data?.message || 'Erreur lors du chargement des bulletins'}`);
+      } else if (err.request) {
+        setError('Impossible de contacter le serveur. Vérifiez votre connexion.');
+      } else {
+        setError('Erreur lors du chargement des bulletins par département');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredDepartements = departements.filter(dept =>
+    dept.departement?.nom?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    dept.departement?.id?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // Calculer les statistiques
+  const calculateStats = () => {
+    const stats = {
+      totalDepartements: filteredDepartements.length,
+      enCours: filteredDepartements.filter(dept => dept.statut === 0).length,
+      enAttente: filteredDepartements.filter(dept => dept.statut === 1).length,
+      autres: filteredDepartements.filter(dept => dept.statut !== 0 && dept.statut !== 1).length
+    };
+
+    return stats;
+  };
+
+  const stats = calculateStats();
+
+  // Formater la date
+  const formatDate = (dateString) => {
+    if (!dateString) return 'Non définie';
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('fr-FR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      });
+    } catch (e) {
+      return 'Date invalide';
+    }
+  };
+
+  // Obtenir le statut avec badge et icône
+  const getStatusInfo = (statut) => {
+    switch (statut) {
+      case 0:
+        return {
+          text: 'En cours',
+          variant: 'success',
+          icon: <CheckCircle size={14} className="me-1" />
+        };
+      case 1:
+        return {
+          text: 'En attente',
+          variant: 'warning',
+          icon: <Clock size={14} className="me-1" />
+        };
+      default:
+        return {
+          text: `Statut ${statut}`,
+          variant: 'secondary',
+          icon: <XCircle size={14} className="me-1" />
+        };
+    }
+  };
+
+  // Fonction pour naviguer vers la page des détails
+  const goToBulletinDetails = (departementId, departementName) => {
+    navigate(`/dashboard-RH/paie/bulletin/departement/${departementId}`, {
+      state: { departementName }
+    });
+  };
+
+  if (loading) {
+    return (
+      <div className="d-flex justify-content-center align-items-center" style={{ height: '60vh' }}>
+        <Spinner animation="border" variant="primary" />
+        <span className="ms-3">Chargement des bulletins par département...</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="container-fluid py-4">
+      {/* En-tête Hero */}
+      <Card className="mb-4 border-0 shadow-lg" style={{ background: 'var(--bg-gradient)', borderRadius: '20px', overflow: 'hidden' }}>
+        <Card.Body className="p-4 p-lg-5">
+          <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center">
+            <div className="text-white">
+              <div className="d-flex align-items-center mb-2">
+                <div className="p-2 bg-white bg-opacity-20 rounded-3 me-3">
+                  <FileText className="text-white" size={28} />
+                </div>
+                <h1 className="h2 mb-0 fw-extrabold" style={{ letterSpacing: '-0.5px' }}>
+                  Bulletins de Paie
+                </h1>
+              </div>
+              <p className="mb-0 opacity-75 fw-medium" style={{ fontSize: '1.1rem' }}>
+                Suivi et état des paies par département
+              </p>
+            </div>
+            <div className="mt-4 mt-md-0">
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={fetchBulletins}
+                className="btn-unified d-flex align-items-center gap-1"
+              >
+                <RefreshCw size={14} />
+                Actualiser
+              </Button>
+            </div>
+          </div>
+        </Card.Body>
+      </Card>
+
+      {/* Alertes */}
+      {error && (
+        <Alert variant="danger" dismissible onClose={() => setError('')}>
+          {error}
+        </Alert>
+      )}
+
+      {/* Cartes de statistiques */}
+      <Row className="mb-4 g-3">
+        <Col md={3}>
+          <div className="stat-card">
+            <div className="stat-icon"><Home size={16} /></div>
+            <div className="stat-content">
+              <div className="stat-value">{stats.totalDepartements}</div>
+              <div className="stat-label">Départements</div>
+            </div>
+          </div>
+        </Col>
+        <Col md={3}>
+          <div className="stat-card">
+            <div className="stat-icon"><CheckCircle size={16} /></div>
+            <div className="stat-content">
+              <div className="stat-value">{stats.enCours}</div>
+              <div className="stat-label">En cours</div>
+            </div>
+          </div>
+        </Col>
+        <Col md={3}>
+          <div className="stat-card">
+            <div className="stat-icon"><Clock size={16} /></div>
+            <div className="stat-content">
+              <div className="stat-value">{stats.enAttente}</div>
+              <div className="stat-label">En attente</div>
+            </div>
+          </div>
+        </Col>
+        <Col md={3}>
+          <div className="stat-card">
+            <div className="stat-icon"><XCircle size={16} /></div>
+            <div className="stat-content">
+              <div className="stat-value">{stats.autres}</div>
+              <div className="stat-label">Autres statuts</div>
+            </div>
+          </div>
+        </Col>
+      </Row>
+
+      {/* Barre de recherche */}
+      <Card className="mb-4 border-0 shadow-sm" style={{ borderRadius: '16px' }}>
+        <Card.Body className="p-3">
+          <InputGroup className="border-0 bg-light" style={{ borderRadius: '12px', overflow: 'hidden' }}>
+            <InputGroup.Text className="bg-transparent border-0 ps-3">
+              <Search size={20} className="text-muted" />
+            </InputGroup.Text>
+            <Form.Control
+              placeholder="Rechercher un département par nom ou code..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="bg-transparent border-0 py-3"
+              style={{ fontSize: '1rem', boxShadow: 'none' }}
+            />
+            {searchTerm && (
+              <Button
+                variant="link"
+                className="text-muted text-decoration-none pe-3"
+                onClick={() => setSearchTerm('')}
+              >
+                <Badge bg="secondary" pill className="p-2 px-3">Effacer</Badge>
+              </Button>
+            )}
+          </InputGroup>
+        </Card.Body>
+      </Card>
+
+      <Card className="border-0 shadow-lg" style={{ borderRadius: '20px', overflow: 'hidden' }}>
+        <Card.Header className="bg-white border-bottom-0 p-4 d-flex justify-content-between align-items-center">
+          <div className="d-flex align-items-center">
+            <h5 className="mb-0 fw-bold me-2">Liste des départements</h5>
+            <Badge bg="primary" style={{ background: 'var(--bg-gradient)', fontSize: '0.8rem', padding: '6px 12px' }}>
+              {filteredDepartements.length}
+            </Badge>
+          </div>
+          <div className="text-muted small fw-medium">
+            {searchTerm ? `Filtre actif : ${searchTerm}` : 'Afficher tous'}
+          </div>
+        </Card.Header>
+
+        <Card.Body className="p-0">
+          <div className="table-responsive">
+            <Table hover className="mb-0 align-middle">
+              <thead className="bg-light text-uppercase small" style={{ letterSpacing: '1px' }}>
+                <tr>
+                  <th className="py-3 ps-4" style={{ width: '5%', color: '#5c2458' }}>#</th>
+                  <th className="py-3" style={{ width: '30%', color: '#5c2458' }}>Département</th>
+                  <th className="py-3" style={{ width: '15%', color: '#5c2458' }}>Code</th>
+                  <th className="py-3 text-center" style={{ width: '15%', color: '#5c2458' }}>Période</th>
+                  <th className="py-3" style={{ width: '15%', color: '#5c2458' }}>Statut</th>
+                  <th className="py-3 text-end pe-4" style={{ width: '10%', color: '#5c2458' }}>Action</th>
+                </tr>
+              </thead>
+              <tbody style={{ borderTop: 'none' }}>
+                {filteredDepartements.length === 0 ? (
+                  <tr>
+                    <td colSpan="6" className="text-center py-5">
+                      <div className="py-4">
+                        <Home size={60} className="mb-3 text-muted opacity-25" />
+                        <h5 className="text-muted">Aucun résultat trouvé</h5>
+                        <p className="text-muted small">Modifiez votre recherche ou actualisez la page</p>
+                      </div>
+                    </td>
+                  </tr>
+                ) : (
+                  filteredDepartements.map((dept, index) => {
+                    const statusInfo = getStatusInfo(dept.statut);
+
+                    return (
+                      <tr key={index} className="table-row-hover transition-all">
+                        <td className="ps-4">
+                          <span className="text-muted fw-medium">{index + 1}</span>
+                        </td>
+                        <td>
+                          <div className="d-flex align-items-center">
+                            <div className="bg-primary bg-opacity-10 p-2 rounded-3 me-3">
+                              <Home size={20} className="text-primary" />
+                            </div>
+                            <div>
+                              <div className="fw-bold fs-6 text-dark">{dept.departement?.nom || 'Nom inconnu'}</div>
+                              <div className="text-muted small">{dept.departement?.description || 'Sans description'}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td>
+                          <code className="px-2 py-1 bg-light text-primary rounded small fw-bold">
+                            {dept.departement?.id || 'N/A'}
+                          </code>
+                        </td>
+                        <td className="text-center">
+                          <div className="d-inline-flex align-items-center px-3 py-1 bg-light rounded-pill small fw-bold">
+                            <Calendar size={14} className="me-2 text-primary" />
+                            {formatDate(dept.date_debut_periode)}
+                          </div>
+                        </td>
+                        <td>
+                          <Badge
+                            bg={statusInfo.variant}
+                            className={`px-3 py-2 rounded-pill fw-bold border border-${statusInfo.variant} bg-opacity-10 text-${statusInfo.variant} d-inline-flex align-items-center`}
+                          >
+                            <span className="me-2" style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'currentColor' }}></span>
+                            {statusInfo.text}
+                          </Badge>
+                        </td>
+                        <td className="text-end pe-4">
+                          <Button
+                            variant="primary"
+                            size="md"
+                            className="btn-gradient border-0 rounded-3 shadow-sm px-4"
+                            style={{ background: 'var(--bg-gradient)' }}
+                            onClick={() => goToBulletinDetails(
+                              dept.departement?.id,
+                              dept.departement?.nom
+                            )}
+                          >
+                            <ArrowRight size={18} />
+                          </Button>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </Table>
+          </div>
+        </Card.Body>
+
+        <Card.Footer className="bg-light">
+          <div className="d-flex justify-content-between align-items-center">
+            <div>
+              <small className="text-muted">
+                Affichage de {filteredDepartements.length} département(s)
+              </small>
+            </div>
+            <div className="d-flex gap-2">
+              <Badge bg="success">
+                En cours: {stats.enCours}
+              </Badge>
+              <Badge bg="warning">
+                En attente: {stats.enAttente}
+              </Badge>
+              <Badge bg="secondary">
+                Autres: {stats.autres}
+              </Badge>
+            </div>
+          </div>
+        </Card.Footer>
+      </Card>
+
+      {/* Légende des statuts */}
+      <Card className="mt-4">
+        <Card.Header className="bg-light">
+          <h6 className="mb-0">
+            <FileText className="me-2" size={18} />
+            Légende des statuts
+          </h6>
+        </Card.Header>
+        <Card.Body>
+          <Row>
+            <Col md={4}>
+              <div className="d-flex align-items-center mb-3">
+                <Badge bg="success" className="me-3">
+                  <CheckCircle size={14} className="me-1" />
+                  En cours
+                </Badge>
+                <small className="text-muted">
+                  La paie est en cours de traitement
+                </small>
+              </div>
+            </Col>
+            <Col md={4}>
+              <div className="d-flex align-items-center mb-3">
+                <Badge bg="warning" className="me-3">
+                  <Clock size={14} className="me-1" />
+                  En attente
+                </Badge>
+                <small className="text-muted">
+                  La paie est en attente de traitement
+                </small>
+              </div>
+            </Col>
+            <Col md={4}>
+              <div className="d-flex align-items-center mb-3">
+                <Badge bg="secondary" className="me-3">
+                  <XCircle size={14} className="me-1" />
+                  Autres statuts
+                </Badge>
+                <small className="text-muted">
+                  Statuts non définis (0 ou 1)
+                </small>
+              </div>
+            </Col>
+          </Row>
+
+          {/* Nouvelle section pour les actions */}
+          <Row className="mt-3 pt-3 border-top">
+            <Col>
+              <div className="d-flex align-items-center">
+                <Button
+                  variant="outline-info"
+                  size="sm"
+                  className="d-flex align-items-center me-3"
+                  disabled
+                >
+                  <List size={14} className="me-1" />
+                  Voir les bulletins
+                </Button>
+                <small className="text-muted">
+                  Cliquez sur l'icône dans le tableau pour voir les bulletins détaillés du département
+                </small>
+              </div>
+            </Col>
+          </Row>
+        </Card.Body>
+      </Card>
+    </div>
+  );
+}
+
+export default BulletinDepartementPage;

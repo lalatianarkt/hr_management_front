@@ -1,0 +1,369 @@
+/* AbsenceRequestPage.css */
+
+.absence-request-container {
+    width: 100vw;
+    max-width: 100%;
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    overflow-x: hidden;
+}
+
+/* Suppression de tous les paddings et margins par défaut */
+.absence-request-container > * {
+    box-sizing: border-box;
+}
+
+/* Header Card */
+.header-card {
+    background: linear-gradient(135deg, #b053ad 0%, #b053ad 100%) !important;
+    color: white !important;
+    border-radius: 0 !important;
+    margin: 0 !important;
+    width: 100vw !important;
+    max-width: 100% !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1) !important;
+}
+
+.header-card .MuiCardContent-root {
+    padding: 24px !important;
+}
+
+/* Messages */
+.messages-container {
+    width: 100%;
+    margin: 16px 0;
+    padding: 0;
+}
+
+.error-alert,
+.success-alert {
+    margin: 16px 0 !important;
+    border-radius: 8px !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Grille principale */
+.MuiGrid-container {
+    margin: 0 !important;
+    padding: 0 16px;
+    width: 100%;
+}
+
+/* Cartes d'information et formulaire */
+.info-card,
+.form-card {
+    border-radius: 12px !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08) !important;
+    transition: transform 0.3s ease, box-shadow 0.3s ease !important;
+    margin-bottom: 16px;
+    height: 100%;
+}
+
+.info-card:hover,
+.form-card:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12) !important;
+}
+
+.info-card .MuiCardContent-root,
+.form-card .MuiCardContent-root {
+    padding: 24px !important;
+    height: 100%;
+}
+
+/* Titres de section */
+.section-title {
+    color: #3a1438 !important;
+    font-weight: 600 !important;
+    margin-bottom: 24px !important;
+    border-bottom: 2px solid #b053ad;
+    padding-bottom: 8px;
+}
+
+/* Informations employé */
+.employee-info {
+    width: 100%;
+}
+
+.employee-avatar {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #b053ad 0%, #b053ad 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 28px;
+    font-weight: bold;
+    margin-right: 16px;
+    box-shadow: 0 4px 10px rgba(25, 118, 210, 0.3);
+}
+
+.employee-name {
+    font-weight: 700 !important;
+    color: #3a1438 !important;
+    margin-bottom: 4px !important;
+}
+
+.employee-id {
+    color: #5c2458 !important;
+    font-size: 14px !important;
+}
+
+.info-divider {
+    margin: 24px 0 !important;
+    border-color: #e1b2db !important;
+}
+
+.info-label {
+    color: #5c2458 !important;
+    font-weight: 500 !important;
+    margin-bottom: 4px !important;
+}
+
+.info-value {
+    color: #3a1438 !important;
+    font-weight: 600 !important;
+    font-size: 16px !important;
+}
+
+.loading-info {
+    min-height: 200px;
+}
+
+/* Formulaire */
+.absence-form {
+    width: 100%;
+}
+
+.form-control {
+    margin-bottom: 8px !important;
+}
+
+.form-control .MuiOutlinedInput-root {
+    border-radius: 8px !important;
+    background-color: white !important;
+}
+
+.date-picker-container {
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+.date-picker-container .MuiFormControl-root {
+    width: 100% !important;
+}
+
+.date-field {
+    background-color: white !important;
+}
+
+.date-field .MuiOutlinedInput-root {
+    border-radius: 8px !important;
+}
+
+/* Carte durée */
+.duration-card {
+    padding: 20px !important;
+    background: linear-gradient(135deg, #f9f1f8 0%, #e1b2db 100%) !important;
+    border: 2px solid #b053ad !important;
+    border-radius: 12px !important;
+    margin: 8px 0 !important;
+}
+
+.duration-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #b053ad 0%, #b053ad 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 10px rgba(25, 118, 210, 0.3);
+}
+
+.duration-label {
+    color: #5c2458 !important;
+    font-weight: 600 !important;
+    margin-bottom: 4px !important;
+}
+
+.duration-value {
+    color: #b053ad !important;
+    font-weight: 700 !important;
+    font-size: 28px !important;
+}
+
+/* Champ commentaire */
+.comment-field .MuiOutlinedInput-root {
+    border-radius: 8px !important;
+    background-color: white !important;
+}
+
+.comment-field .MuiOutlinedInput-multiline {
+    padding: 12px 14px !important;
+}
+
+/* Alerte d'information */
+.info-alert {
+    border-radius: 8px !important;
+    border-left: 4px solid #b053ad !important;
+    background-color: #e3f2fd !important;
+    color: #b053ad !important;
+}
+
+.info-alert .MuiAlert-icon {
+    color: #b053ad !important;
+}
+
+/* Actions du formulaire */
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 16px;
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px solid #e1b2db;
+}
+
+.cancel-btn {
+    min-width: 120px !important;
+    padding: 10px 24px !important;
+    border-radius: 8px !important;
+    font-weight: 600 !important;
+    border-width: 2px !important;
+    color: #5c2458 !important;
+    border-color: #e1b2db !important;
+}
+
+.cancel-btn:hover {
+    border-color: #5c2458 !important;
+    background-color: rgba(149, 165, 166, 0.04) !important;
+}
+
+.submit-btn {
+    min-width: 200px !important;
+    padding: 12px 32px !important;
+    border-radius: 8px !important;
+    font-weight: 700 !important;
+    background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%) !important;
+    box-shadow: 0 4px 15px rgba(46, 204, 113, 0.3) !important;
+}
+
+.submit-btn:hover {
+    background: linear-gradient(135deg, #27ae60 0%, #219653 100%) !important;
+    box-shadow: 0 6px 20px rgba(46, 204, 113, 0.4) !important;
+    transform: translateY(-1px);
+}
+
+.submit-btn:disabled {
+    background: #e1b2db !important;
+    box-shadow: none !important;
+    transform: none !important;
+}
+
+/* Footer */
+.footer-info {
+    width: 100%;
+    margin: 24px 0;
+    padding: 0 16px;
+}
+
+.footer-paper {
+    padding: 20px !important;
+    background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%) !important;
+    border-radius: 12px !important;
+    border-left: 4px solid #f39c12 !important;
+    box-shadow: 0 4px 15px rgba(243, 156, 18, 0.1) !important;
+}
+
+/* Erreurs */
+.error-text {
+    display: block !important;
+    margin-top: 4px !important;
+    font-weight: 500 !important;
+}
+
+/* Responsive */
+@media (max-width: 960px) {
+    .MuiGrid-container {
+        padding: 0 8px;
+    }
+    
+    .info-card .MuiCardContent-root,
+    .form-card .MuiCardContent-root {
+        padding: 16px !important;
+    }
+    
+    .employee-avatar {
+        width: 60px;
+        height: 60px;
+        font-size: 24px;
+    }
+    
+    .duration-value {
+        font-size: 24px !important;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+        gap: 12px;
+    }
+    
+    .cancel-btn,
+    .submit-btn {
+        width: 100% !important;
+        min-width: auto !important;
+    }
+    
+    .footer-info {
+        padding: 0 8px;
+    }
+}
+
+@media (max-width: 600px) {
+    .header-card .MuiCardContent-root {
+        padding: 16px !important;
+    }
+    
+    .MuiGrid-container {
+        padding: 0 4px;
+    }
+    
+    .section-title {
+        font-size: 18px !important;
+    }
+    
+    .employee-name {
+        font-size: 18px !important;
+    }
+    
+    .duration-card {
+        padding: 16px !important;
+    }
+    
+    .duration-value {
+        font-size: 20px !important;
+    }
+    
+    .footer-info {
+        padding: 0 4px;
+    }
+}
+
+/* Suppression des marges MUI par défaut */
+.MuiContainer-root {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+}
+
+/* Assure que tout prend 100% de largeur */
+.MuiGrid-item {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+}

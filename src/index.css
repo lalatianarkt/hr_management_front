@@ -1,0 +1,122 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Source+Sans+3:wght@400;500;600;700&display=swap');
+
+:root {
+  --bg-primary: #b053ad;
+  /* Brand Purple */
+  --bg-primary-hover: #9a4497;
+  --bg-accent: #d946ef;
+  /* Vivid Pink */
+  --bg-accent-light: #f5b7ff;
+
+  /* Brand-derived neutrals (no blue/gray) */
+  --brand-950: #2b0f2a;
+  --brand-900: #3a1438;
+  --brand-800: #4a1b46;
+  --brand-700: #5c2458;
+  --brand-600: #6f2e69;
+  --brand-500: #b053ad;
+  --brand-400: #c06bb9;
+  --brand-300: #d08cc8;
+  --brand-200: #e1b2db;
+  --brand-100: #f0d7eb;
+  --brand-50: #f9f1f8;
+  --brand-25: #fdf9fc;
+
+  --color-orange: #f28541;
+  /* Warm Orange */
+  --color-orange-hover: #d97738;
+  --color-dark: var(--brand-950);
+
+  /* Semantic Status Colors mapped to brand */
+  --status-success: #10b981;
+  /* Emerald */
+  --status-warning: var(--color-orange);
+  --status-error: #ef4444;
+  /* Rose/Red */
+  --status-info: var(--bg-primary);
+  --status-accent: var(--bg-accent);
+
+  --bg-gradient: var(--bg-primary);
+  --bg-gradient-orange: var(--bg-primary);
+  --bg-gradient-login: linear-gradient(135deg, #8f5a8b 0%, #b053ad 45%, #e879f9 100%);
+
+  --sidebar-bg: var(--brand-25);
+  --sidebar-text: var(--brand-900);
+  --sidebar-item-active: var(--brand-100);
+
+  --color-text-main: var(--brand-900);
+  --color-text-muted: var(--brand-700);
+  --color-heading: var(--brand-950);
+  --color-border: var(--brand-200);
+  --surface-bg: var(--brand-25);
+
+  /* Bootstrap theme overrides */
+  --bs-primary: var(--bg-primary);
+  --bs-secondary: var(--brand-700);
+  --bs-info: var(--bg-primary);
+  --bs-light: var(--brand-50);
+  --bs-dark: var(--brand-900);
+  --bs-border-color: var(--color-border);
+  --bs-body-color: var(--color-text-main);
+  --bs-body-bg: var(--surface-bg);
+  --bs-link-color: var(--bg-primary);
+  --bs-link-hover-color: var(--bg-primary-hover);
+  --bs-focus-ring-color: rgba(176, 83, 173, 0.25);
+  --bs-focus-ring-width: 0.2rem;
+  --bs-gray-100: var(--brand-50);
+  --bs-gray-200: var(--brand-100);
+  --bs-gray-300: var(--brand-200);
+  --bs-gray-400: var(--brand-300);
+  --bs-gray-500: var(--brand-600);
+  --bs-gray-600: var(--brand-700);
+  --bs-gray-700: var(--brand-800);
+  --bs-gray-800: var(--brand-900);
+  --bs-gray-900: var(--brand-950);
+
+  --shadow-premium: 0 12px 30px rgba(176, 83, 173, 0.2);
+  --shadow-orange: 0 12px 30px rgba(242, 133, 65, 0.2);
+}
+
+body {
+  margin: 0;
+  font-family: 'Source Sans 3', 'Space Grotesk', system-ui, -apple-system, sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: var(--surface-bg);
+  color: var(--color-text-main);
+  min-height: 100vh;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  color: var(--color-heading);
+  font-family: 'Space Grotesk', 'Source Sans 3', system-ui, sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+a {
+  color: var(--bg-primary);
+  text-decoration: none;
+}
+
+a:hover {
+  color: var(--bg-primary);
+}

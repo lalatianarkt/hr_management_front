@@ -1,0 +1,589 @@
+/* Global: neutralize hover variables */
+:root {
+  --bg-primary-hover: var(--bg-primary);
+  --color-orange-hover: var(--color-orange);
+}
+
+/* Buttons: lock hover/active to base styles (site-wide) */
+.btn {
+  --bs-btn-hover-bg: var(--bs-btn-bg);
+  --bs-btn-hover-border-color: var(--bs-btn-border-color);
+  --bs-btn-hover-color: var(--bs-btn-color);
+  --bs-btn-active-bg: var(--bs-btn-bg);
+  --bs-btn-active-border-color: var(--bs-btn-border-color);
+  --bs-btn-active-color: var(--bs-btn-color);
+  --bs-btn-hover-box-shadow: var(--bs-btn-box-shadow, none);
+  --bs-btn-active-box-shadow: var(--bs-btn-box-shadow, none);
+}
+
+button,
+.btn,
+.ant-btn,
+.MuiButton-root,
+.MuiIconButton-root,
+.rbc-toolbar button {
+  transition: none !important;
+}
+
+/* No hover effects on buttons and clickable controls */
+button:hover,
+button:focus,
+button:active,
+.btn:hover,
+.btn:focus,
+.btn:active,
+.ant-btn:hover,
+.ant-btn:focus,
+.ant-btn:active,
+.MuiButton-root:hover,
+.MuiButton-root:focus,
+.MuiButton-root:active,
+.MuiIconButton-root:hover,
+.MuiIconButton-root:focus,
+.MuiIconButton-root:active,
+.rbc-toolbar button:hover {
+  transform: none !important;
+  filter: none !important;
+  opacity: 1 !important;
+  text-decoration: none !important;
+}
+
+*:hover {
+  transition: none !important;
+  animation: none !important;
+}
+
+/* Links and navigation */
+a:hover,
+a:focus,
+a:active {
+  text-decoration: none !important;
+}
+
+.nav-link:not(.active):hover,
+.nav-link:not(.active):focus,
+.nav-link:not(.active):active,
+.submenu .nav-link:not(.active):hover,
+.submenu .nav-link:not(.active):focus,
+.submenu .nav-link:not(.active):active,
+.logout-link:hover,
+.logout-link:focus,
+.logout-link:active,
+.nav-treeview .nav-link:not(.active):hover,
+.nav-treeview .nav-link:not(.active):focus,
+.nav-treeview .nav-link:not(.active):active {
+  background: transparent !important;
+  color: inherit !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+/* Sidebar: keep labels visible and avoid hover-only text */
+.app-sidebar .nav-label,
+.app-sidebar .nav-link span,
+.app-sidebar .nav-link p {
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+/* Sidebar: keep hover effects for fluidity */
+.app-sidebar .nav-sidebar .nav-link,
+.app-sidebar .submenu .nav-link,
+.app-sidebar .logout-link {
+  transition: all 0.2s ease !important;
+}
+
+.app-sidebar .nav-sidebar a.nav-link:hover {
+  background-color: #f9f1f8 !important;
+  color: var(--bg-primary) !important;
+  transform: translateX(2px) !important;
+}
+
+.app-sidebar .submenu a.nav-link:hover {
+  background-color: #f9f1f8 !important;
+  color: var(--bg-primary) !important;
+  transform: none !important;
+}
+
+.app-sidebar .logout-link:hover {
+  background-color: #fef2f2 !important;
+  transform: none !important;
+}
+
+/* Action buttons: show labels without relying on hover */
+button[title],
+button[aria-label],
+a.btn[title],
+a.btn[aria-label],
+[role="button"][title],
+[role="button"][aria-label],
+.ant-btn[title],
+.ant-btn[aria-label],
+.MuiIconButton-root[title],
+.MuiIconButton-root[aria-label] {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  overflow: visible;
+}
+
+button[title]::after,
+a.btn[title]::after,
+[role="button"][title]::after,
+.ant-btn[title]::after,
+.MuiIconButton-root[title]::after {
+  content: attr(title);
+  margin-left: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+button[aria-label]:not([title])::after,
+a.btn[aria-label]:not([title])::after,
+[role="button"][aria-label]:not([title])::after,
+.ant-btn[aria-label]:not([title])::after,
+.MuiIconButton-root[aria-label]:not([title])::after {
+  content: attr(aria-label);
+  margin-left: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.MuiIconButton-root[title],
+.MuiIconButton-root[aria-label] {
+  border-radius: 8px !important;
+  padding: 6px 10px !important;
+}
+
+/* Disable tooltip popups on hover (keep labels always visible) */
+.MuiTooltip-popper,
+.ant-tooltip {
+  display: none !important;
+}
+
+/* Cards and containers */
+.card:hover,
+.card:focus,
+.card:active,
+.stat-card:hover,
+.stat-card:focus,
+.stat-card:active,
+.stats-card:hover,
+.stats-card:focus,
+.stats-card:active,
+.kpi-card-premium:hover,
+.kpi-card-premium:focus,
+.kpi-card-premium:active,
+.manager-card:hover,
+.manager-card:focus,
+.manager-card:active,
+.chart-container:hover,
+.summary-card:hover,
+.info-card:hover,
+.form-card:hover {
+  transform: none !important;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.04) !important;
+  border-color: var(--color-border) !important;
+}
+
+.manager-card-transition:hover,
+.employee-badge:hover {
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* Tables (Bootstrap / Ant / MUI) */
+.table-hover > tbody > tr:hover > * {
+  background-color: transparent !important;
+}
+
+.table-row-hover:hover,
+.demande-row:hover,
+.dashboard-table tr:hover,
+.demandes-table tr:hover,
+.regles-table tr:hover td {
+  background-color: transparent !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+.ant-table-tbody > tr.ant-table-row:hover > td,
+.ant-table-tbody > tr:hover > td {
+  background: transparent !important;
+}
+
+.MuiTableRow-root.MuiTableRow-hover:hover,
+.MuiTableRow-root:hover {
+  background-color: transparent !important;
+}
+
+/* Misc hover UI */
+.legend-item:hover {
+  background: inherit !important;
+}
+
+/* Bootstrap primary/action */
+.btn-primary:hover,
+.btn-primary:focus,
+.btn-primary:active,
+.btn-action:hover,
+.btn-action:focus,
+.btn-action:active {
+  background: var(--bg-primary) !important;
+  border-color: var(--bg-primary) !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 12px rgba(97, 18, 202, 0.15) !important;
+}
+
+/* Bootstrap secondary */
+.btn-secondary:hover,
+.btn-secondary:focus,
+.btn-secondary:active {
+  background: transparent !important;
+  border-color: var(--bg-primary) !important;
+  color: var(--bg-primary) !important;
+  box-shadow: none !important;
+}
+
+/* Filled outline variants */
+.btn-outline-primary:hover,
+.btn-outline-primary:focus,
+.btn-outline-primary:active,
+.btn-outline-secondary:hover,
+.btn-outline-secondary:focus,
+.btn-outline-secondary:active {
+  background: var(--bg-primary) !important;
+  border-color: var(--bg-primary) !important;
+  color: #ffffff !important;
+  box-shadow: none !important;
+}
+
+/* Keep outline style on other outline buttons */
+.btn-outline-success:hover,
+.btn-outline-success:focus,
+.btn-outline-success:active,
+.btn-outline-danger:hover,
+.btn-outline-danger:focus,
+.btn-outline-danger:active,
+.btn-outline-warning:hover,
+.btn-outline-warning:focus,
+.btn-outline-warning:active,
+.btn-outline-info:hover,
+.btn-outline-info:focus,
+.btn-outline-info:active,
+.btn-outline-dark:hover,
+.btn-outline-dark:focus,
+.btn-outline-dark:active,
+.btn-outline-light:hover,
+.btn-outline-light:focus,
+.btn-outline-light:active {
+  background-color: transparent !important;
+  border-color: currentColor !important;
+  color: currentColor !important;
+  box-shadow: none !important;
+}
+
+.btn-link:hover,
+.btn-link:focus,
+.btn-link:active {
+  color: inherit !important;
+  text-decoration: none !important;
+}
+
+/* Bootstrap semantic buttons (hover same as base) */
+.btn-success:hover,
+.btn-success:focus,
+.btn-success:active {
+  background-color: var(--bs-success) !important;
+  border-color: var(--bs-success) !important;
+  color: #ffffff !important;
+}
+
+.btn-warning:hover,
+.btn-warning:focus,
+.btn-warning:active {
+  background-color: var(--bs-warning) !important;
+  border-color: var(--bs-warning) !important;
+  color: #ffffff !important;
+}
+
+.btn-danger:hover,
+.btn-danger:focus,
+.btn-danger:active {
+  background-color: var(--bs-danger) !important;
+  border-color: var(--bs-danger) !important;
+  color: #ffffff !important;
+}
+
+.btn-info:hover,
+.btn-info:focus,
+.btn-info:active {
+  background-color: var(--bs-info) !important;
+  border-color: var(--bs-info) !important;
+  color: #ffffff !important;
+}
+
+/* Ant Design buttons */
+.ant-btn-primary:hover,
+.ant-btn-primary:focus,
+.ant-btn-primary:active {
+  background: var(--bg-primary) !important;
+  border-color: var(--bg-primary) !important;
+  color: #ffffff !important;
+  box-shadow: none !important;
+}
+
+.ant-btn:not(.ant-btn-primary):not(.unified-btn):not(.ant-input-search-button):hover,
+.ant-btn:not(.ant-btn-primary):not(.unified-btn):not(.ant-input-search-button):focus,
+.ant-btn:not(.ant-btn-primary):not(.unified-btn):not(.ant-input-search-button):active {
+  background: #ffffff !important;
+  border-color: var(--color-border) !important;
+  color: var(--color-text-main) !important;
+}
+
+.ant-btn.unified-btn:hover,
+.ant-btn.unified-btn:focus,
+.ant-btn.unified-btn:active,
+.ant-input-search .ant-btn:hover,
+.ant-input-search .ant-btn:focus,
+.ant-input-search-button:hover,
+.ant-input-search-button:focus {
+  background: var(--bg-primary) !important;
+  border-color: var(--bg-primary) !important;
+  color: #ffffff !important;
+}
+
+/* MUI buttons */
+body .MuiButton-containedPrimary:hover,
+body .MuiButton-containedPrimary:focus,
+body .MuiButton-containedPrimary:active {
+  background-color: var(--bg-primary) !important;
+}
+
+body .MuiButton-containedSecondary:hover,
+body .MuiButton-containedSecondary:focus,
+body .MuiButton-containedSecondary:active {
+  background-color: var(--brand-700) !important;
+}
+
+body .MuiButton-outlinedPrimary:hover,
+body .MuiButton-outlinedPrimary:focus,
+body .MuiButton-outlinedPrimary:active {
+  background-color: transparent !important;
+  color: var(--bg-primary) !important;
+  border-color: var(--bg-primary) !important;
+}
+
+body .MuiButton-outlinedSecondary:hover,
+body .MuiButton-outlinedSecondary:focus,
+body .MuiButton-outlinedSecondary:active {
+  background-color: transparent !important;
+  color: var(--brand-700) !important;
+  border-color: var(--brand-700) !important;
+}
+
+body .MuiIconButton-root:hover,
+body .MuiIconButton-root:focus,
+body .MuiIconButton-root:active {
+  background-color: transparent !important;
+}
+
+/* Custom buttons - Dashboard RH */
+.btn-export:hover,
+.btn-export:focus,
+.btn-export:active {
+  background: linear-gradient(135deg, #b053ad, #764ba2) !important;
+  color: #ffffff !important;
+  box-shadow: none !important;
+}
+
+.btn-refresh:hover,
+.btn-refresh:focus,
+.btn-refresh:active {
+  background: #f9f1f8 !important;
+  color: #5c2458 !important;
+  box-shadow: none !important;
+}
+
+/* Demande conge */
+.demande-conge-container .btn-submit:hover,
+.demande-conge-container .btn-submit:focus,
+.demande-conge-container .btn-submit:active {
+  background-color: #2ecc71 !important;
+}
+
+.demande-conge-container .btn-reset:hover,
+.demande-conge-container .btn-reset:focus,
+.demande-conge-container .btn-reset:active {
+  background-color: #e74c3c !important;
+}
+
+.demande-conge-container .btn-refresh:hover,
+.demande-conge-container .btn-refresh:focus,
+.demande-conge-container .btn-refresh:active {
+  background-color: #b053ad !important;
+}
+
+.demande-conge-container .pagination-btn:hover,
+.demande-conge-container .pagination-btn:focus,
+.demande-conge-container .pagination-btn:active {
+  background-color: #b053ad !important;
+}
+
+.demande-conge-container .btn-view:hover,
+.demande-conge-container .btn-view:focus,
+.demande-conge-container .btn-view:active,
+.demande-conge-container .btn-edit:hover,
+.demande-conge-container .btn-edit:focus,
+.demande-conge-container .btn-edit:active {
+  background: none !important;
+  border-color: #e1b2db !important;
+  color: inherit !important;
+}
+
+/* Validation conges */
+.validation-conges-container .btn-apply:hover,
+.validation-conges-container .btn-apply:focus,
+.validation-conges-container .btn-apply:active {
+  background-color: #2ecc71 !important;
+}
+
+.validation-conges-container .btn-reset:hover,
+.validation-conges-container .btn-reset:focus,
+.validation-conges-container .btn-reset:active {
+  background-color: #e74c3c !important;
+}
+
+.validation-conges-container .btn-calendar:hover,
+.validation-conges-container .btn-calendar:focus,
+.validation-conges-container .btn-calendar:active {
+  background: none !important;
+}
+
+.validation-conges-container .actions button:hover,
+.validation-conges-container .actions button:focus,
+.validation-conges-container .actions button:active {
+  opacity: 1 !important;
+}
+
+.validation-conges-container .pagination button:hover,
+.validation-conges-container .pagination button:focus,
+.validation-conges-container .pagination button:active {
+  background: #b053ad !important;
+}
+
+.validation-conges-container .btn-close:hover,
+.validation-conges-container .btn-close:focus,
+.validation-conges-container .btn-close:active {
+  background: none !important;
+  color: #5c2458 !important;
+}
+
+.validation-conges-container .btn-reject-modal:hover,
+.validation-conges-container .btn-reject-modal:focus,
+.validation-conges-container .btn-reject-modal:active,
+.validation-conges-container .btn-confirm-reject:hover,
+.validation-conges-container .btn-confirm-reject:focus,
+.validation-conges-container .btn-confirm-reject:active,
+.validation-conges-container .btn-action-reject:hover,
+.validation-conges-container .btn-action-reject:focus,
+.validation-conges-container .btn-action-reject:active {
+  background: #e74c3c !important;
+  box-shadow: none !important;
+}
+
+.validation-conges-container .btn-approve-modal:hover,
+.validation-conges-container .btn-approve-modal:focus,
+.validation-conges-container .btn-approve-modal:active,
+.validation-conges-container .btn-confirm-approve:hover,
+.validation-conges-container .btn-confirm-approve:focus,
+.validation-conges-container .btn-confirm-approve:active,
+.validation-conges-container .btn-action-approve:hover,
+.validation-conges-container .btn-action-approve:focus,
+.validation-conges-container .btn-action-approve:active {
+  background: #2ecc71 !important;
+  box-shadow: none !important;
+}
+
+.validation-conges-container .btn-cancel:hover,
+.validation-conges-container .btn-cancel:focus,
+.validation-conges-container .btn-cancel:active {
+  background: #5c2458 !important;
+}
+
+/* Regles conges */
+.regles-conges-container .btn-save:hover,
+.regles-conges-container .btn-save:focus,
+.regles-conges-container .btn-save:active {
+  background: linear-gradient(135deg, #b053ad, #b053ad) !important;
+  box-shadow: none !important;
+}
+
+.regles-conges-container .btn-cancel:hover,
+.regles-conges-container .btn-cancel:focus,
+.regles-conges-container .btn-cancel:active {
+  background: #f9f1f8 !important;
+  border-color: #e1b2db !important;
+  color: #5c2458 !important;
+}
+
+.regles-conges-container .btn-edit:hover,
+.regles-conges-container .btn-edit:focus,
+.regles-conges-container .btn-edit:active {
+  background: none !important;
+  color: #b053ad !important;
+  transform: none !important;
+}
+
+.regles-conges-container .btn-delete:hover,
+.regles-conges-container .btn-delete:focus,
+.regles-conges-container .btn-delete:active {
+  background: none !important;
+  color: #fa5252 !important;
+  transform: none !important;
+}
+
+/* Demande absence */
+.absence-request-container .cancel-btn:hover,
+.absence-request-container .cancel-btn:focus,
+.absence-request-container .cancel-btn:active {
+  border-color: #e1b2db !important;
+  background-color: transparent !important;
+}
+
+.absence-request-container .submit-btn:hover,
+.absence-request-container .submit-btn:focus,
+.absence-request-container .submit-btn:active {
+  background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%) !important;
+  box-shadow: 0 4px 15px rgba(46, 204, 113, 0.3) !important;
+  transform: none !important;
+}
+
+/* Pagination (Bootstrap / Ant / MUI) */
+.pagination .page-link:hover,
+.pagination .page-link:focus {
+  background-color: var(--brand-50) !important;
+  color: var(--bg-primary) !important;
+  border-color: var(--color-border) !important;
+}
+
+.ant-pagination-item:hover,
+.ant-pagination-prev:hover .ant-pagination-item-link,
+.ant-pagination-next:hover .ant-pagination-item-link {
+  background-color: var(--brand-50) !important;
+  border-color: var(--color-border) !important;
+  color: var(--color-text-main) !important;
+}
+
+.MuiPaginationItem-root:hover {
+  background-color: transparent !important;
+}
+
+.MuiPaginationItem-root.Mui-selected:hover {
+  background-color: var(--bg-primary) !important;
+}

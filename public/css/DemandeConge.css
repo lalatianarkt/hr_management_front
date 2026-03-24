@@ -1,0 +1,134 @@
+/* Dans DemandeConge.css, ajoutez ces styles */
+
+/* Messages d'avertissement */
+.warning-message {
+    background-color: #fff3cd;
+    color: #856404;
+    padding: 10px;
+    border-radius: 5px;
+    margin-bottom: 15px;
+    border: 1px solid #ffeaa7;
+    font-size: 14px;
+}
+
+/* Spinner de chargement */
+.spinner {
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #3498db;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    animation: spin 1s linear infinite;
+    display: inline-block;
+    margin-right: 10px;
+    vertical-align: middle;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.loading {
+    text-align: center;
+    padding: 40px;
+    color: #7f8c8d;
+    font-size: 16px;
+}
+
+.loading-small {
+    text-align: center;
+    padding: 15px;
+    color: #7f8c8d;
+    background: #f8f9fa;
+    border-radius: 5px;
+    font-size: 14px;
+}
+
+/* Message quand pas de types */
+.no-types {
+    padding: 15px;
+    text-align: center;
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 5px;
+    color: #856404;
+}
+
+/* Type sélectionné */
+.selected-type {
+    color: #2ecc71;
+    font-weight: 600;
+    margin-top: 5px;
+    display: block;
+}
+
+/* Cellule motif */
+.motif-cell {
+    max-width: 200px;
+    word-wrap: break-word;
+}
+
+.autre-motif {
+    background: #f8f9fa;
+    padding: 5px 10px;
+    border-radius: 4px;
+    border-left: 3px solid #3498db;
+    font-size: 13px;
+}
+
+/* Bouton actualiser */
+.btn-refresh {
+    background-color: #3498db;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: background-color 0.3s;
+}
+
+.btn-refresh:hover:not(:disabled) {
+    background-color: #2980b9;
+}
+
+.btn-refresh:disabled {
+    background-color: #bdc3c7;
+    cursor: not-allowed;
+}
+
+/* Désactiver les boutons radio pendant le chargement */
+.radio-label input[type="radio"]:disabled + .radio-custom {
+    border-color: #bdc3c7;
+    cursor: not-allowed;
+}
+
+.radio-label input[type="radio"]:disabled ~ span {
+    color: #95a5a6;
+    cursor: not-allowed;
+}
+
+/* Pour les petits écrans */
+@media (max-width: 768px) {
+    .demandes-table-container {
+        overflow-x: auto;
+    }
+    
+    .demandes-table {
+        min-width: 800px;
+    }
+    
+    .section-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    
+    .btn-refresh {
+        align-self: flex-start;
+    }
+}

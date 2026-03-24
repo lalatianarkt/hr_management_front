@@ -1,0 +1,222 @@
+/* ManagerList.css */
+.manager-list-page {
+  min-height: 100vh;
+  background-color: #f9f1f8;
+}
+
+/* Header */
+.page-header {
+  background: linear-gradient(135deg, #3a1438, #b053ad);
+  color: white;
+  padding: 2rem 0;
+  margin-bottom: 2rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.page-header h1 {
+  font-weight: 600;
+}
+
+.clock-display h4 {
+  margin-bottom: 0.2rem;
+  font-weight: 600;
+}
+
+/* Statistiques */
+.stats-card {
+  text-align: center;
+  padding: 1.5rem;
+  border: none;
+  border-radius: 10px;
+  color: white;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease;
+}
+
+.stats-card:hover {
+  transform: translateY(-5px);
+}
+
+.stats-primary {
+  background: linear-gradient(135deg, #3a1438, #34495e);
+}
+
+.stats-success {
+  background: linear-gradient(135deg, #27ae60, #2ecc71);
+}
+
+.stats-warning {
+  background: linear-gradient(135deg, #f39c12, #f1c40f);
+}
+
+.stats-card h3 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+/* Filtres */
+.filter-section {
+  border: none;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+/* Cartes managers */
+.manager-card {
+  border: none;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.manager-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+}
+
+.manager-card-header {
+  background: linear-gradient(135deg, #3a1438, #34495e);
+  color: white;
+  border-radius: 10px 10px 0 0 !important;
+  padding: 1rem;
+}
+
+.manager-card-header h6 {
+  font-weight: 600;
+  margin-bottom: 0;
+}
+
+/* Sections dans les cartes */
+.section-title {
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  color: #5c2458;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+/* Badges de statut */
+.status-active {
+  background-color: rgba(39, 174, 96, 0.1) !important;
+  color: #27ae60 !important;
+  border: 1px solid #27ae60 !important;
+}
+
+.status-inactive {
+  background-color: rgba(231, 76, 60, 0.1) !important;
+  color: #e74c3c !important;
+  border: 1px solid #e74c3c !important;
+}
+
+/* Badges de date */
+.date-badge {
+  background-color: #f9f1f8;
+  border: 1px solid #e1b2db;
+  padding: 0.5rem 1rem;
+  border-radius: 5px;
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+}
+
+/* Avatar circulaire */
+.avatar-circle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #b053ad, #3a1438);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 1.2rem;
+}
+
+.avatar-circle-lg {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #b053ad, #3a1438);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 2rem;
+}
+
+/* Table */
+.table thead th {
+  background: linear-gradient(135deg, #3a1438, #34495e);
+  color: white;
+  border: none;
+  font-weight: 600;
+  padding: 1rem;
+}
+
+.table tbody tr {
+  transition: background-color 0.2s ease;
+}
+
+.table tbody tr:hover {
+  background-color: rgba(52, 152, 219, 0.05);
+}
+
+/* Footer */
+.page-footer {
+  background-color: #3a1438;
+  color: white;
+  padding: 2rem 0;
+  margin-top: 3rem;
+}
+
+.page-footer h5 {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+/* Modal */
+.modal-header {
+  background: linear-gradient(135deg, #3a1438, #34495e);
+  color: white;
+  border-radius: 0;
+}
+
+.info-section {
+  margin-bottom: 1rem;
+}
+
+.info-section label {
+  font-weight: 600;
+  color: #3a1438;
+  font-size: 0.9rem;
+  margin-bottom: 0.2rem;
+  display: block;
+}
+
+.info-value {
+  background-color: #f9f1f8;
+  padding: 0.5rem 1rem;
+  border-radius: 5px;
+  margin-bottom: 0;
+  border-left: 3px solid #b053ad;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .stats-card h3 {
+    font-size: 2rem;
+  }
+  
+  .page-header h1 {
+    font-size: 1.8rem;
+  }
+  
+  .manager-card {
+    margin-bottom: 1.5rem;
+  }
+}

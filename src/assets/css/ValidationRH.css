@@ -1,0 +1,70 @@
+/* ValidationRH.css */
+.rbc-calendar {
+  min-height: 500px;
+}
+
+.rbc-toolbar {
+  margin-bottom: 15px;
+}
+
+.rbc-toolbar button {
+  color: #b053ad;
+  border: 1px solid #b053ad;
+  background: white;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  margin: 0 2px;
+}
+
+.rbc-toolbar button:hover {
+  background-color: #f9f1f8;
+}
+
+.rbc-toolbar button.rbc-active {
+  background-color: #b053ad;
+  color: white;
+}
+
+.rbc-toolbar-label {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #3a1438;
+}
+
+.rbc-header {
+  background-color: #f9f1f8;
+  padding: 10px 0;
+  font-weight: 600;
+  color: #5c2458;
+}
+
+.rbc-today {
+  background-color: #e3f2fd;
+}
+
+.rbc-event {
+  border-radius: 4px;
+  padding: 2px 5px;
+  font-size: 0.85rem;
+}
+
+.rbc-event:hover {
+  opacity: 0.9;
+}
+
+.rbc-selected {
+  box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.5);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .rbc-toolbar {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .rbc-toolbar .rbc-btn-group {
+    justify-content: center;
+  }
+}
