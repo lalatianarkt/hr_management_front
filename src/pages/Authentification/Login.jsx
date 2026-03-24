@@ -43,6 +43,7 @@ function LoginPage() {
       if (response.data.token) {
         sessionStorage.setItem('token', response.data.token);
         sessionStorage.setItem('nomComplet', response.data.user.nomComplet);
+        sessionStorage.setItem('matricule', response.data.user.matricule || '');
         sessionStorage.setItem('département', response.data.infosPro.departement.nom);
         window.location.href = response.data.path;
       } else {

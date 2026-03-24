@@ -9,7 +9,7 @@ import {
   Eye, Mail, Phone, MoreVertical,
   User, Briefcase, Calendar, Building,
   FileText, Target, Award,
-  Clock, Hash, CheckCircle, XCircle,
+  Clock, Hash, CheckCircle, XCircle, Network,
   UserCheck, Users, Home, MapPin
 } from 'lucide-react';
 import axiosInstance from '../../utils/AxiosInstance';
@@ -248,20 +248,33 @@ const EmployeesManager = () => {
                 Liste des employés sous votre responsabilité managériale
               </p>
             </div>
-            <Button
-              variant="outline-primary"
-              onClick={fetchEmployees}
-              disabled={loading}
-            >
-              <span className="d-flex align-items-center">
-                {loading ? (
-                  <Spinner animation="border" size="sm" className="me-2" />
-                ) : (
-                  <RefreshCw size={16} className="me-2" />
-                )}
-                Actualiser
-              </span>
-            </Button>
+            <div className="d-flex align-items-center gap-2">
+              <Button
+                as={Link}
+                to="/dashboard-Manager/organisation/hierarchie"
+                variant="outline-secondary"
+              >
+                <span className="d-flex align-items-center">
+                  <Network size={16} className="me-2" />
+                  Vue hiérarchique
+                </span>
+              </Button>
+
+              <Button
+                variant="outline-primary"
+                onClick={fetchEmployees}
+                disabled={loading}
+              >
+                <span className="d-flex align-items-center">
+                  {loading ? (
+                    <Spinner animation="border" size="sm" className="me-2" />
+                  ) : (
+                    <RefreshCw size={16} className="me-2" />
+                  )}
+                  Actualiser
+                </span>
+              </Button>
+            </div>
           </div>
         </Col>
       </Row>

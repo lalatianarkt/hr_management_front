@@ -7,6 +7,7 @@ import {
   ChevronDown,
   ChevronRight,
   Clock,
+  Network,
   LogOut,
   Dot
 } from 'lucide-react';
@@ -92,6 +93,13 @@ export default function Sidebar() {
                     <li><Link to="/dashboard-Manager/conge/validation" className="nav-link small"><Dot size={18} className="me-1" /> <span className="nav-label">Validation des congés</span></Link></li>
                   </ul>
                 )}
+              </li>
+
+              <li className="nav-item">
+                <Link to="/dashboard-Manager/organisation/hierarchie" className="nav-link">
+                  <Network size={18} className="me-2" />
+                  <span className="m-0 nav-label">Vue hiérarchique</span>
+                </Link>
               </li>
 
               <li className="nav-item mt-auto">

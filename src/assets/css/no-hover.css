@@ -91,22 +91,26 @@ a:active {
 .app-sidebar .submenu .nav-link,
 .app-sidebar .logout-link {
   transition: all 0.2s ease !important;
+  color: #9c479c !important;
 }
 
-.app-sidebar .nav-sidebar a.nav-link:hover {
-  background-color: #f9f1f8 !important;
-  color: var(--bg-primary) !important;
+/* Manager Sidebar: use violet hover background for both <a> and <button> links */
+.app-sidebar .nav-sidebar a.nav-link:hover,
+.app-sidebar .nav-sidebar button.nav-link:hover {
+  background-color: #a250c1 !important; /* violet foncé */
+  color: #fff !important;
   transform: translateX(2px) !important;
 }
 
-.app-sidebar .submenu a.nav-link:hover {
-  background-color: #f9f1f8 !important;
-  color: var(--bg-primary) !important;
+.app-sidebar .submenu a.nav-link:hover,
+.app-sidebar .submenu button.nav-link:hover {
+  background-color: #a250c1 !important;
+  color: #fff !important;
   transform: none !important;
 }
 
 .app-sidebar .logout-link:hover {
-  background-color: #fef2f2 !important;
+  background-color: #fff !important;
   transform: none !important;
 }
 
