@@ -19,7 +19,7 @@ import {
   ViewList, ViewModule,
   NavigateBefore, NavigateNext,
   ChevronLeft, ChevronRight,
-  Business, Badge
+  Business, Badge, HourglassEmpty, TaskAlt, Block, VerifiedUser
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { DemoContainer } from '@mui/x-date-pickers/internals/demo';
@@ -123,25 +123,25 @@ const SuiviConges = () => {
     
     try {
       // 1. Charger les départements depuis l'API
-      console.log("Chargement des départements depuis api/departements...");
-      const deptsResponse = await axiosInstance.get('/api/departements');
+      const deptsResponse = await axiosInstance.get('/api/departements/actif');
       const deptsData = Array.isArray(deptsResponse.data) ? deptsResponse.data : [];
-      console.log("Départements chargés:", deptsData);
-      
       setDepartements(deptsData);
 
       // 2. Charger toutes les demandes depuis la vue
-      console.log("Chargement des demandes depuis vue...");
       const response = await axiosInstance.get('/api/vue-demandes-conge');
-      
       const demandesArray = Array.isArray(response.data) ? response.data : [];
-      
-      console.log("Toutes les demandes depuis vue:", demandesArray);
+
+      console.log("Demandes chargées:", demandesArray);
+      console.log("Structure de la première demande:", demandesArray[0] ? Object.keys(demandesArray[0]) : "Aucune demande");
+      console.log(
+        "Exemples statuts (id -> statut):",
+        demandesArray.slice(0, 10).map(d => ({ id: d.id, statut: d.statut }))
+      );
       
       setDemandes(demandesArray);
       setFilteredDemandes(demandesArray);
       
-      // Charger les soldes pour tous les employés
+      // Charger les soldes après avoir les demandes
       await chargerSoldes(demandesArray);
       
     } catch (err) {
@@ -157,18 +157,29 @@ const SuiviConges = () => {
     
     try {
       const soldesMap = {};
-      const idsUniques = [...new Set(demandesList.map(d => d.idEmploye))];
       
-      console.log("Chargement des soldes pour les employés:", idsUniques);
+      // Filtrer les IDs valides - utiliser idEmploye (exactement comme dans les données)
+      const idsUniques = [...new Set(demandesList
+        .map(d => d.idEmploye)
+        .filter(id => id && id !== '' && id !== undefined && id !== null)
+      )];
       
+      console.log("IDs uniques pour chargement soldes:", idsUniques);
+      
+      // Charger les soldes pour chaque employé
       for (const idEmploye of idsUniques) {
-        if (!idEmploye) continue;
-        
         try {
+          console.log(`Chargement solde pour employé ${idEmploye}...`);
           const response = await axiosInstance.get(`/api/mouvementSolde/employe/${idEmploye}/solde-actuel`);
           
+          console.log(`Réponse solde pour ${idEmploye}:`, response.data);
+          
           if (response.data) {
-            soldesMap[idEmploye] = response.data.nbCongeRestant || 0;
+            // Vérifier la structure de la réponse
+            const solde = response.data.nbCongeRestant !== undefined ? response.data.nbCongeRestant : 
+                         response.data.solde !== undefined ? response.data.solde : 
+                         response.data.nbJoursRestant !== undefined ? response.data.nbJoursRestant : 0;
+            soldesMap[idEmploye] = solde;
           } else {
             soldesMap[idEmploye] = 0;
           }
@@ -189,10 +200,17 @@ const SuiviConges = () => {
   };
 
   const verifierSoldeSuffisant = (demande) => {
-    if (!demande || !demande.idEmploye) return false;
+    if (!demande) {
+      return false;
+    }
     
     const idEmploye = demande.idEmploye;
-    const soldeActuel = soldes[idEmploye] || 0;
+    if (!idEmploye) {
+      console.warn("idEmploye manquant pour la demande:", demande.id);
+      return false;
+    }
+    
+    const soldeActuel = soldes[idEmploye] !== undefined ? soldes[idEmploye] : 0;
     const joursDemandes = demande.nbJours || 0;
     
     return soldeActuel >= joursDemandes;
@@ -213,60 +231,30 @@ const SuiviConges = () => {
   const appliquerFiltres = () => {
     let result = [...demandes];
     
-    console.log("Application des filtres sur", result.length, "demandes");
-    
     // Filtre par statut
     if (filters.statut) {
-      console.log("Filtre statut:", filters.statut);
-      
-      result = result.filter(d => {
-        const libelle = d.decisionManagerLibelle || '';
-        
-        switch(filters.statut) {
-          case 'attente':
-            return libelle.includes('attente') || libelle === 'en attente';
-          case 'valide':
-            return (libelle.includes('valid') && libelle.includes('manager')) ||
-                   libelle === 'acquis';
-          case 'rejete':
-            return libelle.includes('refus') && libelle.includes('manager');
-          case 'acquis':
-            return libelle === 'acquis';
-          default:
-            return true;
-        }
-      });
-      
-      console.log("Après filtre statut:", result.length, "demandes");
+      result = result.filter(d => d.statut === parseInt(filters.statut));
     }
     
     // Filtre par matricule
     if (matriculeInput.trim() !== '') {
-      console.log("Filtre matricule:", matriculeInput);
       result = result.filter(d => 
         d.matricule && d.matricule.toLowerCase().includes(matriculeInput.toLowerCase())
       );
-      console.log("Après filtre matricule:", result.length, "demandes");
     }
     
     // Filtre par département
     if (filters.idDepartement) {
-      console.log("Filtre département:", filters.idDepartement);
       result = result.filter(d => d.idDepartement == filters.idDepartement);
-      console.log("Après filtre département:", result.length, "demandes");
     }
     
     // Filtres par date
     if (filters.dateDebut) {
-      console.log("Filtre date début:", filters.dateDebut?.format('DD/MM/YYYY'));
       result = result.filter(d => dayjs(d.dateDebut).isSameOrAfter(filters.dateDebut, 'day'));
-      console.log("Après filtre date début:", result.length, "demandes");
     }
     
     if (filters.dateFin) {
-      console.log("Filtre date fin:", filters.dateFin?.format('DD/MM/YYYY'));
       result = result.filter(d => dayjs(d.dateFin).isSameOrBefore(filters.dateFin, 'day'));
-      console.log("Après filtre date fin:", result.length, "demandes");
     }
     
     // Filtre par période
@@ -290,10 +278,8 @@ const SuiviConges = () => {
       
       const dateLimite = aujourdhui.subtract(jours, 'day');
       result = result.filter(d => dayjs(d.dateDemande).isSameOrAfter(dateLimite, 'day'));
-      console.log("Après filtre période:", result.length, "demandes");
     }
     
-    console.log("Résultat final du filtrage:", result.length, "demandes");
     setFilteredDemandes(result);
     setCurrentPage(1);
   };
@@ -317,40 +303,54 @@ const SuiviConges = () => {
     return dayjs(dateString).format('DD/MM/YYYY');
   };
 
-  const getStatutColor = (decisionManagerLibelle) => {
-    const libelle = decisionManagerLibelle || '';
-    
-    if (libelle.includes('attente')) {
-      return 'warning';
-    } else if (libelle.includes('valid') && libelle.includes('manager')) {
-      return 'info';
-    } else if (libelle.includes('acquis')) {
-      return 'success';
-    } else if (libelle.includes('refus') && libelle.includes('manager')) {
-      return 'error';
-    } else if (libelle.includes('annul')) {
-      return 'default';
-    } else {
-      return 'default';
+  // Fonctions de statut
+  const getStatutColor = (statut) => {
+    switch(statut) {
+      case 0: return 'warning';
+      case 1: return 'info';
+      case 2: return 'info';
+      case 4: return 'default';
+      case 5: return 'success';
+      case 6: return 'primary';
+      case 7: return 'error';
+      default: return 'default';
     }
   };
 
-  const getStatutLabel = (decisionManagerLibelle) => {
-    const libelle = decisionManagerLibelle || '';
-    
-    if (libelle.includes('attente')) {
-      return 'En attente';
-    } else if (libelle.includes('valid') && libelle.includes('manager')) {
-      return 'Validé par manager';
-    } else if (libelle.includes('acquis')) {
-      return 'Acquis';
-    } else if (libelle.includes('refus') && libelle.includes('manager')) {
-      return 'Refusé par manager';
-    } else if (libelle.includes('annul')) {
-      return 'Annulé';
-    } else {
-      return libelle || 'Inconnu';
+  const getStatutLabel = (statut) => {
+    switch(statut) {
+      case 0: return 'En attente Manager';
+      case 1: return 'Validé par Manager';
+      case 2: return 'Validé par Manager';
+      case 4: return 'Annulé par RH/Manager';
+      case 5: return 'Acquis/Terminé';
+      case 6: return 'En attente validation RH';
+      case 7: return 'Refusé par RH';
+      default: return 'Inconnu';
     }
+  };
+
+  const getStatutIcon = (statut) => {
+    switch(statut) {
+      case 0: return <HourglassEmpty sx={{ fontSize: 16 }} />;
+      case 1: return <TaskAlt sx={{ fontSize: 16 }} />;
+      case 2: return <TaskAlt sx={{ fontSize: 16 }} />;
+      case 4: return <Block sx={{ fontSize: 16 }} />;
+      case 5: return <CheckCircle sx={{ fontSize: 16 }} />;
+      case 6: return <VerifiedUser sx={{ fontSize: 16 }} />;
+      case 7: return <Cancel sx={{ fontSize: 16 }} />;
+      default: return null;
+    }
+  };
+
+  // Calcul des statistiques
+  const stats = {
+    enAttenteManager: demandes.filter(d => d.statut === 0).length,
+    valideManager: demandes.filter(d => d.statut === 1 || d.statut === 2).length,
+    annule: demandes.filter(d => d.statut === 4).length,
+    acquis: demandes.filter(d => d.statut === 5).length,
+    enAttenteRH: demandes.filter(d => d.statut === 6).length,
+    refuseRH: demandes.filter(d => d.statut === 7).length
   };
 
   // Préparer les événements pour le calendrier
@@ -361,13 +361,20 @@ const SuiviConges = () => {
       const dateFin = dayjs(demande.dateFin);
       
       let backgroundColor = '#b053ad';
+      const statut = demande.statut;
       
-      const libelle = demande.decisionManagerLibelle || '';
-      
-      if (libelle.includes('acquis')) {
+      if (statut === 5) {
         backgroundColor = '#4caf50';
-      } else if (libelle.includes('refus') && libelle.includes('manager')) {
+      } else if (statut === 7) {
         backgroundColor = '#f44336';
+      } else if (statut === 6) {
+        backgroundColor = '#2196f3';
+      } else if (statut === 1 || statut === 2) {
+        backgroundColor = '#0288d1';
+      } else if (statut === 0) {
+        backgroundColor = '#ff9800';
+      } else if (statut === 4) {
+        backgroundColor = '#9e9e9e';
       } else if (dateDebut.isBefore(aujourdhui, 'day') && dateFin.isAfter(aujourdhui, 'day')) {
         backgroundColor = '#ff9800';
       } else if (dateFin.isBefore(aujourdhui, 'day')) {
@@ -376,7 +383,7 @@ const SuiviConges = () => {
       
       return {
         id: demande.id,
-        title: `${demande.nomEmploye} ${demande.prenomEmploye} - ${demande.nbJours}j`,
+        title: `${demande.nomEmploye} ${demande.prenomEmploye} - ${demande.nbJours}j - ${getStatutLabel(statut)}`,
         start: new Date(demande.dateDebut),
         end: new Date(demande.dateFin),
         allDay: true,
@@ -395,33 +402,27 @@ const SuiviConges = () => {
 
   const calendarEvents = prepareCalendarEvents();
 
-  // Gestionnaire d'événement du calendrier
   const handleSelectEvent = (event) => {
     setSelectedDemande(event.resource);
   };
 
-  // Gestionnaire pour changer de vue dans le calendrier
   const handleViewChange = (view) => {
     setCalendarView(view);
   };
 
-  // Gestionnaire pour naviguer dans le calendrier
   const handleNavigate = (newDate) => {
     setCalendarDate(newDate);
   };
 
-  // Calcul de la pagination
   const totalPages = Math.ceil(filteredDemandes.length / itemsPerPage);
   const indexDebut = (currentPage - 1) * itemsPerPage;
   const indexFin = indexDebut + itemsPerPage;
   const demandesPage = filteredDemandes.slice(indexDebut, indexFin);
 
-  // Gestion du changement de page
   const handlePageChange = (event, page) => {
     setCurrentPage(page);
   };
 
-  // Fonctions de navigation personnalisées pour le calendrier
   const goToToday = () => {
     setCalendarDate(new Date());
   };
@@ -483,37 +484,34 @@ const SuiviConges = () => {
               
               <Box display="flex" alignItems="center" flexWrap="wrap" gap={2} mt={1}>
                 <Chip
-                  label={`${demandes.filter(d => {
-                    const libelle = d.decisionManagerLibelle || '';
-                    return libelle.includes('attente') || libelle === 'en attente';
-                  }).length} en attente`}
+                  label={`${stats.enAttenteManager} en attente Manager`}
                   variant="outlined"
                   sx={{ bgcolor: 'rgba(176, 83, 173, 0.08)', color: 'var(--bg-primary)' }}
-                  icon={<AccessTime />}
+                  icon={<HourglassEmpty />}
                 />
                 <Chip
-                  label={`${demandes.filter(d => (d.decisionManagerLibelle || '').includes('acquis')).length} acquis`}
+                  label={`${stats.valideManager} validés Manager`}
+                  variant="outlined"
+                  sx={{ bgcolor: 'rgba(176, 83, 173, 0.08)', color: 'var(--bg-primary)' }}
+                  icon={<TaskAlt />}
+                />
+                <Chip
+                  label={`${stats.acquis} acquis`}
                   variant="outlined"
                   sx={{ bgcolor: 'rgba(176, 83, 173, 0.08)', color: 'var(--bg-primary)' }}
                   icon={<CheckCircle />}
                 />
                 <Chip
-                  label={`${demandes.filter(d => {
-                    const libelle = d.decisionManagerLibelle || '';
-                    return libelle.includes('refus') && libelle.includes('manager');
-                  }).length} rejetés`}
+                  label={`${stats.enAttenteRH} en attente RH`}
+                  variant="outlined"
+                  sx={{ bgcolor: 'rgba(176, 83, 173, 0.08)', color: 'var(--bg-primary)' }}
+                  icon={<VerifiedUser />}
+                />
+                <Chip
+                  label={`${stats.refuseRH} refusés`}
                   variant="outlined"
                   sx={{ bgcolor: 'rgba(176, 83, 173, 0.08)', color: 'var(--bg-primary)' }}
                   icon={<Cancel />}
-                />
-                <Chip
-                  label={`${demandes.filter(d => {
-                    const libelle = d.decisionManagerLibelle || '';
-                    return libelle.includes('valid') && libelle.includes('manager');
-                  }).length} validés par manager`}
-                  variant="outlined"
-                  sx={{ bgcolor: 'rgba(176, 83, 173, 0.08)', color: 'var(--bg-primary)' }}
-                  icon={<CheckCircle />}
                 />
               </Box>
             </Grid>
@@ -559,10 +557,13 @@ const SuiviConges = () => {
                   onChange={handleFilterChange}
                 >
                   <MenuItem value="">Tous les statuts</MenuItem>
-                  <MenuItem value="attente">En attente</MenuItem>
-                  <MenuItem value="valide">Validé par manager</MenuItem>
-                  <MenuItem value="acquis">Acquis</MenuItem>
-                  <MenuItem value="rejete">Refusé par manager</MenuItem>
+                  <MenuItem value="0">En attente Manager</MenuItem>
+                  <MenuItem value="1">Validé par Manager</MenuItem>
+                  <MenuItem value="2">Validé par Manager</MenuItem>
+                  <MenuItem value="4">Annulé par RH/Manager</MenuItem>
+                  <MenuItem value="5">Acquis/Terminé</MenuItem>
+                  <MenuItem value="6">En attente validation RH</MenuItem>
+                  <MenuItem value="7">Refusé par RH</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
@@ -671,15 +672,9 @@ const SuiviConges = () => {
             </Grid>
           </Grid>
           
-          {/* Information sur le filtrage */}
           <Box mt={2}>
             <Typography variant="caption" color="textSecondary">
-              Affichage de {filteredDemandes.length} demandes sur {demandes.length} • 
-              {filters.statut && ` Statut: ${filters.statut}`}
-              {matriculeInput && ` • Matricule contenant: "${matriculeInput}"`}
-              {filters.idDepartement && ` • Département: ${departements.find(d => d.id == filters.idDepartement)?.nom}`}
-              {filters.dateDebut && ` • Du ${filters.dateDebut?.format('DD/MM/YYYY')}`}
-              {filters.dateFin && ` au ${filters.dateFin?.format('DD/MM/YYYY')}`}
+              Affichage de {filteredDemandes.length} demandes sur {demandes.length}
             </Typography>
           </Box>
         </CardContent>
@@ -714,7 +709,6 @@ const SuiviConges = () => {
       {viewMode === 'calendar' && (
         <Card>
           <CardContent>
-            {/* Barre de navigation personnalisée pour le calendrier */}
             <Box display="flex" justifyContent="space-between" alignItems="center" mb={2} p={1} bgcolor="var(--brand-50)" borderRadius={1}>
               <Stack direction="row" spacing={1}>
                 <Button
@@ -796,32 +790,38 @@ const SuiviConges = () => {
               <Grid container spacing={2}>
                 <Grid item xs={6} md={2.4}>
                   <Box display="flex" alignItems="center">
-                    <Box width={20} height={20} bgcolor="#b053ad" mr={1} borderRadius={1} />
-                    <Typography variant="body2">Validé par manager</Typography>
+                    <Box width={20} height={20} bgcolor="#ff9800" mr={1} borderRadius={1} />
+                    <Typography variant="body2">En attente Manager (0)</Typography>
                   </Box>
                 </Grid>
                 <Grid item xs={6} md={2.4}>
                   <Box display="flex" alignItems="center">
-                    <Box width={20} height={20} bgcolor="#4caf50" mr={1} borderRadius={1} />
-                    <Typography variant="body2">Acquis</Typography>
+                    <Box width={20} height={20} bgcolor="#0288d1" mr={1} borderRadius={1} />
+                    <Typography variant="body2">Validé Manager (1,2)</Typography>
                   </Box>
                 </Grid>
                 <Grid item xs={6} md={2.4}>
                   <Box display="flex" alignItems="center">
                     <Box width={20} height={20} bgcolor="#f44336" mr={1} borderRadius={1} />
-                    <Typography variant="body2">Rejeté</Typography>
+                    <Typography variant="body2">Refusé (7)</Typography>
                   </Box>
                 </Grid>
                 <Grid item xs={6} md={2.4}>
                   <Box display="flex" alignItems="center">
-                    <Box width={20} height={20} bgcolor="#ff9800" mr={1} borderRadius={1} />
-                    <Typography variant="body2">En cours</Typography>
+                    <Box width={20} height={20} bgcolor="#9e9e9e" mr={1} borderRadius={1} />
+                    <Typography variant="body2">Annulé (4)</Typography>
                   </Box>
                 </Grid>
                 <Grid item xs={6} md={2.4}>
                   <Box display="flex" alignItems="center">
-                    <Box width={20} height={20} bgcolor="#5c2458" mr={1} borderRadius={1} />
-                    <Typography variant="body2">Passé</Typography>
+                    <Box width={20} height={20} bgcolor="#4caf50" mr={1} borderRadius={1} />
+                    <Typography variant="body2">Acquis (5)</Typography>
+                  </Box>
+                </Grid>
+                <Grid item xs={6} md={2.4}>
+                  <Box display="flex" alignItems="center">
+                    <Box width={20} height={20} bgcolor="#2196f3" mr={1} borderRadius={1} />
+                    <Typography variant="body2">En attente RH (6)</Typography>
                   </Box>
                 </Grid>
               </Grid>
@@ -876,7 +876,7 @@ const SuiviConges = () => {
                     </TableHead>
                     <TableBody>
                       {demandesPage.map((demande) => {
-                        const soldeActuel = soldes[demande.idEmploye] || 0;
+                        const soldeActuel = soldes[demande.idEmploye] !== undefined ? soldes[demande.idEmploye] : 0;
                         const soldeSuffisant = verifierSoldeSuffisant(demande);
                         
                         return (
@@ -922,18 +922,30 @@ const SuiviConges = () => {
                                 >
                                   {soldeActuel.toFixed(1)} j
                                 </Typography>
-                                {!soldeSuffisant && (
+                                {!soldeSuffisant && soldeActuel > 0 && (
                                   <Typography variant="caption" color="error">
                                     <Warning fontSize="inherit" /> Insuffisant
+                                  </Typography>
+                                )}
+                                {soldeActuel === 0 && !loadingSoldes && (
+                                  <Typography variant="caption" color="warning.main">
+                                    Aucun solde
+                                  </Typography>
+                                )}
+                                {loadingSoldes && (
+                                  <Typography variant="caption" color="textSecondary">
+                                    <CircularProgress size={12} sx={{ mr: 0.5 }} />
+                                    Chargement...
                                   </Typography>
                                 )}
                               </Box>
                             </TableCell>
                             <TableCell>
                               <Chip
-                                label={getStatutLabel(demande.decisionManagerLibelle)}
-                                color={getStatutColor(demande.decisionManagerLibelle)}
+                                label={getStatutLabel(demande.statut)}
+                                color={getStatutColor(demande.statut)}
                                 size="small"
+                                icon={getStatutIcon(demande.statut)}
                               />
                             </TableCell>
                             <TableCell>
@@ -953,7 +965,6 @@ const SuiviConges = () => {
                   </Table>
                 </TableContainer>
 
-                {/* Pagination */}
                 {totalPages > 1 && (
                   <Box display="flex" justifyContent="center" alignItems="center" mt={3}>
                     <Pagination
@@ -1032,7 +1043,7 @@ const SuiviConges = () => {
                     </Typography>
                   </Box>
                   <Typography variant="caption" color="textSecondary">
-                    Manager: {selectedDemande.nomCompletManager}
+                    Manager: {selectedDemande.nomCompletManager || selectedDemande.nomManager}
                   </Typography>
                 </Grid>
                 
@@ -1062,7 +1073,7 @@ const SuiviConges = () => {
                       color={verifierSoldeSuffisant(selectedDemande) ? "success.main" : "error.main"}
                       fontWeight="bold"
                     >
-                      {(soldes[selectedDemande.idEmploye] || 0).toFixed(1)} jours
+                      {(soldes[selectedDemande.idEmploye] !== undefined ? soldes[selectedDemande.idEmploye] : 0).toFixed(1)} jours
                     </Typography>
                   </Box>
                 </Grid>
@@ -1072,8 +1083,9 @@ const SuiviConges = () => {
                     Statut
                   </Typography>
                   <Chip
-                    label={getStatutLabel(selectedDemande.decisionManagerLibelle)}
-                    color={getStatutColor(selectedDemande.decisionManagerLibelle)}
+                    label={getStatutLabel(selectedDemande.statut)}
+                    color={getStatutColor(selectedDemande.statut)}
+                    icon={getStatutIcon(selectedDemande.statut)}
                   />
                 </Grid>
                 

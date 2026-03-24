@@ -67,7 +67,12 @@ function SelectRolePage() {
         sessionStorage.setItem('hasMultipleRoles', 'false');
         sessionStorage.setItem('nomComplet', response.data.user?.nomComplet || '');
         sessionStorage.setItem('matricule', response.data.user?.matricule || '');
-        sessionStorage.setItem('departement', response.data.infosPro?.departement?.nom || '');
+        sessionStorage.setItem(
+          'departement',
+          response.data.infosPro?.departement?.nom ||
+          response.data.infosPro?.poste?.departement?.nom ||
+          ''
+        );
         
         // Nettoyer les données temporaires
         sessionStorage.removeItem('userRoles');

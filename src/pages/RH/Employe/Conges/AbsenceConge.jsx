@@ -51,11 +51,19 @@ import {
   FaCalendarTimes,
   FaCalendarMinus
 } from 'react-icons/fa';
+import { Calendar, dayjsLocalizer, Views } from 'react-big-calendar';
+import dayjs from 'dayjs';
+import 'dayjs/locale/fr';
+import 'react-big-calendar/lib/css/react-big-calendar.css';
 import { format, parseISO, startOfMonth, endOfMonth, eachDayOfInterval, 
          isSameMonth, isSameDay, startOfWeek, endOfWeek, addMonths, 
          subMonths, isToday, isWeekend } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import axiosInstance from '../../../utils/AxiosInstance';
+
+// Configuration de dayjs en francais
+dayjs.locale('fr');
+const localizer = dayjsLocalizer(dayjs);
 
 const AbsenceConge = () => {
   const { id } = useParams();
@@ -249,6 +257,27 @@ const AbsenceConge = () => {
   };
 
   const stats = getStats();
+
+  const calendarEvents = absencesConges
+    .filter(absence => typeFilter === 'all' || absence.typeAbsence === typeFilter)
+    .map(absence => {
+      const start = absence.dateAbsence ? parseISO(absence.dateAbsence) : new Date();
+      const end = start;
+      const isConge = absence.typeAbsence === 'CONGE';
+      return {
+        title: `${getTypeLabel(absence.typeAbsence)}${absence.nomComplet ? ' - ' + absence.nomComplet : ''}`,
+        start,
+        end,
+        allDay: true,
+        raw: absence,
+        style: {
+          backgroundColor: isConge ? '#d4edda' : '#fff3cd',
+          borderColor: isConge ? '#28a745' : '#ffc107',
+          color: '#1f1f1f',
+          borderLeft: `3px solid ${isConge ? '#28a745' : '#ffc107'}`
+        }
+      };
+    });
 
   if (loading || loadingEmploye) {
     return (

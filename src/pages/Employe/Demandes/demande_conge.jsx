@@ -21,7 +21,7 @@ import {
   PendingActions, ThumbUp, ThumbDown,
   Block, EditCalendar, HourglassEmpty,
   TaskAlt, Close, VerifiedUser,
-  DoneAll, FiberManualRecord
+  DoneAll, FiberManualRecord, InfoOutlined
 } from '@mui/icons-material';
 import { DemoContainer } from '@mui/x-date-pickers/internals/demo';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -48,6 +48,7 @@ const DemandeConge = () => {
     // États pour les filtres
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
+    const [showFilters, setShowFilters] = useState(false);
     
     // États pour le modal de création
     const [showCreateModal, setShowCreateModal] = useState(false);
@@ -146,7 +147,7 @@ const DemandeConge = () => {
         }
 
         if (statusFilter !== 'all') {
-            filtered = filtered.filter(demande => demande.decisionManager === parseInt(statusFilter));
+            filtered = filtered.filter(demande => demande.statut === parseInt(statusFilter));
         }
 
         setFilteredDemandes(filtered);
@@ -183,7 +184,7 @@ const DemandeConge = () => {
     };
 
     const handleUpdatedDemande = () => {
-        // Recharge la liste complÃ¨te pour rÃ©cupÃ©rer les relations (ex: typeConge)
+        // Recharge la liste complète pour récupérer les relations (ex: typeConge)
         loadDemandes();
     };
 
@@ -293,7 +294,8 @@ const DemandeConge = () => {
                 nbJours: formData.nbJours,
                 typeConge: formData.typeMotif === 'standard' && formData.idTypeConge 
                     ? { id: formData.idTypeConge } 
-                    : null
+                    : null,
+                employe: {id : sessionStorage.getItem('idEmploye')}
             };
             const response = await axiosInstance.post('/api/demandes-conge', demandeData);
             setDemandes(prev => [response.data, ...prev]);
@@ -336,11 +338,12 @@ const DemandeConge = () => {
         if (!selectedDemande) return;
 
         if (!annulationCommentaire.trim()) {
-            alert("Veuillez saisir un commentaire pour justifier l'annulation.");
+            setFormError("Veuillez saisir un commentaire pour justifier l'annulation.");
             return;
         }
 
         setSubmitting(true);
+        setFormError('');
 
         try {
             await axiosInstance.put(
@@ -350,6 +353,7 @@ const DemandeConge = () => {
 
             setShowAnnulationModal(false);
             setAnnulationCommentaire('');
+            setFormError('');
             loadDemandes(); // Recharger la liste
 
         } catch (err) {
@@ -366,21 +370,21 @@ const DemandeConge = () => {
         }
     };
 
-    const getStatusConfig = (decisionManager) => {
+    const getStatusConfig = (statut) => {
         const configs = {
             0: { 
                 label: 'En attente', 
                 color: 'warning', 
                 icon: <HourglassEmpty sx={{ fontSize: 16 }} />,
-                bgColor: 'warning.main',
+                bgColor: '#ed6c02',
                 dotColor: '#ff9800',
                 visible: true
             },
             1: { 
-                label: 'Approuvé', 
+                label: 'Approuvé', //en attente de validation RH
                 color: 'success', 
                 icon: <TaskAlt sx={{ fontSize: 16 }} />,
-                bgColor: 'success.main',
+                bgColor: '#2e7d32',
                 dotColor: '#4caf50',
                 visible: true
             },
@@ -388,7 +392,7 @@ const DemandeConge = () => {
                 label: 'Rejeté', 
                 color: 'error', 
                 icon: <Close sx={{ fontSize: 16 }} />,
-                bgColor: 'error.main',
+                bgColor: '#d32f2f',
                 dotColor: '#f44336',
                 visible: true
             },
@@ -396,7 +400,7 @@ const DemandeConge = () => {
                 label: 'Annulé', 
                 color: 'default', 
                 icon: <Block sx={{ fontSize: 16 }} />,
-                bgColor: 'grey.500',
+                bgColor: '#9e9e9e',
                 dotColor: '#9e9e9e',
                 visible: true
             },
@@ -404,7 +408,7 @@ const DemandeConge = () => {
                 label: 'Annulé par responsable', 
                 color: 'default', 
                 icon: <Block sx={{ fontSize: 16 }} />,
-                bgColor: 'grey.500',
+                bgColor: '#9e9e9e',
                 dotColor: '#9e9e9e',
                 visible: true
             },
@@ -412,17 +416,34 @@ const DemandeConge = () => {
                 label: 'Terminé', 
                 color: 'info', 
                 icon: <VerifiedUser sx={{ fontSize: 16 }} />,
-                bgColor: 'info.main',
+                bgColor: '#0288d1',
+                dotColor: '#0288d1',
+                visible: true
+            },
+            6: { 
+                label: 'Validé par RH', 
+                color: 'info', 
+                icon: <VerifiedUser sx={{ fontSize: 16 }} />,
+                bgColor: '#0288d1',
+                dotColor: '#0288d1',
+                visible: true
+            },
+            7: { 
+                label: 'Refusé par RH', 
+                color: 'info', 
+                icon: <VerifiedUser sx={{ fontSize: 16 }} />,
+                bgColor: '#0288d1',
                 dotColor: '#0288d1',
                 visible: true
             }
+
         };
         
-        return configs[decisionManager] || { 
+        return configs[statut] || { 
             label: 'Inconnu', 
             color: 'default', 
             icon: null,
-            bgColor: 'grey.500',
+            bgColor: '#9e9e9e',
             dotColor: '#9e9e9e',
             visible: true
         };
@@ -435,11 +456,11 @@ const DemandeConge = () => {
 
     // Calcul des statistiques
     const stats = {
-        enAttente: demandes.filter(d => d.decisionManager === 0).length,
-        approuves: demandes.filter(d => d.decisionManager === 1).length,
-        rejetes: demandes.filter(d => d.decisionManager === 2).length,
-        annules: demandes.filter(d => d.decisionManager === 3 || d.decisionManager === 4).length,
-        termines: demandes.filter(d => d.decisionManager === 5).length
+        enAttente: demandes.filter(d => d.statut === 0).length,
+        approuves: demandes.filter(d => d.statut === 1).length,
+        rejetes: demandes.filter(d => d.statut === 2).length,
+        annules: demandes.filter(d => d.statut === 3 || d.statut === 4).length,
+        termines: demandes.filter(d => d.statut === 5).length
     };
 
     if (loading && demandes.length === 0) {
@@ -455,163 +476,129 @@ const DemandeConge = () => {
 
     return (
         <Box p={3}>
-            {/* En-tête */}
-            <Card sx={{ mb: 3, bgcolor: 'primary.main', color: 'white' }}>
-                <CardContent>
-                    <Grid container alignItems="center" spacing={2}>
-                        <Grid item>
-                            <IconButton
-                                component={Link}
-                                to="/dashboard"
-                                sx={{ color: 'white' }}
-                            >
-                                <ArrowBack />
-                            </IconButton>
-                        </Grid>
-                        <Grid item xs>
-                            <Typography variant="h4" component="h1" gutterBottom>
-                                <CalendarMonth sx={{ mr: 1, verticalAlign: 'middle' }} />
-                                Mes Demandes de Congé
-                            </Typography>
-                            
-                            <Box display="flex" alignItems="center" gap={2} flexWrap="wrap">
-                                <Breadcrumbs 
-                                    sx={{ color: 'white', '& .MuiBreadcrumbs-separator': { color: 'rgba(255,255,255,0.5)' } }}
-                                    separator={<NavigateNext fontSize="small" />}
-                                >
-                                    <Box display="flex" alignItems="center">
-                                        <Home sx={{ mr: 0.5 }} fontSize="small" />
-                                        <Typography variant="body2">Accueil</Typography>
-                                    </Box>
-                                    <Typography variant="body2">Demandes de congé</Typography>
-                                </Breadcrumbs>
-                                
-                                {userInfo.nomComplet && (
-                                    <Chip
-                                        label={userInfo.nomComplet}
-                                        size="small"
-                                        icon={<Person />}
-                                        sx={{ 
-                                            bgcolor: 'rgba(255,255,255,0.2)', 
-                                            color: 'white',
-                                            '& .MuiChip-icon': { color: 'white' }
-                                        }}
-                                    />
-                                )}
-                            </Box>
-                        </Grid>
-                        <Grid item>
-                            <Button
-                                variant="contained"
-                                color="secondary"
-                                startIcon={<Add />}
-                                onClick={handleOpenCreateModal}
-                                size="large"
-                            >
-                                Nouvelle demande
-                            </Button>
-                        </Grid>
-                    </Grid>
-                </CardContent>
-            </Card>
+            {/* En-tete */}
+            <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
+                <Box display="flex" alignItems="center" gap={2}>
+                    <Box>
+                        <Typography variant="h5" component="h1">
+                            <CalendarMonth sx={{ mr: 1, verticalAlign: 'middle' }} />
+                            Mes demandes de Congé
+                        </Typography>
+                    </Box>
+                </Box>
+                <Stack direction="row" spacing={2} alignItems="center">
+                    <Button
+                        variant="contained"
+                        disableElevation
+                        startIcon={<FilterList />}
+                        onClick={() => setShowFilters(prev => !prev)}
+                        sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600, bgcolor: '#b053ad', boxShadow: 'none', '&:hover': { bgcolor: '#b053ad', boxShadow: 'none' }, '&:active': { bgcolor: '#b053ad', boxShadow: 'none' }, '&.Mui-focusVisible': { bgcolor: '#b053ad', boxShadow: 'none' } }}
+                    >
+                        Filtre
+                    </Button>
+                    <Button
+                        variant="contained"
+                        disableElevation
+                        startIcon={<Add />}
+                        onClick={handleOpenCreateModal}
+                        sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600, bgcolor: '#b053ad', boxShadow: 'none', '&:hover': { bgcolor: '#b053ad', boxShadow: 'none' }, '&:active': { bgcolor: '#b053ad', boxShadow: 'none' }, '&.Mui-focusVisible': { bgcolor: '#b053ad', boxShadow: 'none' } }}
+                    >
+                        Nouvelle demande
+                    </Button>
+                </Stack>
+            </Box>
 
             {error && (
-                <Alert severity="error" sx={{ mb: 3 }}>
+                <Alert 
+                    severity="error" 
+                    sx={{ 
+                        mb: 3,
+                        bgcolor: '#fdf2f2',
+                        borderLeft: '4px solid #dc2626',
+                        color: '#991b1b',
+                        '& .MuiAlert-icon': {
+                            color: '#dc2626'
+                        }
+                    }}
+                >
                     {error}
                 </Alert>
             )}
 
             {/* Statistiques */}
-            <Grid container spacing={3} sx={{ mb: 3 }}>
-                <Grid item xs={12} sm={6} md={2.4}>
-                    <Card>
-                        <CardContent>
-                            <Box display="flex" alignItems="center" mb={2}>
-                                <HourglassEmpty color="warning" sx={{ mr: 1, fontSize: 30 }} />
-                                <Typography variant="h6" color="textSecondary">
-                                    En attente
-                                </Typography>
+            <Box sx={{ mb: 2, mt: 0 }}>
+                <Stack direction="row" spacing={2} flexWrap="wrap">
+                    <Card sx={{ minWidth: 210, flex: '1 1 180px', bgcolor: '#f8eff7', borderLeft: '4px solid #f39c12', borderRadius: 3, boxShadow: '0 6px 18px rgba(176,83,173,0.12)' }}>
+                        <CardContent sx={{ py: 2 }}>
+                            <Box display="flex" alignItems="center" gap={2}>
+                                <HourglassEmpty sx={{ color: '#f39c12' }} />
+                                <Box>
+                                    <Typography variant="h6" sx={{ fontSize: '1.1rem', color: '#7a4b73' }}>En attente</Typography>
+                                    <Typography variant="h4" sx={{ color: '#f39c12', fontWeight: 700 }}>{stats.enAttente}</Typography>
+                                </Box>
                             </Box>
-                            <Typography variant="h3" color="warning.main" fontWeight="bold" align="center">
-                                {stats.enAttente}
-                            </Typography>
                         </CardContent>
                     </Card>
-                </Grid>
 
-                <Grid item xs={12} sm={6} md={2.4}>
-                    <Card>
-                        <CardContent>
-                            <Box display="flex" alignItems="center" mb={2}>
-                                <TaskAlt color="success" sx={{ mr: 1, fontSize: 30 }} />
-                                <Typography variant="h6" color="textSecondary">
-                                    Approuvés
-                                </Typography>
+                    <Card sx={{ minWidth: 210, flex: '1 1 180px', bgcolor: '#f8eff7', borderLeft: '4px solid #2e7d32', borderRadius: 3, boxShadow: '0 6px 18px rgba(176,83,173,0.12)' }}>
+                        <CardContent sx={{ py: 2 }}>
+                            <Box display="flex" alignItems="center" gap={2}>
+                                <TaskAlt sx={{ color: '#2e7d32' }} />
+                                <Box>
+                                    <Typography variant="h6" sx={{ fontSize: '1.1rem', color: '#7a4b73' }}>Approuvés</Typography>
+                                    <Typography variant="h4" sx={{ color: '#2e7d32', fontWeight: 700 }}>{stats.approuves}</Typography>
+                                </Box>
                             </Box>
-                            <Typography variant="h3" color="success.main" fontWeight="bold" align="center">
-                                {stats.approuves}
-                            </Typography>
                         </CardContent>
                     </Card>
-                </Grid>
 
-                <Grid item xs={12} sm={6} md={2.4}>
-                    <Card>
-                        <CardContent>
-                            <Box display="flex" alignItems="center" mb={2}>
-                                <Close color="error" sx={{ mr: 1, fontSize: 30 }} />
-                                <Typography variant="h6" color="textSecondary">
-                                    Rejetés
-                                </Typography>
+                    <Card sx={{ minWidth: 210, flex: '1 1 180px', bgcolor: '#f8eff7', borderLeft: '4px solid #d32f2f', borderRadius: 3, boxShadow: '0 6px 18px rgba(176,83,173,0.12)' }}>
+                        <CardContent sx={{ py: 2 }}>
+                            <Box display="flex" alignItems="center" gap={2}>
+                                <Close sx={{ color: '#d32f2f' }} />
+                                <Box>
+                                    <Typography variant="h6" sx={{ fontSize: '1.1rem', color: '#7a4b73' }}>Rejetés</Typography>
+                                    <Typography variant="h4" sx={{ color: '#d32f2f', fontWeight: 700 }}>{stats.rejetes}</Typography>
+                                </Box>
                             </Box>
-                            <Typography variant="h3" color="error.main" fontWeight="bold" align="center">
-                                {stats.rejetes}
-                            </Typography>
                         </CardContent>
                     </Card>
-                </Grid>
 
-                <Grid item xs={12} sm={6} md={2.4}>
-                    <Card>
-                        <CardContent>
-                            <Box display="flex" alignItems="center" mb={2}>
-                                <Block color="disabled" sx={{ mr: 1, fontSize: 30 }} />
-                                <Typography variant="h6" color="textSecondary">
-                                    Annulés
-                                </Typography>
+                    <Card sx={{ minWidth: 210, flex: '1 1 180px', bgcolor: '#f8eff7', borderLeft: '4px solid #9e9e9e', borderRadius: 3, boxShadow: '0 6px 18px rgba(176,83,173,0.12)' }}>
+                        <CardContent sx={{ py: 2 }}>
+                            <Box display="flex" alignItems="center" gap={2}>
+                                <Block sx={{ color: '#9e9e9e' }} />
+                                <Box>
+                                    <Typography variant="h6" sx={{ fontSize: '1.1rem', color: '#7a4b73' }}>Annulés</Typography>
+                                    <Typography variant="h4" sx={{ color: '#6d6d6d', fontWeight: 700 }}>{stats.annules}</Typography>
+                                </Box>
                             </Box>
-                            <Typography variant="h3" color="textSecondary" fontWeight="bold" align="center">
-                                {stats.annules}
-                            </Typography>
                         </CardContent>
                     </Card>
-                </Grid>
 
-                <Grid item xs={12} sm={6} md={2.4}>
-                    <Card>
-                        <CardContent>
-                            <Box display="flex" alignItems="center" mb={2}>
-                                <VerifiedUser color="info" sx={{ mr: 1, fontSize: 30 }} />
-                                <Typography variant="h6" color="textSecondary">
-                                    Terminés
-                                </Typography>
+                    <Card sx={{ minWidth: 210, flex: '1 1 180px', bgcolor: '#f8eff7', borderLeft: '4px solid #b053ad', borderRadius: 3, boxShadow: '0 6px 18px rgba(176,83,173,0.12)' }}>
+                        <CardContent sx={{ py: 2 }}>
+                            <Box display="flex" alignItems="center" gap={2}>
+                                <VerifiedUser sx={{ color: '#b053ad' }} />
+                                <Box>
+                                    <Typography variant="h6" sx={{ fontSize: '1.1rem', color: '#7a4b73' }}>Terminés</Typography>
+                                    <Typography variant="h4" sx={{ color: '#b053ad', fontWeight: 700 }}>{stats.termines}</Typography>
+                                </Box>
                             </Box>
-                            <Typography variant="h3" color="info.main" fontWeight="bold" align="center">
-                                {stats.termines}
-                            </Typography>
                         </CardContent>
                     </Card>
-                </Grid>
-            </Grid>
-
+                </Stack>
+            </Box>
+            
             {/* Filtres */}
-            <Card sx={{ mb: 3 }}>
-                <CardContent>
-                    <Typography variant="h6" gutterBottom>
-                        <FilterList sx={{ mr: 1, verticalAlign: 'middle' }} />
-                        Filtres
-                    </Typography>
-                    
+            {showFilters && (
+            <Card sx={{ mb: 3, bgcolor: '#f8eff7', border: '1px solid #e2c9df', borderRadius: 3, boxShadow: '0 8px 24px rgba(176,83,173,0.12)' }}>
+                <CardContent sx={{ py: 3 }}>
+                    <Box display="flex" alignItems="center" gap={1} mb={2}>
+                        <FilterList sx={{ color: '#b053ad' }} />
+                        <Typography variant="subtitle1" fontWeight="600">Recherche multicriteres</Typography>
+                    </Box>
+
                     <Grid container spacing={2} alignItems="center">
                         <Grid item xs={12} md={8}>
                             <TextField
@@ -655,6 +642,14 @@ const DemandeConge = () => {
                                 startIcon={<Refresh />}
                                 onClick={loadDemandes}
                                 disabled={loading}
+                                sx={{
+                                    borderColor: '#b053ad',
+                                    color: '#b053ad',
+                                    '&:hover': {
+                                        borderColor: '#8e3d8b',
+                                        backgroundColor: '#f8eff7'
+                                    }
+                                }}
                             >
                                 Actualiser
                             </Button>
@@ -668,10 +663,11 @@ const DemandeConge = () => {
                     </Box>
                 </CardContent>
             </Card>
+            )}
 
             {/* Table des demandes */}
             <Card>
-                <CardContent>
+                <CardContent sx={{ py: 2 }}>
                     <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
                         <Typography variant="h6">
                             <CalendarToday sx={{ mr: 1, verticalAlign: 'middle' }} />
@@ -680,7 +676,17 @@ const DemandeConge = () => {
                     </Box>
 
                     {filteredDemandes.length === 0 ? (
-                        <Alert severity="info">
+                        <Alert 
+                            severity="info"
+                            sx={{
+                                bgcolor: '#f8eff7',
+                                borderLeft: '4px solid #b053ad',
+                                color: '#7a4b73',
+                                '& .MuiAlert-icon': {
+                                    color: '#b053ad'
+                                }
+                            }}
+                        >
                             Aucune demande trouvée.
                         </Alert>
                     ) : (
@@ -699,8 +705,8 @@ const DemandeConge = () => {
                                 </TableHead>
                                 <TableBody>
                                     {filteredDemandes.map((demande) => {
-                                        const statusConfig = getStatusConfig(demande.decisionManager);
-                                        const peutAnnuler = demande.decisionManager === 0 || demande.decisionManager === 1;
+                                        const statusConfig = getStatusConfig(demande.statut);
+                                        const peutAnnuler = demande.statut === 0 || demande.statut === 1;
                                         
                                         return (
                                             <TableRow key={demande.id} hover>
@@ -753,6 +759,7 @@ const DemandeConge = () => {
                                                             <IconButton 
                                                                 size="small"
                                                                 onClick={() => setSelectedDemande(demande)}
+                                                                sx={{ color: '#b053ad' }}
                                                             >
                                                                 <Visibility fontSize="small" />
                                                             </IconButton>
@@ -761,8 +768,8 @@ const DemandeConge = () => {
                                                         <Tooltip title="Modifier">
                                                             <IconButton
                                                                 size="small"
-                                                                color="primary"
                                                                 onClick={() => handleOpenUpdateModal(demande)}
+                                                                sx={{ color: '#b053ad' }}
                                                             >
                                                                 <Edit fontSize="small" />
                                                             </IconButton>
@@ -772,8 +779,8 @@ const DemandeConge = () => {
                                                             <Tooltip title="Annuler la demande">
                                                                 <IconButton 
                                                                     size="small"
-                                                                    color="error"
                                                                     onClick={() => handleAnnulation(demande)}
+                                                                    sx={{ color: '#d32f2f' }}
                                                                 >
                                                                     <DeleteOutline fontSize="small" />
                                                                 </IconButton>
@@ -793,15 +800,26 @@ const DemandeConge = () => {
 
             {/* MODAL DE CRÉATION */}
             <Dialog open={showCreateModal} onClose={handleCloseCreateModal} maxWidth="md" fullWidth>
-                <DialogTitle>
+                <DialogTitle sx={{ bgcolor: '#f8eff7', color: '#b053ad' }}>
                     <Box display="flex" alignItems="center" gap={1}>
-                        <Add color="primary" />
+                        <Add sx={{ color: '#b053ad' }} />
                         Nouvelle Demande de Congé
                     </Box>
                 </DialogTitle>
                 <DialogContent>
                     {formError && (
-                        <Alert severity="error" sx={{ mb: 2 }}>
+                        <Alert 
+                            severity="error" 
+                            sx={{ 
+                                mb: 2,
+                                bgcolor: '#fdf2f2',
+                                borderLeft: '4px solid #dc2626',
+                                color: '#991b1b',
+                                '& .MuiAlert-icon': {
+                                    color: '#dc2626'
+                                }
+                            }}
+                        >
                             {formError}
                         </Alert>
                     )}
@@ -866,6 +884,14 @@ const DemandeConge = () => {
                                         variant={formData.typeMotif === 'standard' ? 'contained' : 'outlined'}
                                         onClick={() => handleInputChange({ target: { name: 'typeMotif', value: 'standard' } })}
                                         startIcon={<FileCopy />}
+                                        sx={formData.typeMotif === 'standard' ? {
+                                            bgcolor: '#b053ad',
+                                            '&:hover': { bgcolor: '#8e3d8b' }
+                                        } : {
+                                            borderColor: '#b053ad',
+                                            color: '#b053ad',
+                                            '&:hover': { borderColor: '#8e3d8b', backgroundColor: '#f8eff7' }
+                                        }}
                                     >
                                         Type standard
                                     </Button>
@@ -873,6 +899,14 @@ const DemandeConge = () => {
                                         variant={formData.typeMotif === 'autre' ? 'contained' : 'outlined'}
                                         onClick={() => handleInputChange({ target: { name: 'typeMotif', value: 'autre' } })}
                                         startIcon={<Edit />}
+                                        sx={formData.typeMotif === 'autre' ? {
+                                            bgcolor: '#b053ad',
+                                            '&:hover': { bgcolor: '#8e3d8b' }
+                                        } : {
+                                            borderColor: '#b053ad',
+                                            color: '#b053ad',
+                                            '&:hover': { borderColor: '#8e3d8b', backgroundColor: '#f8eff7' }
+                                        }}
                                     >
                                         Autre motif
                                     </Button>
@@ -919,12 +953,13 @@ const DemandeConge = () => {
                     </Box>
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={handleCloseCreateModal}>Annuler</Button>
+                    <Button onClick={handleCloseCreateModal} sx={{ color: '#b053ad' }}>Annuler</Button>
                     <Button 
                         variant="contained" 
                         onClick={handleSubmit}
                         disabled={submitting}
                         startIcon={<Add />}
+                        sx={{ bgcolor: '#b053ad', '&:hover': { bgcolor: '#8e3d8b' } }}
                     >
                         {submitting ? 'Création...' : 'Soumettre'}
                     </Button>
@@ -941,22 +976,44 @@ const DemandeConge = () => {
             />
 
             <Dialog open={showAnnulationModal} onClose={() => setShowAnnulationModal(false)} maxWidth="sm" fullWidth>
-                <DialogTitle>
+                <DialogTitle sx={{ bgcolor: '#f8eff7', color: '#d32f2f' }}>
                     <Box display="flex" alignItems="center" gap={1}>
-                        <DeleteOutline color="error" />
+                        <DeleteOutline sx={{ color: '#d32f2f' }} />
                         Annulation de demande
                     </Box>
                 </DialogTitle>
                 <DialogContent>
                     {formError && (
-                        <Alert severity="error" sx={{ mb: 2 }}>
+                        <Alert 
+                            severity="error" 
+                            sx={{ 
+                                mb: 2,
+                                bgcolor: '#fdf2f2',
+                                borderLeft: '4px solid #dc2626',
+                                color: '#991b1b',
+                                '& .MuiAlert-icon': {
+                                    color: '#dc2626'
+                                }
+                            }}
+                        >
                             {formError}
                         </Alert>
                     )}
                     
                     {selectedDemande && (
                         <>
-                            <Alert severity="warning" sx={{ mb: 2 }}>
+                            <Alert 
+                                severity="warning" 
+                                sx={{ 
+                                    mb: 2,
+                                    bgcolor: '#fef9e3',
+                                    borderLeft: '4px solid #f59e0b',
+                                    color: '#b45309',
+                                    '& .MuiAlert-icon': {
+                                        color: '#f59e0b'
+                                    }
+                                }}
+                            >
                                 Êtes-vous sûr de vouloir annuler cette demande ?
                             </Alert>
                             
@@ -984,7 +1041,7 @@ const DemandeConge = () => {
                     )}
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={() => setShowAnnulationModal(false)}>Annuler</Button>
+                    <Button onClick={() => setShowAnnulationModal(false)} sx={{ color: '#b053ad' }}>Annuler</Button>
                     <Button 
                         variant="contained" 
                         color="error"
@@ -999,9 +1056,9 @@ const DemandeConge = () => {
 
             {/* MODAL DE DÉTAILS */}
             <Dialog open={!!selectedDemande && !showAnnulationModal && !showCreateModal && !showUpdateModal} onClose={() => setSelectedDemande(null)} maxWidth="sm" fullWidth>
-                <DialogTitle>
+                <DialogTitle sx={{ bgcolor: '#f8eff7', color: '#b053ad' }}>
                     <Box display="flex" alignItems="center" gap={1}>
-                        <Visibility color="primary" />
+                        <Visibility sx={{ color: '#b053ad' }} />
                         Détails de la demande
                     </Box>
                 </DialogTitle>
@@ -1036,23 +1093,23 @@ const DemandeConge = () => {
                             <Grid item xs={12}>
                                 <Typography variant="subtitle2" color="textSecondary">Statut</Typography>
                                 <Chip
-                                    label={getStatusConfig(selectedDemande.decisionManager).label}
+                                    label={getStatusConfig(selectedDemande?.statut).label}
                                     size="small"
                                     sx={{
-                                        bgcolor: `${getStatusConfig(selectedDemande.decisionManager).bgColor}15`,
-                                        color: getStatusConfig(selectedDemande.decisionManager).bgColor,
-                                        border: `1px solid ${getStatusConfig(selectedDemande.decisionManager).bgColor}`,
+                                        bgcolor: `${getStatusConfig(selectedDemande?.statut).bgColor}15`,
+                                        color: getStatusConfig(selectedDemande?.statut).bgColor,
+                                        border: `1px solid ${getStatusConfig(selectedDemande?.statut).bgColor}`,
                                         fontWeight: 500,
                                         mt: 0.5
                                     }}
-                                    icon={getStatusConfig(selectedDemande.decisionManager).icon}
+                                    icon={getStatusConfig(selectedDemande?.statut).icon}
                                 />
                             </Grid>
                             
                             {selectedDemande.autreMotif && (
                                 <Grid item xs={12}>
                                     <Typography variant="subtitle2" color="textSecondary">Motif détaillé</Typography>
-                                    <Paper variant="outlined" sx={{ p: 2, bgcolor: 'grey.50' }}>
+                                    <Paper variant="outlined" sx={{ p: 2, bgcolor: '#f8eff7' }}>
                                         <Typography variant="body2">{selectedDemande.autreMotif}</Typography>
                                     </Paper>
                                 </Grid>
@@ -1061,7 +1118,7 @@ const DemandeConge = () => {
                             {selectedDemande.commentaireManager && (
                                 <Grid item xs={12}>
                                     <Typography variant="subtitle2" color="textSecondary">Commentaire du responsable</Typography>
-                                    <Paper variant="outlined" sx={{ p: 2, bgcolor: 'grey.50' }}>
+                                    <Paper variant="outlined" sx={{ p: 2, bgcolor: '#f8eff7' }}>
                                         <Typography variant="body2">{selectedDemande.commentaireManager}</Typography>
                                     </Paper>
                                 </Grid>
@@ -1070,7 +1127,7 @@ const DemandeConge = () => {
                     )}
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={() => setSelectedDemande(null)}>Fermer</Button>
+                    <Button onClick={() => setSelectedDemande(null)} sx={{ color: '#b053ad' }}>Fermer</Button>
                 </DialogActions>
             </Dialog>
         </Box>

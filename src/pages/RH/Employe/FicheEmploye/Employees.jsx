@@ -581,7 +581,7 @@ function Employees() {
     }
   };
 
-  const pageSizeOptions = [5, 10, 25, 50, 100];
+  const pageSizeOptions = [3, 5, 10, 25, 50, 100];
 
   const getPaginationItems = () => {
     const items = [];
@@ -782,7 +782,7 @@ function Employees() {
               </div>
             </div>
 
-            <div className="stat-card bg-danger bg-opacity-10 border-start border-danger border-3">
+            {/* <div className="stat-card bg-danger bg-opacity-10 border-start border-danger border-3">
               <div className="d-flex align-items-center">
                 <div className="stat-icon bg-danger bg-opacity-25 p-2 rounded me-3">
                   <Calendar size={20} className="text-danger" />
@@ -792,7 +792,7 @@ function Employees() {
                   <div className="stat-label text-muted small">En congés</div>
                 </div>
               </div>
-            </div>
+            </div> */}
           </div>
         </Col>
       </Row>

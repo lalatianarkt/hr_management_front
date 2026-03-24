@@ -48,6 +48,7 @@ import PeriodesPaie from "../RH/Paie/periode/PeriodesPaie";
 import NouvelleEditionPaie from "../RH/Paie/edition/NouvelleEditionPaie";
 import ParametrageGlobal from "../RH/Paramétrage/ParametrageGobal";
 import ExportConfiguration from "../RH/Employe/FicheEmploye/export/ExportConfiguration";
+import DemandesCongeEmploye from "../RH/Employe/Conges/DemandesConges";
 
 
 const RouterRH = () => {
@@ -97,6 +98,7 @@ const RouterRH = () => {
                 <Route path="conge/soldeAnnuel" element={<SoldeAnnuelRH />} />   
                 <Route path="conge/regle" element={<ReglesConges />} /> 
                 <Route path="conge" element={<ValidationRH />} />   
+                <Route path="employees/:id/conges" element={<DemandesCongeEmploye />} />
                 <Route path="paie/edition" element={<NouvelleEditionPaie />} />
                 <Route path="paie/periodes" element={<PeriodesPaie />} />
                 <Route path="paie/edition/rubrique" element={<RubriquesList />} />

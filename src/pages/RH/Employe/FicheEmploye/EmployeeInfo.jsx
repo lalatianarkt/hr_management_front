@@ -65,59 +65,80 @@ const LoadingSpinner = ({ message = "Chargement..." }) => (
 
 const InfoCard = ({ title, icon: Icon, children, onEdit, editLabel = "Modifier" }) => (
   <Card className="border h-100">
-    <Card.Header className="bg-white text-dark d-flex justify-content-between align-items-center py-3 border-bottom">
-      <div className="d-flex align-items-center gap-2">
+    <Card.Header className="bg-white text-dark d-flex align-items-center py-3 border-bottom">
+      <div className="d-flex align-items-center gap-2 flex-grow-1">
         {Icon && <Icon size={18} className="text-muted" />}
         <h5 className="mb-0 fw-semibold">{title}</h5>
       </div>
       {onEdit && (
-        <OverlayTrigger placement="top" overlay={<Tooltip>{editLabel}</Tooltip>}>
-          <Button 
-            variant="outline-primary" 
-            size="sm" 
-            onClick={onEdit}
-            className="d-flex align-items-center justify-content-center"
-          >
-            <PencilFill size={14} />
-          </Button>
-        </OverlayTrigger>
+        <div className="ms-auto d-flex justify-content-end">
+          <OverlayTrigger placement="top" overlay={<Tooltip>{editLabel}</Tooltip>}>
+            <Button 
+              variant="outline-primary" 
+              size="sm" 
+              onClick={onEdit}
+              className="d-flex align-items-center justify-content-center flex-shrink-0"
+            >
+              <PencilFill size={14} />
+            </Button>
+          </OverlayTrigger>
+        </div>
       )}
     </Card.Header>
     <Card.Body className="p-3">{children}</Card.Body>
   </Card>
 );
 
-const InfoItem = ({ label, value, icon: Icon, type = 'text', linkTo = null }) => (
-  <div className="mb-3">
-    <small className="text-muted d-flex align-items-center gap-1 mb-1">
-      {Icon && <Icon size={12} />}
-      {label}
-    </small>
-    {type === 'badge' ? (
-      <Badge bg="light" text="dark" className="fw-semibold border">
-        {value || 'Non spécifié'}
-      </Badge>
-    ) : type === 'email' ? (
-      <a href={`mailto:${value}`} className="text-decoration-none d-block text-primary">
-        {value || 'Non spécifié'}
-      </a>
-    ) : type === 'phone' ? (
-      <a href={`tel:${value}`} className="text-decoration-none d-block text-primary">
-        {value || 'Non spécifié'}
-      </a>
-    ) : type === 'money' ? (
-      <span className="fw-semibold d-block">
-        {value ? new Intl.NumberFormat('fr-MG', { style: 'currency', currency: 'MGA' }).format(value) : 'Non spécifié'}
-      </span>
-    ) : linkTo ? (
-      <Link to={linkTo} className="text-decoration-none d-block text-primary">
-        {value || 'Non spécifié'}
-      </Link>
-    ) : (
-      <p className="mb-0 text-dark">{value || 'Non spécifié'}</p>
-    )}
+const InfoPanel = ({ title, children }) => (
+  <div
+    className="h-100 rounded-4 p-3"
+    style={{ background: 'linear-gradient(180deg, #fcf7fb 0%, #ffffff 100%)', border: '1px solid #edd8ea' }}
+  >
+    <div className="fw-semibold mb-3" style={{ color: '#5c2458', fontSize: '0.95rem' }}>{title}</div>
+    {children}
   </div>
 );
+
+const InfoItem = ({ label, value, icon: Icon, type = 'text', linkTo = null }) => {
+  const displayValue = value || 'Non specifie';
+
+  const content = type === 'badge' ? (
+    <Badge bg="light" text="dark" className="fw-semibold border">{displayValue}</Badge>
+  ) : type === 'email' ? (
+    <a href={`mailto:${value}`} className="text-decoration-none text-primary fw-medium" style={{ wordBreak: 'break-word' }}>{displayValue}</a>
+  ) : type === 'phone' ? (
+    <a href={`tel:${value}`} className="text-decoration-none text-primary fw-medium">{displayValue}</a>
+  ) : type === 'money' ? (
+    <span className="fw-semibold text-dark">{value ? new Intl.NumberFormat('fr-MG', { style: 'currency', currency: 'MGA' }).format(value) : 'Non specifie'}</span>
+  ) : linkTo ? (
+    <Link to={linkTo} className="text-decoration-none text-primary fw-medium" style={{ wordBreak: 'break-word' }}>{displayValue}</Link>
+  ) : (
+    <span className="text-dark fw-medium" style={{ wordBreak: 'break-word' }}>{displayValue}</span>
+  );
+
+  return (
+    <div
+      className="rounded-3 px-3 py-3 mb-2"
+      style={{
+        background: '#ffffff',
+        border: '1px solid #f1e3ef',
+        minHeight: '70px',
+        display: 'flex',
+        alignItems: 'center'
+      }}
+    >
+      <div className="d-flex align-items-center gap-3 w-100" style={{ textAlign: 'left' }}>
+        <div className="d-flex align-items-center gap-2 fw-semibold" style={{ color: '#7a4b73', flexShrink: 0 }}>
+          {Icon && <Icon size={12} />}
+          <span>{label} :</span>
+        </div>
+        <div className="fw-medium text-dark" style={{ textAlign: 'left', wordBreak: 'break-word', flex: '1 1 auto' }}>
+          {content}
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const StatusBadge = ({ contrat }) => {
   const getStatusConfig = () => {
@@ -1611,163 +1632,177 @@ function EmployeeInfo() {
       />
             
 <Card className="border mb-4 position-relative">
-      {/* Dropdown positionné en absolu en haut à droite */}
-      <div style={{ position: 'absolute', top: '20px', right: '20px', zIndex: 10 }}>
-        <Dropdown drop="down">
-          <Dropdown.Toggle variant="outline-primary" className="d-flex align-items-center gap-2">
-            <Download /> Actions
-          </Dropdown.Toggle>
-
-          <Dropdown.Menu>
-            <Dropdown.Item onClick={() => handleExportPDF(employe.id)}>
-              <FileEarmarkTextFill className="me-2" />
-              Exporter en PDF
-            </Dropdown.Item>
-            <Dropdown.Divider />
-            <Dropdown.Item onClick={() => navigate(`/dashboard-RH/employees/${id}/absences`)}>
-              <CalendarFill className="me-2" />
-              Voir les absences
-            </Dropdown.Item>
-            <Dropdown.Item onClick={() => navigate(`/dashboard-RH/employees/${id}/soldesConges`)}>
-              <CalendarFill className="me-2" />
-              Voir les soldes de congé 
-            </Dropdown.Item>
-            <Dropdown.Item onClick={() => navigate(`/dashboard-RH/employees/${id}/mouvements`)}>
-              <CalendarFill className="me-2" /> 
-              Voir les mouvements  
-            </Dropdown.Item>
-          </Dropdown.Menu>
-        </Dropdown>
-      </div>
-
-      <Card.Body className="p-4">
-        <Row className="align-items-center">
-          <Col>
+      <Card.Body className="p-3">
+        <div className="d-flex justify-content-between align-items-start gap-4 flex-wrap">
+          <div style={{ maxWidth: "760px" }}>
             <div className="d-flex align-items-center gap-3 mb-3">
-              <div className="bg-light rounded-circle p-3">
-                <PersonFill size={40} className="text-primary" />
+              <div className="bg-light rounded-circle p-2" style={{ width: "52px", height: "52px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <PersonFill size={28} className="text-primary" />
               </div>
               <div>
-                <h1 className="h2 mb-2 fw-bold">{employe.prenom} {employe.nom}</h1>
-                <div className="d-flex align-items-center gap-3 flex-wrap">
-                  <MatriculeBadge matricule={infosPro?.matricule || employe.matricule} />
-                  <StatusBadge contrat={contratActuel} />
-                </div>
+                <h1 className="h4 mb-1 fw-bold">{employe.prenom} {employe.nom}</h1>
+                <div className="text-muted small">Fiche employe</div>
               </div>
             </div>
-            
             <div className="d-flex flex-wrap gap-2">
+              <Badge bg="light" text="dark" className="border px-3 py-2">{infosPro?.matricule || employe.matricule || "-"}</Badge>
+              <StatusBadge contrat={contratActuel} />
               {infosPro?.poste?.departement?.nom && (
-                <Badge bg="light" text="dark" className="border d-flex align-items-center gap-1">
+                <Badge bg="light" text="dark" className="border px-3 py-2 d-flex align-items-center gap-1">
                   <BuildingFill size={12} />
                   {safeDisplay(infosPro?.poste?.departement?.nom)}
                 </Badge>
               )}
               {infosPro?.poste?.nom && (
-                <Badge bg="light" text="dark" className="border d-flex align-items-center gap-1">
+                <Badge bg="light" text="dark" className="border px-3 py-2 d-flex align-items-center gap-1">
                   <BriefcaseFill size={12} />
                   {safeDisplay(infosPro?.poste?.nom)}
                 </Badge>
               )}
               {infosPro?.typeContrat?.intitule && (
-                <Badge bg="light" text="dark" className="border">
-                  {infosPro.typeContrat.intitule}
-                </Badge>
+                <Badge bg="light" text="dark" className="border px-3 py-2">{infosPro.typeContrat.intitule}</Badge>
               )}
             </div>
-          </Col>
-        </Row>
+          </div>
+        <div style={{ position: 'absolute', top: '20px', right: '20px', zIndex: 10 }}>
+          <Dropdown drop="down">
+            <Dropdown.Toggle variant="outline-primary" className="d-flex align-items-center gap-2">
+              <Download size={16} /> Actions
+            </Dropdown.Toggle>
+            <Dropdown.Menu>
+              <Dropdown.Item onClick={() => handleExportPDF(employe.id)}>
+                <FileEarmarkTextFill className="me-2" />
+                Exporter en PDF
+              </Dropdown.Item>
+              <Dropdown.Divider />
+              <Dropdown.Item onClick={() => navigate(`/dashboard-RH/employees/${id}/conges`)}>
+                <CalendarFill className="me-2" />
+                Voir les demandes de congé
+              </Dropdown.Item>
+              <Dropdown.Item onClick={() => navigate(`/dashboard-RH/employees/${id}/absences`)}>
+                <CalendarFill className="me-2" />
+                Voir les absences
+              </Dropdown.Item>
+              <Dropdown.Item onClick={() => navigate(`/dashboard-RH/employees/${id}/soldesConges`)}>
+                <CalendarFill className="me-2" />
+                Voir les soldes de conge
+              </Dropdown.Item>
+              <Dropdown.Item onClick={() => navigate(`/dashboard-RH/employees/${id}/mouvements`)}>
+                <CalendarFill className="me-2" />
+                Voir les mouvements
+              </Dropdown.Item>
+            </Dropdown.Menu>
+          </Dropdown>
+        </div>
+        </div>
       </Card.Body>
     </Card>
 
       {error && <Alert variant="danger" dismissible onClose={() => setError('')} className="mb-4"><ExclamationTriangleFill className="me-2" />{error}</Alert>}
       {success && <Alert variant="success" dismissible onClose={() => setSuccess('')} className="mb-4"><CheckCircleFill className="me-2" />{success}</Alert>}
 
-      <Card className="border mb-4">
+      <Card className="border mb-4 position-relative">
         <Card.Body className="p-0">
           <Tabs activeKey={activeKey} onSelect={(k) => setActiveKey(k)} className="border-0" fill>
             <Tab eventKey="personnel" title={<span className="d-flex align-items-center gap-2"><PersonFill /> Personnel</span>}>
               <div className="p-3">
+                <InfoCard title="Informations Personnelles" icon={PersonFill} onEdit={openPersonnelModal}>
+                  <Row className="g-3">
+                    <Col md={6}>
+                      <InfoPanel title="Identite">
+                        <InfoItem label="Nom" value={employe.nom} />
+                        <InfoItem label="Prenom" value={employe.prenom} />
+                        <InfoItem label="Date de naissance" value={formatDate(employe.dateNaissance)} icon={CalendarFill} />
+                        <InfoItem label="Lieu de naissance" value={employe.lieuNaissance} />
+                        <InfoItem label="Sexe" value={employe.sexe?.sexe} />
+                        <InfoItem label="Nationalite" value={employe.nationalite?.nationalite} />
+                      </InfoPanel>
+                    </Col>
+                    <Col md={6}>
+                      <InfoPanel title="Famille">
+                        <InfoItem label="Nom du pere" value={employe.nomPere} />
+                        <InfoItem label="Nom de la mere" value={employe.nomMere} />
+                        <InfoItem label="Etat civil" value={getEtatCivilLibelle(employe.etatCivil)} />
+                        <InfoItem label="Nombre d'enfants" value={employe.nbEnfants} />
+                        {employe.nomConjoint && <InfoItem label="Nom du conjoint" value={employe.nomConjoint} />}
+                      </InfoPanel>
+                    </Col>
+                  </Row>
+                </InfoCard>
+              </div>
+            </Tab>
+            <Tab eventKey="documents" title={<span className="d-flex align-items-center gap-2"><FileEarmarkTextFill /> Documents</span>}>
+              <div className="p-3">
+                <Row className="g-4">
+                  <Col lg={7}>
+                    <InfoCard title="Documents Administratifs" icon={FileEarmarkTextFill} onEdit={openPersonnelModal}>
+                      <InfoPanel title="Pieces administratives">
+                        <InfoItem label="CIN" value={employe.cin} />
+                        <InfoItem label="Numero CNAPS" value={employe.numCnaps || '-'} />
+                        <InfoItem label="Numero OSTIE" value={employe.numOstie || '-'} />
+                      </InfoPanel>
+                    </InfoCard>
+                  </Col>
+                  <Col lg={5}>
+                    <InfoCard title="Modes de Paiement" icon={CreditCardFill} onEdit={openModesPaiementModal} editLabel="Gerer les modes de paiement">
+                      {loadingModes ? (
+                        <div className="text-center py-3"><Spinner size="sm" animation="border" variant="primary" /><p className="mt-2 text-muted small">Chargement...</p></div>
+                      ) : modesPaiement.length === 0 ? (
+                        <Alert variant="info" className="py-2"><small>Aucun mode de paiement enregistre.</small></Alert>
+                      ) : (
+                        <div>
+                          {modesPaiement.slice(0, 3).map(mode => (
+                            <div key={mode.id} className="rounded-3 px-3 py-2 mb-2" style={{ background: '#ffffff', border: '1px solid #f1e3ef' }}>
+                              <div className="d-flex align-items-center justify-content-between gap-2">
+                                <div className="d-flex align-items-center gap-2">
+                                  {mode.typePaiement?.id === 'TP001' && <Bank size={16} className="text-primary" />}
+                                  {mode.typePaiement?.id === 'TP002' && <Phone size={16} className="text-success" />}
+                                  {mode.typePaiement?.id === 'TP003' && <Cash size={16} className="text-warning" />}
+                                  <div>
+                                    <small className="d-block fw-semibold">{typesPaiement.find(t => t.id === mode.typePaiement?.id)?.libelle || 'Mode de paiement'}</small>
+                                    {mode.typePaiement?.id === 'TP001' && <small className="text-muted">{mode.nomBanque} ???? {mode.numeroCompte?.slice(-4)}</small>}
+                                    {mode.typePaiement?.id === 'TP002' && <small className="text-muted">{mode.telephoneMobile}</small>}
+                                  </div>
+                                </div>
+                                {mode.estParDefaut && <Badge bg="success" pill>Defaut</Badge>}
+                              </div>
+                            </div>
+                          ))}
+                          {modesPaiement.length > 3 && (
+                            <Button variant="link" className="p-0 mt-2 text-decoration-none" onClick={openModesPaiementModal}>
+                              + {modesPaiement.length - 3} autre(s) mode(s)
+                            </Button>
+                          )}
+                        </div>
+                      )}
+                    </InfoCard>
+                  </Col>
+                </Row>
+              </div>
+            </Tab>
+            <Tab eventKey="contact" title={<span className="d-flex align-items-center gap-2"><TelephoneFill /> Contact</span>}>
+              <div className="p-3">
                 <Row className="g-4">
                   <Col lg={6}>
-                    <InfoCard title="Informations Personnelles" icon={PersonFill} onEdit={openPersonnelModal}>
-                      <Row>
-                        <Col md={6}>
-                          <InfoItem label="Nom" value={employe.nom} />
-                          <InfoItem label="Prénom" value={employe.prenom} />
-                          <InfoItem label="Date de naissance" value={formatDate(employe.dateNaissance)} icon={CalendarFill} />
-                          <InfoItem label="Lieu de naissance" value={employe.lieuNaissance} />
-                          <InfoItem label="Sexe" value={employe.sexe?.sexe} />
-                          <InfoItem label="Nationalité" value={employe.nationalite?.nationalite} />
-                        </Col>
-                        <Col md={6}>
-                          <InfoItem label="Nom du père" value={employe.nomPere} />
-                          <InfoItem label="Nom de la mère" value={employe.nomMere} />
-                          <InfoItem label="État civil" value={getEtatCivilLibelle(employe.etatCivil)} />
-                          <InfoItem label="Nombre d'enfants" value={employe.nbEnfants} />
-                          {employe.nomConjoint && <InfoItem label="Nom du conjoint" value={employe.nomConjoint} />}
-                        </Col>
-                      </Row>
+                    <InfoCard title="Coordonnees" icon={TelephoneFill} onEdit={openPersonnelModal}>
+                      <InfoPanel title="Coordonnees principales">
+                        <InfoItem label="Email" value={employe.email} type="email" icon={EnvelopeFill} />
+                        <InfoItem label="Telephone" value={employe.telephone} type="phone" icon={TelephoneFill} />
+                        <InfoItem label="Adresse" value={employe.adresse} icon={GeoAltFill} />
+                        <InfoItem label="Region" value={employe.region?.nom} />
+                        <InfoItem label="Code postal" value={employe.codePostal} />
+                      </InfoPanel>
                     </InfoCard>
                   </Col>
                   <Col lg={6}>
-                    <Row className="g-4">
-                      <Col xs={12}>
-                        <InfoCard title="Coordonnées et Documents" icon={TelephoneFill} onEdit={openPersonnelModal}>
-                          <InfoItem label="Email" value={employe.email} type="email" icon={EnvelopeFill} />
-                          <InfoItem label="Téléphone" value={employe.telephone} type="phone" icon={TelephoneFill} />
-                          <InfoItem label="Adresse" value={employe.adresse} icon={GeoAltFill} />
-                          <InfoItem label="Région" value={employe.region?.nom} />
-                          <InfoItem label="Code postal" value={employe.codePostal} />
-                          <div className="mt-4">
-                            <h6 className="fw-semibold mb-3">Documents administratifs</h6>
-                            <InfoItem label="CIN" value={employe.cin} />
-                            <InfoItem label="Numéro CNAPS" value={employe.numCnaps || '-'} />
-                            <InfoItem label="Numéro OSTIE" value={employe.numOstie || '-'} />
-                          </div>
-                        </InfoCard>
-                      </Col>
-                      <Col xs={12}>
-                        <InfoCard title="Contact d'urgence" icon={PeopleFill} onEdit={openContactModal}>
-                          <InfoItem label="Nom" value={employe.emergencyContact?.nom} />
-                          <InfoItem label="Téléphone" value={employe.emergencyContact?.contact} type="phone" />
-                          <InfoItem label="Email" value={employe.emergencyContact?.email || '-'} type="email" />
-                          <InfoItem label="Adresse" value={employe.emergencyContact?.adresse} />
-                        </InfoCard>
-                      </Col>
-                      <Col xs={12}>
-                        <InfoCard title="Modes de paiement" icon={CreditCardFill} onEdit={openModesPaiementModal} editLabel="Gérer les modes de paiement">
-                          {loadingModes ? (
-                            <div className="text-center py-3"><Spinner size="sm" animation="border" variant="primary" /><p className="mt-2 text-muted small">Chargement...</p></div>
-                          ) : modesPaiement.length === 0 ? (
-                            <Alert variant="info" className="py-2"><small>Aucun mode de paiement enregistré.</small></Alert>
-                          ) : (
-                            <div>
-                              {modesPaiement.slice(0, 2).map(mode => (
-                                <div key={mode.id} className="d-flex align-items-center justify-content-between mb-2 pb-2 border-bottom">
-                                  <div className="d-flex align-items-center gap-2">
-                                    {mode.typePaiement?.id === 'TP001' && <Bank size={16} className="text-primary" />}
-                                    {mode.typePaiement?.id === 'TP002' && <Phone size={16} className="text-success" />}
-                                    {mode.typePaiement?.id === 'TP003' && <Cash size={16} className="text-warning" />}
-                                    <div>
-                                      <small className="d-block fw-semibold">{typesPaiement.find(t => t.id === mode.typePaiement?.id)?.libelle || 'Mode de paiement'}</small>
-                                      {mode.typePaiement?.id === 'TP001' && <small className="text-muted">{mode.nomBanque} •••• {mode.numeroCompte?.slice(-4)}</small>}
-                                      {mode.typePaiement?.id === 'TP002' && <small className="text-muted">{mode.telephoneMobile}</small>}
-                                    </div>
-                                  </div>
-                                  {mode.estParDefaut && <Badge bg="success" pill>Défaut</Badge>}
-                                </div>
-                              ))}
-                              {modesPaiement.length > 2 && (
-                                <Button variant="link" className="p-0 mt-2 text-decoration-none" onClick={openModesPaiementModal}>
-                                  + {modesPaiement.length - 2} autre(s) mode(s)
-                                </Button>
-                              )}
-                            </div>
-                          )}
-                        </InfoCard>
-                      </Col>
-                    </Row>
+                    <InfoCard title="Contact d'urgence" icon={PeopleFill} onEdit={openContactModal}>
+                      <InfoPanel title="Personne a contacter">
+                        <InfoItem label="Nom" value={employe.emergencyContact?.nom} />
+                        <InfoItem label="Telephone" value={employe.emergencyContact?.contact} type="phone" />
+                        <InfoItem label="Email" value={employe.emergencyContact?.email || '-'} type="email" />
+                        <InfoItem label="Adresse" value={employe.emergencyContact?.adresse} />
+                      </InfoPanel>
+                    </InfoCard>
                   </Col>
                 </Row>
               </div>
@@ -1775,29 +1810,33 @@ function EmployeeInfo() {
             <Tab eventKey="professionnel" title={<span className="d-flex align-items-center gap-2"><BriefcaseFill /> Professionnel</span>}>
               <div className="p-3">
                 <Row className="g-4 mb-4">
-                  <Col lg={8}>
+                  <Col lg={12}>
                     <InfoCard title="Contrat Actuel" icon={BriefcaseFill} onEdit={() => openProModal(0)}>
-                      <Row>
+                      <Row className="g-3">
                         <Col md={6}>
-                          <InfoItem label="Poste" value={infosPro?.poste?.nom} />
-                          <InfoItem label="Département" value={infosPro?.poste?.departement?.nom || infosPro?.departement?.nom} />
-                          <InfoItem label="Salaire de base" value={infosPro?.salaireBase} type="money" />
-                          {infosPro?.manager?.employe && (
-                            <InfoItem label="Manager" value={`${infosPro.manager.employe.prenom} ${infosPro.manager.employe.nom}`} linkTo={`/dashboard-RH/employees/employe/manager/${infosPro.manager.id}`} />
-                          )}
+                          <InfoPanel title="Affectation">
+                            <InfoItem label="Poste" value={infosPro?.poste?.nom} />
+                            <InfoItem label="Departement" value={infosPro?.poste?.departement?.nom || infosPro?.departement?.nom} />
+                            <InfoItem label="Salaire de base" value={infosPro?.salaireBase} type="money" />
+                            {infosPro?.manager?.employe && (
+                              <InfoItem label="Manager" value={`${infosPro.manager.employe.prenom} ${infosPro.manager.employe.nom}`} linkTo={`/dashboard-RH/employees/employe/manager/${infosPro.manager.id}`} />
+                            )}
+                          </InfoPanel>
                         </Col>
                         <Col md={6}>
-                          <InfoItem label="Date d'embauche" value={formatDate(infosPro?.dateEmbauche)} icon={CalendarFill} />
-                          <InfoItem label="Date début d'assignation" value={formatDate(infosPro?.dateDebutAssignationPoste)} icon={ClockFill} />
-                          <InfoItem label="Date fin d'assignation" value={formatDate(infosPro?.dateFinAssignationPoste)} icon={ClockFill} />
-                          <div className="mb-3">
-                            <small className="text-muted d-flex align-items-center gap-1 mb-1">Type de contrat</small>
-                            <ContratBadge typeContrat={infosPro?.typeContrat} />
-                          </div>
-                          {infosPro?.classification && <InfoItem label="Classification" value={infosPro.classification} />}
-                          {infosPro?.categorieProfessionnelle && <InfoItem label="Catégorie professionnelle" value={infosPro.categorieProfessionnelle.libelle} />}
-                          {infosPro?.typeTempsTravail && <InfoItem label="Temps de travail" value={infosPro.typeTempsTravail.tempsTravail} />}
-                          {infosPro?.typeEntree && <InfoItem label="Type d'entrée" value={infosPro.typeEntree.nom || infosPro.typeEntree.libelle} />}
+                          <InfoPanel title="Conditions du contrat">
+                            <InfoItem label="Date d'embauche" value={formatDate(infosPro?.dateEmbauche)} icon={CalendarFill} />
+                            <InfoItem label="Date debut d'assignation" value={formatDate(infosPro?.dateDebutAssignationPoste)} icon={ClockFill} />
+                            <InfoItem label="Date fin d'assignation" value={formatDate(infosPro?.dateFinAssignationPoste)} icon={ClockFill} />
+                            <div className="rounded-3 px-3 py-2 mb-2" style={{ background: '#ffffff', border: '1px solid #f1e3ef' }}>
+                              <small className="text-muted fw-semibold d-block mb-1">Type de contrat</small>
+                              <ContratBadge typeContrat={infosPro?.typeContrat} />
+                            </div>
+                            {infosPro?.classification && <InfoItem label="Classification" value={infosPro.classification} />}
+                            {infosPro?.categorieProfessionnelle && <InfoItem label="Categorie professionnelle" value={infosPro.categorieProfessionnelle.libelle} />}
+                            {infosPro?.typeTempsTravail && <InfoItem label="Temps de travail" value={infosPro.typeTempsTravail.tempsTravail} />}
+                            {infosPro?.typeEntree && <InfoItem label="Type d'entree" value={infosPro.typeEntree.nom || infosPro.typeEntree.libelle} />}
+                          </InfoPanel>
                         </Col>
                       </Row>
                     </InfoCard>

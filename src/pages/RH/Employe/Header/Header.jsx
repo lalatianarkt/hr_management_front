@@ -58,13 +58,17 @@ export default function Header() {
   const fetchNotifications = async () => {
     setLoading(true);
     try {
-      const response = await axiosInstance.get("/api/notifications/utilisateur");
-
+      const response = await axiosInstance.get(`/api/notifications/utilisateur`);
+      
       if (response.data) {
-        setNotifications(response.data);
-        const unread = response.data.filter((notif) => notif.status === 0).length;
+        const notificationsData = Array.isArray(response.data) ? response.data : 
+                                 (response.data.content ? response.data.content : []);
+        setNotifications(notificationsData);
+        
+        // Compter les notifications non lues (estLu = false)
+        const unread = notificationsData.filter((notif) => !notif.estLu).length;
         setUnreadCount(unread);
-        console.log("Notifications recuperees:", response.data);
+        console.log("Notifications recuperees:", notificationsData);
       }
     } catch (error) {
       console.error("Erreur lors de la recuperation des notifications:", error);
@@ -76,13 +80,28 @@ export default function Header() {
     }
   };
 
+  // Compter les notifications non lues via le compteur
+  const fetchUnreadCount = async () => {
+    try {
+      const response = await axiosInstance.get(`/api/notifications/utilisateur/count-non-lues`);
+      
+      if (response.data && response.data.count !== undefined) {
+        setUnreadCount(response.data.count);
+      }
+    } catch (error) {
+      console.error("Erreur lors du comptage des notifications:", error);
+    }
+  };
+
   const markAsRead = async (notificationId) => {
     try {
-      await axiosInstance.put(`/api/notifications/${notificationId}/lire`);
-
+      // Utiliser le nouveau endpoint pour marquer comme lue
+      await axiosInstance.put(`/api/notifications/${notificationId}/read`);
+      
+      // Mettre à jour l'état local
       setNotifications((prevNotifications) =>
         prevNotifications.map((notif) =>
-          notif.id === notificationId ? { ...notif, status: 1 } : notif
+          notif.id === notificationId ? { ...notif, estLu: true } : notif
         )
       );
       setUnreadCount((prev) => Math.max(0, prev - 1));
@@ -93,16 +112,18 @@ export default function Header() {
 
   const markAllAsRead = async () => {
     try {
-      await axiosInstance.patch("/api/notifications/lire-tous");
-
+      await axiosInstance.put(`/api/notifications/utilisateur/read-all`);
+      
+      // Mettre à jour l'état local
       setNotifications((prevNotifications) =>
-        prevNotifications.map((notif) => ({ ...notif, status: 1 }))
+        prevNotifications.map((notif) => ({ ...notif, estLu: true }))
       );
       setUnreadCount(0);
     } catch (error) {
       console.error("Erreur lors du marquage de toutes les notifications:", error);
+      // Fallback: mettre à jour localement quand même
       setNotifications((prevNotifications) =>
-        prevNotifications.map((notif) => ({ ...notif, status: 1 }))
+        prevNotifications.map((notif) => ({ ...notif, estLu: true }))
       );
       setUnreadCount(0);
     }
@@ -194,7 +215,11 @@ export default function Header() {
 
   useEffect(() => {
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 30000);
+    // Rafraîchir les notifications toutes les 30 secondes
+    const interval = setInterval(() => {
+      fetchUnreadCount(); // Utiliser le compteur pour économiser la bande passante
+      fetchNotifications(); // Rafraîchir la liste complète périodiquement
+    }, 30000);
     return () => clearInterval(interval);
   }, []);
 
@@ -204,11 +229,32 @@ export default function Header() {
     const now = new Date();
     const diffInSeconds = Math.floor((now - date) / 1000);
 
-    if (diffInSeconds < 60) return "a l'instant";
+    if (diffInSeconds < 60) return "à l'instant";
     if (diffInSeconds < 3600) return `il y a ${Math.floor(diffInSeconds / 60)} min`;
     if (diffInSeconds < 86400) return `il y a ${Math.floor(diffInSeconds / 3600)} h`;
     if (diffInSeconds < 604800) return `il y a ${Math.floor(diffInSeconds / 86400)} j`;
     return date.toLocaleDateString();
+  };
+
+  const buildNotificationLink = (lien) => {
+    if (!lien) return "";
+    const clean = lien.startsWith("/") ? lien : `/${lien}`;
+    return `/dashboard-RH${clean}`;
+  };
+
+  // Extraire le titre de la notification (depuis le message ou depuis un champ dédié)
+  const getNotificationTitle = (notification) => {
+    // Si le message est long, prendre les premiers mots comme titre
+    const message = notification.message || "";
+    if (message.length > 50) {
+      return message.substring(0, 50) + "...";
+    }
+    return message;
+  };
+
+  // Extraire le message principal
+  const getNotificationMessage = (notification) => {
+    return notification.message || "";
   };
 
   const getBreadcrumbItems = (pathname) => {
@@ -373,7 +419,7 @@ export default function Header() {
               <div
                 className="position-absolute end-0 mt-2 bg-white shadow-lg rounded-3"
                 style={{
-                  width: "360px",
+                  width: "380px",
                   maxHeight: "480px",
                   zIndex: 1000,
                   border: "1px solid var(--color-border)",
@@ -412,64 +458,84 @@ export default function Header() {
                       <p className="text-muted small mt-2">Aucune notification</p>
                     </div>
                   ) : (
-                    notifications.map((notification) => (
-                      <div
-                        key={notification.id}
-                        className={`p-3 border-bottom ${notification.status === 0 ? "bg-light" : ""}`}
-                        onClick={() => notification.status === 0 && markAsRead(notification.id)}
-                        style={{
-                          cursor: notification.status === 0 ? "pointer" : "default",
-                          transition: "background-color 0.2s",
-                          ...(notification.status === 0 && {
-                            borderLeft: "3px solid var(--bg-primary)",
-                          }),
-                        }}
-                      >
-                        <div className="d-flex">
-                          <div className="me-3">
-                            {notification.status === 0 ? (
-                              <i className="bi bi-envelope-fill text-primary"></i>
-                            ) : (
-                              <i className="bi bi-envelope-open-fill text-muted"></i>
-                            )}
-                          </div>
-
-                          <div className="flex-grow-1">
-                            <div className="d-flex justify-content-between align-items-start">
-                              <div>
-                                <p className={`mb-1 small fw-bold ${notification.status === 0 ? "text-dark" : "text-muted"}`}>
-                                  {notification.titre || notification.title}
-                                </p>
-                                <p className="mb-1 small text-muted">{notification.message}</p>
-                              </div>
-
-                              {notification.status === 0 && (
-                                <span className="badge bg-primary rounded-pill" style={{ fontSize: "8px" }}>
-                                  Nouveau
-                                </span>
-                              )}
-
-                              {notification.status === 1 && (
-                                <span className="badge bg-secondary rounded-pill" style={{ fontSize: "8px" }}>
-                                  Lu
-                                </span>
+                    notifications.map((notification) => {
+                      const isUnread = !notification.estLu;
+                      return (
+                        <div
+                          key={notification.id}
+                          className={`p-3 border-bottom ${isUnread ? "bg-light" : ""}`}
+                          onClick={() => isUnread && markAsRead(notification.id)}
+                          style={{
+                            cursor: isUnread ? "pointer" : "default",
+                            transition: "background-color 0.2s",
+                            ...(isUnread && {
+                              borderLeft: "3px solid var(--bg-primary)",
+                            }),
+                          }}
+                        >
+                          <div className="d-flex">
+                            <div className="me-3">
+                              {isUnread ? (
+                                <i className="bi bi-envelope-fill text-primary"></i>
+                              ) : (
+                                <i className="bi bi-envelope-open-fill text-muted"></i>
                               )}
                             </div>
 
-                            <small className="text-muted" style={{ fontSize: "10px" }}>
-                              {formatRelativeTime(notification.createdAt || notification.dateCreation)}
-                            </small>
+                            <div className="flex-grow-1">
+                              <div className="d-flex justify-content-between align-items-start">
+                                <div className="flex-grow-1 me-2">
+                                  <p className={`mb-1 small fw-bold ${isUnread ? "text-dark" : "text-muted"}`}>
+                                    {getNotificationTitle(notification)}
+                                  </p>
+                                  <p className="mb-1 small text-muted" style={{ wordBreak: "break-word" }}>
+                                    {getNotificationMessage(notification)}
+                                  </p>
+                                </div>
+
+                                <div className="text-end">
+                                  {isUnread ? (
+                                    <span className="badge bg-primary rounded-pill" style={{ fontSize: "8px" }}>
+                                      Nouveau
+                                    </span>
+                                  ) : (
+                                    <span className="badge bg-secondary rounded-pill" style={{ fontSize: "8px" }}>
+                                      Lu
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+
+                              <div className="d-flex justify-content-between align-items-center mt-1">
+                                <small className="text-muted" style={{ fontSize: "10px" }}>
+                                  {formatRelativeTime(notification.createdAt)}
+                                </small>
+                                {notification.lien && (
+                                  <Link 
+                                    to={buildNotificationLink(notification.lien)} 
+                                    className="text-decoration-none small"
+                                    style={{ fontSize: "10px", color: "var(--bg-primary)" }}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      if (isUnread) markAsRead(notification.id);
+                                    }}
+                                  >
+                                    Ouvrir l'action
+                                  </Link>
+                                )}
+                              </div>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))
+                      );
+                    })
                   )}
                 </div>
 
                 <div className="p-2 border-top text-center">
-                  <a href="/notifications" className="text-decoration-none small" style={{ color: "var(--bg-primary)" }}>
+                  <Link to="/dashboard-RH/notifications" className="text-decoration-none small" style={{ color: "var(--bg-primary)" }}>
                     Voir toutes les notifications
-                  </a>
+                  </Link>
                 </div>
               </div>
             )}

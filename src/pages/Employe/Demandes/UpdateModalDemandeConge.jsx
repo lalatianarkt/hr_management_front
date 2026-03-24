@@ -48,6 +48,7 @@ const UpdateModalDemandeConge = ({ open, onClose, demande, typesConge, onUpdated
       setFormError('');
       try {
         const response = await axiosInstance.get(`/api/demandes-conge/${demande.id}`);
+        console.log("response : ", response.data);
         const loaded = response.data;
         setFullDemande(loaded);
 

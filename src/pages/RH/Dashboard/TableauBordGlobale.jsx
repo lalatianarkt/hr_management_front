@@ -71,11 +71,11 @@ const TableauBordGlobale = () => {
       }
 
       // UNIQUEMENT l'endpoint /periode avec les deux dates
-      // const url = `/api/dashboard/periode?dateDebut=${dateDebut.format("YYYY-MM-DD")}&dateFin=${dateFin.format("YYYY-MM-DD")}`;
+      const url = `/api/dashboard/periode?dateDebut=${dateDebut.format("YYYY-MM-DD")}&dateFin=${dateFin.format("YYYY-MM-DD")}`;
 
-      // const response = await axiosInstance.get(url);
+      const response = await axiosInstance.get(url);
       
-      // console.log("Données dashboard:", response.data);
+      console.log("Données dashboard:", response.data);
       
       setDashboardData("response.data");
       
@@ -135,15 +135,15 @@ const TableauBordGlobale = () => {
     } catch (err) {
       console.error("Erreur export:", err);
       
-      if (err.response?.status === 401 || err.response?.status === 403) {
-        sessionStorage.removeItem('token');
-        message.error('Session expirée. Veuillez vous reconnecter.');
-        setTimeout(() => {
-          navigate('/?message=' + encodeURIComponent('Session expirée. Veuillez vous reconnecter.'));
-        }, 2000);
-      } else {
-        message.error("Erreur lors de l'export");
-      }
+      // if (err.response?.status === 401 || err.response?.status === 403) {
+      //   sessionStorage.removeItem('token');
+      //   message.error('Session expirée. Veuillez vous reconnecter.');
+      //   setTimeout(() => {
+      //     navigate('/?message=' + encodeURIComponent('Session expirée. Veuillez vous reconnecter.'));
+      //   }, 2000);
+      // } else {
+      //   message.error("Erreur lors de l'export");
+      // }
     }
   };
 

@@ -1,9 +1,9 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useSidebar } from "../../../components/SidebarContext";
 import {
-  LayoutDashboard,
-  Users,
+  User,
+  Calendar,
   ChevronDown,
   ChevronRight,
   LogOut,
@@ -13,23 +13,47 @@ import {
 export default function Sidebar() {
   const { isSidebarOpen, closeSidebar } = useSidebar();
   const location = useLocation();
-  const [openSection, setOpenSection] = useState('employes');
+  const [openSection, setOpenSection] = useState('personnel');
+
+  const normalizePath = (path) => {
+    try {
+      return decodeURIComponent(path);
+    } catch {
+      return path;
+    }
+  };
 
   const toggleSection = (section) => {
     setOpenSection(prev => prev === section ? null : section);
   };
 
-  const isActive = (path) => location.pathname === path;
+  const isActive = (path) => normalizePath(location.pathname) === normalizePath(path);
+
+  useEffect(() => {
+    const path = normalizePath(location.pathname);
+
+    if (path.startsWith('/emp/conge') || path.startsWith('/emp/absence')) {
+      setOpenSection('demandes');
+      return;
+    }
+
+    if (path.startsWith('/emp/infos') || path.startsWith('/emp/presence')) {
+      setOpenSection('personnel');
+      return;
+    }
+
+    if (path.startsWith('/emp/mouvement')) {
+      setOpenSection('mouvement');
+    }
+  }, [location.pathname]);
 
   return (
     <>
-      {/* Overlay pour mobile */}
       {isSidebarOpen && (
         <div className="sidebar-overlay active" onClick={closeSidebar} />
       )}
 
       <aside className={`app-sidebar ${isSidebarOpen ? 'sidebar-open' : ''}`}>
-        {/* Sidebar Decorative Waves (Brand Colored) */}
         <div className="sidebar-wave">
           <svg viewBox="0 0 120 28" preserveAspectRatio="none">
             <path d="M0 20 C 30 20, 30 15, 60 15 S 90 20, 120 20 V 28 H 0" fill="var(--bg-primary)" opacity="0.1" />
@@ -47,77 +71,93 @@ export default function Sidebar() {
           </Link>
         </div>
 
-        {/* Contenu scrollable */}
         <div className="sidebar-wrapper">
-          <nav className="mt-2">
-            <ul className="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
+          <nav>
+            <ul className="nav nav-sidebar flex-column">
 
-              <li className="nav-header">NAVIGATION PRINCIPALE</li>
-
-              {/* Fiches Personnel */}
-              <li className={`nav-item ${openSection === 'employes' ? 'menu-open' : ''}`}>
-                <a href="#" className="nav-link" onClick={(e) => { e.preventDefault(); toggleSection('employes'); }}>
-                  <i className="nav-icon bi bi-people"></i>
-                  <p>
-                    Personnel
-                    <i className={`nav-arrow bi ${openSection === 'employes' ? 'bi-chevron-down' : 'bi-chevron-right'}`}></i>
-                  </p>
-                </a>
-                <ul className="nav nav-treeview" style={{ display: openSection === 'employes' ? 'block' : 'none' }}>
-                  <li className="nav-item">
-                    <Link to="/emp/infos/fiche-perso" className="nav-link">
-                      <i className="nav-icon bi bi-circle"></i>
-                      <p>Fiche personnel</p>
-                    </Link>
-                  </li>
-                  <li className="nav-item">
-                    <Link to="/emp/presence/pointage" className="nav-link">
-                      <i className="nav-icon bi bi-circle"></i>
-                      <p>Présence</p>
-                    </Link>
-                  </li>
-                  <li className="nav-item">
-                    <Link to="#" className="nav-link">
-                      <i className="nav-icon bi bi-circle"></i>
-                      <p>Document personnel</p>
-                    </Link>
-                  </li>
-                </ul>
+              <li className="sidebar-section-title">
+                <span className="gradient-text">Mon Espace</span>
               </li>
 
-              {/* Congés */}
-              <li className={`nav-item ${openSection === 'demandes' ? 'menu-open' : ''}`}>
-                <a href="#" className="nav-link" onClick={(e) => { e.preventDefault(); toggleSection('demandes'); }}>
-                  <i className="nav-icon bi bi-people"></i>
-                  <p>
-                    Demandes
-                    <i className={`nav-arrow bi ${openSection === 'demandes' ? 'bi-chevron-down' : 'bi-chevron-right'}`}></i>
-                  </p>
-                </a>
-                <ul className="nav nav-treeview" style={{ display: openSection === 'demandes' ? 'block' : 'none' }}>
-                  <li className="nav-item">
-                    <Link to="/emp/conge/demande" className="nav-link">
-                      <i className="nav-icon bi bi-circle"></i>
-                      <p>Demande congé</p>
-                    </Link>
-                  </li>
-                  <li className="nav-item">
-                    <Link to="/emp/absence/liste/demande" className="nav-link">
-                      <i className="nav-icon bi bi-circle"></i>
-                      <p>Demande absence</p>
-                    </Link>
-                  </li>
-                </ul>
-              </li>
-
-              {/* Déconnexion */}
               <li className="nav-item">
-                <a href="#" className="nav-link text-danger">
-                  <i className="nav-icon bi bi-box-arrow-right"></i>
-                  <p>Se déconnecter</p>
-                </a>
+                <button
+                  className={`nav-link w-100 bg-transparent border-0 text-start d-flex align-items-center ${openSection === 'personnel' ? 'section-open' : ''}`}
+                  onClick={() => toggleSection('personnel')}
+                >
+                  <User size={18} className="me-2" />
+                  <span className="m-0 flex-grow-1 nav-label">Personnel</span>
+                  {openSection === 'personnel' ? <ChevronDown size={16} className="opacity-50" /> : <ChevronRight size={16} className="opacity-50" />}
+                </button>
+                {openSection === 'personnel' && (
+                  <ul className="nav flex-column submenu">
+                    <li>
+                      <Link to="/emp/infos/fiche-perso" className={`nav-link small ${isActive('/emp/infos/fiche-perso') ? 'active' : ''}`}>
+                        <Dot size={18} className="me-1" /> <span className="nav-label">Fiche personnelle</span>
+                      </Link>
+                    </li>
+                    <li>
+                      <Link to="/emp/presence/pointage" className={`nav-link small ${isActive('/emp/presence/pointage') ? 'active' : ''}`}>
+                        <Dot size={18} className="me-1" /> <span className="nav-label">Pointage</span>
+                      </Link>
+                    </li>
+                  </ul>
+                )}
               </li>
 
+              <li className="sidebar-section-title">
+                <span className="gradient-text">Demandes</span>
+              </li>
+
+              <li className="nav-item">
+                <button
+                  className={`nav-link w-100 bg-transparent border-0 text-start d-flex align-items-center ${openSection === 'demandes' ? 'section-open' : ''}`}
+                  onClick={() => toggleSection('demandes')}
+                >
+                  <Calendar size={18} className="me-2" />
+                  <span className="m-0 flex-grow-1 nav-label">Conges et absences</span>
+                  {openSection === 'demandes' ? <ChevronDown size={16} className="opacity-50" /> : <ChevronRight size={16} className="opacity-50" />}
+                </button>
+                {openSection === 'demandes' && (
+                  <ul className="nav flex-column submenu">
+                    <li>
+                      <Link to="/emp/conge/demande" className={`nav-link small ${isActive('/emp/conge/demande') ? 'active' : ''}`}>
+                        <Dot size={18} className="me-1" /> <span className="nav-label">Demande conge</span>
+                      </Link>
+                    </li>
+                  </ul>
+                )}
+              </li>
+
+              <li className="sidebar-section-title">
+                <span className="gradient-text">Mouvement</span>
+              </li>
+
+              <li className="nav-item">
+                <button
+                  className={`nav-link w-100 bg-transparent border-0 text-start d-flex align-items-center ${openSection === 'mouvement' ? 'section-open' : ''}`}
+                  onClick={() => toggleSection('mouvement')}
+                >
+                  <Calendar size={18} className="me-2" />
+                  <span className="m-0 flex-grow-1 nav-label">Demande mouvement</span>
+                  {openSection === 'mouvement' ? <ChevronDown size={16} className="opacity-50" /> : <ChevronRight size={16} className="opacity-50" />}
+                </button>
+                {openSection === 'mouvement' && (
+                  <ul className="nav flex-column submenu">
+                    <li>
+                      <Link to="/emp/mouvement/demande" className={`nav-link small ${isActive('/emp/mouvement/demande') ? 'active' : ''}`}>
+                        <Dot size={18} className="me-1" /> <span className="nav-label">Demande mouvement</span>
+                      </Link>
+                    </li>
+                  </ul>
+                )}
+              </li>
+
+              <li className="nav-item mt-auto">
+                <Link to="/" className="nav-link logout-link">
+                  <LogOut size={18} className="me-2" />
+                  <span className="m-0 nav-label">Deconnexion</span>
+                </Link>
+              </li>
             </ul>
           </nav>
         </div>

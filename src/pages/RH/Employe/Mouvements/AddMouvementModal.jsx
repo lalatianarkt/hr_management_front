@@ -42,7 +42,8 @@ const AddMouvementModal = ({
   employeId,
   employeNom,
   employePrenom,
-  onSuccess 
+  onSuccess,
+  hideSalarySection = false
 }) => {
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
@@ -283,7 +284,7 @@ const AddMouvementModal = ({
       }));
     }
     
-    if (name === 'nouveauPosteId') {
+    if (name === 'nouveauPosteId' && !hideSalarySection) {
       // Quand un poste est sélectionné, mettre à jour le salaire proposé
       const selectedPoste = [...postesByDepartement, ...postes].find(p => p.id === value);
       if (selectedPoste && selectedPoste.salaireBase) {
@@ -349,6 +350,11 @@ const AddMouvementModal = ({
     if (selectedType) {
       const typeValue = selectedType.value;
       
+      if (hideSalarySection && typeValue === 'promotion' && typePromotion === 'salaire') {
+        setError("Ce type de promotion n'est pas autorisé");
+        return false;
+      }
+      
       // Mutation
       if (typeValue === 'mutation') {
         if (!formData.nouveauDepartementId) {
@@ -359,7 +365,7 @@ const AddMouvementModal = ({
           setError('Veuillez sélectionner un nouveau poste pour la mutation');
           return false;
         }
-        if (!formData.nouveauSalaire || parseFloat(formData.nouveauSalaire) <= 0) {
+        if (!hideSalarySection && (!formData.nouveauSalaire || parseFloat(formData.nouveauSalaire) <= 0)) {
           setError('Veuillez saisir un nouveau salaire pour la mutation');
           return false;
         }
@@ -371,7 +377,7 @@ const AddMouvementModal = ({
           setError('Veuillez sélectionner un nouveau poste');
           return false;
         }
-        if (!formData.nouveauSalaire || parseFloat(formData.nouveauSalaire) <= 0) {
+        if (!hideSalarySection && (!formData.nouveauSalaire || parseFloat(formData.nouveauSalaire) <= 0)) {
           setError('Veuillez saisir un nouveau salaire pour le changement de poste');
           return false;
         }
@@ -385,7 +391,7 @@ const AddMouvementModal = ({
         }
         
         if (typePromotion === 'salaire') {
-          if (!formData.nouveauSalaire || parseFloat(formData.nouveauSalaire) <= 0) {
+          if (!hideSalarySection && (!formData.nouveauSalaire || parseFloat(formData.nouveauSalaire) <= 0)) {
             setError('Veuillez saisir un nouveau salaire valide pour la promotion');
             return false;
           }
@@ -394,7 +400,7 @@ const AddMouvementModal = ({
             setError('Veuillez sélectionner un nouveau poste pour la promotion');
             return false;
           }
-          if (!formData.nouveauSalaire || parseFloat(formData.nouveauSalaire) <= 0) {
+          if (!hideSalarySection && (!formData.nouveauSalaire || parseFloat(formData.nouveauSalaire) <= 0)) {
             setError('Veuillez saisir un nouveau salaire pour la promotion');
             return false;
           }
@@ -407,7 +413,7 @@ const AddMouvementModal = ({
             setError('Veuillez sélectionner un nouveau poste pour la promotion');
             return false;
           }
-          if (!formData.nouveauSalaire || parseFloat(formData.nouveauSalaire) <= 0) {
+          if (!hideSalarySection && (!formData.nouveauSalaire || parseFloat(formData.nouveauSalaire) <= 0)) {
             setError('Veuillez saisir un nouveau salaire pour la promotion');
             return false;
           }
@@ -415,7 +421,7 @@ const AddMouvementModal = ({
       }
       
       // Augmentation de salaire
-      if (typeValue === 'augmentation_salaire' && !formData.nouveauSalaire) {
+      if (!hideSalarySection && typeValue === 'augmentation_salaire' && !formData.nouveauSalaire) {
         setError('Veuillez saisir un nouveau salaire');
         return false;
       }
@@ -451,13 +457,16 @@ const AddMouvementModal = ({
       };
       
       if (shouldIncludeInfosProPropose(typeValue)) {
+        const resolvedSalaire = hideSalarySection
+          ? (currentSalaire || formData.salaireBase || null)
+          : (formData.nouveauSalaire || formData.salaireBase || currentSalaire);
         const infosProPropose = {
           employe: { id: employeId },
           statut: parseInt(formData.statut),
           dateDebut: formData.dateDebut || new Date().toISOString().split('T')[0],
           dateFin: formData.dateFin || null,
-          salaire: formData.nouveauSalaire || formData.salaireBase || currentSalaire,
-          salaireBase: formData.nouveauSalaire || formData.salaireBase || currentSalaire,
+          salaire: resolvedSalaire,
+          salaireBase: resolvedSalaire,
           dateDebutAssignationPoste: formData.dateDebutAssignationPoste || formData.dateDebut || new Date().toISOString().split('T')[0],
           classification: formData.classification || '',
           categorieProfessionnelle: formData.categorieProfessionnelleId ? {
@@ -728,14 +737,16 @@ const AddMouvementModal = ({
             <div className="mb-4">
               <Form.Label className="fw-bold mb-2">Type de promotion *</Form.Label>
               <div className="d-flex flex-wrap gap-2">
-                <Button
-                  variant={typePromotion === 'salaire' ? 'success' : 'outline-success'}
-                  onClick={() => handleTypePromotionChange('salaire')}
-                  className="d-flex align-items-center"
-                >
-                  <FaMoneyBillWave className="me-2" />
-                  Augmentation de salaire seulement
-                </Button>
+                {!hideSalarySection && (
+                  <Button
+                    variant={typePromotion === 'salaire' ? 'success' : 'outline-success'}
+                    onClick={() => handleTypePromotionChange('salaire')}
+                    className="d-flex align-items-center"
+                  >
+                    <FaMoneyBillWave className="me-2" />
+                    Augmentation de salaire seulement
+                  </Button>
+                )}
                 <Button
                   variant={typePromotion === 'poste' ? 'info' : 'outline-info'}
                   onClick={() => handleTypePromotionChange('poste')}
@@ -832,42 +843,46 @@ const AddMouvementModal = ({
             </>
           )}
           
-          {/* Nouveau salaire - Pour tous les mouvements qui impliquent un changement */}
-          {(typeValue === 'mutation' || 
-            typeValue === 'changement de poste' || 
-            typeValue === 'changement_poste' ||
-            typeValue === 'promotion' ||
-            typeValue === 'augmentation_salaire') && (
+          {!hideSalarySection && (
             <>
-              {renderSalaireComparison()}
-              
-              <Form.Group className="mb-3">
-                <Form.Label>
-                  Nouveau salaire (Ar) *
-                  {typeValue === 'mutation' && formData.nouveauPosteId && (
-                    <span className="text-info ms-2">
-                      (Salaire du poste sélectionné)
-                    </span>
-                  )}
-                </Form.Label>
-                <Form.Control
-                  type="number"
-                  name="nouveauSalaire"
-                  value={formData.nouveauSalaire}
-                  onChange={handleChange}
-                  min="0"
-                  step="1000"
-                  required
-                />
-                <Form.Text className="text-muted">
-                  {typeValue === 'mutation' && formData.nouveauPosteId && (
-                    `Le salaire proposé doit correspondre au poste sélectionné`
-                  )}
-                  {typeValue === 'changement de poste' && (
-                    `Saisissez le salaire correspondant au nouveau poste`
-                  )}
-                </Form.Text>
-              </Form.Group>
+              {/* Nouveau salaire - Pour tous les mouvements qui impliquent un changement */}
+              {(typeValue === 'mutation' || 
+                typeValue === 'changement de poste' || 
+                typeValue === 'changement_poste' ||
+                typeValue === 'promotion' ||
+                typeValue === 'augmentation_salaire') && (
+                <>
+                  {renderSalaireComparison()}
+                  
+                  <Form.Group className="mb-3">
+                    <Form.Label>
+                      Nouveau salaire (Ar) *
+                      {typeValue === 'mutation' && formData.nouveauPosteId && (
+                        <span className="text-info ms-2">
+                          (Salaire du poste sélectionné)
+                        </span>
+                      )}
+                    </Form.Label>
+                    <Form.Control
+                      type="number"
+                      name="nouveauSalaire"
+                      value={formData.nouveauSalaire}
+                      onChange={handleChange}
+                      min="0"
+                      step="1000"
+                      required
+                    />
+                    <Form.Text className="text-muted">
+                      {typeValue === 'mutation' && formData.nouveauPosteId && (
+                        `Le salaire proposé doit correspondre au poste sélectionné`
+                      )}
+                      {typeValue === 'changement de poste' && (
+                        `Saisissez le salaire correspondant au nouveau poste`
+                      )}
+                    </Form.Text>
+                  </Form.Group>
+                </>
+              )}
             </>
           )}
           
@@ -1055,12 +1070,14 @@ const AddMouvementModal = ({
                           <strong>Employé:</strong>
                           <span className="ms-2 fw-medium">{employePrenom} {employeNom}</span>
                         </div>
-                        <div className="mb-2">
-                          <strong>Nouveau salaire:</strong>
-                          <span className="ms-2 text-success fw-bold">
-                            {formData.nouveauSalaire ? `${formData.nouveauSalaire.toLocaleString()} Ar` : 'Non spécifié'}
-                          </span>
-                        </div>
+                        {!hideSalarySection && (
+                          <div className="mb-2">
+                            <strong>Nouveau salaire:</strong>
+                            <span className="ms-2 text-success fw-bold">
+                              {formData.nouveauSalaire ? `${formData.nouveauSalaire.toLocaleString()} Ar` : 'Non spécifié'}
+                            </span>
+                          </div>
+                        )}
                       </Col>
                     </Row>
                     {formData.motif && (

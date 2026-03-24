@@ -212,13 +212,6 @@ const EmployeeInfosPro = () => {
                 Informations Professionnelles
               </h1>
             </div>
-            <div className="col-sm-6">
-              <ol className="breadcrumb float-sm-right">
-                <li className="breadcrumb-item"><Link to="/dashboard-RH">Accueil</Link></li>
-                <li className="breadcrumb-item"><Link to="/dashboard-RH/employees">Employés</Link></li>
-                <li className="breadcrumb-item active">Infos Pro</li>
-              </ol>
-            </div>
           </div>
         </div>
       </div>
@@ -244,7 +237,7 @@ const EmployeeInfosPro = () => {
                     </h3>
                     <div className="d-flex align-items-center">
                       <Badge bg="light" text="dark" className="me-2">
-                        {infosPro.employe?.matricule || 'Matricule'}
+                        {infosPro.matricule || infosPro.employe?.matricule || 'Matricule'}
                       </Badge>
                       <Badge bg={statusConfig.color}>
                         {statusConfig.icon}
@@ -400,7 +393,7 @@ const EmployeeInfosPro = () => {
                   <div className="list-group list-group-flush">
                     <div className="list-group-item d-flex justify-content-between align-items-center">
                       <span>Date de début</span>
-                      <strong>{formatDate(infosPro.dateDebut)}</strong>
+                      <strong>{formatDate(infosPro.dateDebutAssignationPoste || infosPro.dateDebut)}</strong>
                     </div>
                     <div className="list-group-item d-flex justify-content-between align-items-center">
                       <span>Date de fin</span>

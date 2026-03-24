@@ -50,10 +50,17 @@ function LoginPage() {
         // Stocker le token
         sessionStorage.setItem('token', response.data.token);
         sessionStorage.setItem('email', email);
-        sessionStorage.setItem('userId', response.data.user?.id || '');
         sessionStorage.setItem('nomComplet', response.data.user?.nomComplet || '');
-        sessionStorage.setItem('matricule', response.data.user?.matricule || '');
-        sessionStorage.setItem('departement', response.data.infosPro?.departement?.nom || '');
+        sessionStorage.setItem('matricule', response.data.infosPro?.matricule || '');
+        sessionStorage.setItem('poste', response.data.infosPro?.poste?.nom || '');
+        sessionStorage.setItem('idEmploye', response.data.infosPro?.employe?.id || '');
+        sessionStorage.setItem(
+          'departement',
+          response.data.infosPro?.departement?.nom ||
+          response.data.infosPro?.poste?.departement?.nom ||
+          ''
+        );
+        // sessionStorage.setItem('idEmploye', response.data.employe?.id || '');
         
         // Stocker les informations des rôles
         if (response.data.roles && response.data.roles.length > 0) {
@@ -63,7 +70,7 @@ function LoginPage() {
         }
         
         // Redirection vers le path par défaut
-        const redirectPath = response.data.path || '/dashboard-RH';
+        const redirectPath = response.data.path;
         console.log('Redirection vers:', redirectPath);
         window.location.href = redirectPath;
         

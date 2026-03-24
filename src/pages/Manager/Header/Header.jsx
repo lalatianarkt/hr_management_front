@@ -1,12 +1,16 @@
-// src/components/Header.jsx
-import React, { useState, useEffect, useRef } from "react";
+﻿import React, { useState, useEffect, useRef } from "react";
+import { Link, useLocation } from "react-router-dom";
 import { useSidebar } from "../../../components/SidebarContext";
-import { useNavigate } from "react-router-dom";
 import axiosInstance from "../../utils/AxiosInstance";
 
 export default function Header() {
   const { toggleSidebar } = useSidebar();
-  const navigate = useNavigate();
+  const location = useLocation();
+  const [notifications, setNotifications] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const notificationRef = useRef(null);
   
   // État pour la gestion des rôles
   const [roles, setRoles] = useState([]);
@@ -14,18 +18,12 @@ export default function Header() {
   const [showRoleDropdown, setShowRoleDropdown] = useState(false);
   const [roleSwitching, setRoleSwitching] = useState(false);
   const roleDropdownRef = useRef(null);
-  
-  // État pour les notifications
-  const [notifications, setNotifications] = useState([]);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [showNotifications, setShowNotifications] = useState(false);
-  const notificationRef = useRef(null);
 
   const getNomComplet = () => {
     try {
-      const nomComplet = sessionStorage.getItem('nomComplet');
+      const nomComplet = sessionStorage.getItem("nomComplet");
       if (!nomComplet) {
-        const userStr = sessionStorage.getItem('user');
+        const userStr = sessionStorage.getItem("user");
         if (userStr) {
           const user = JSON.parse(userStr);
           return user.nomComplet || "Utilisateur";
@@ -35,23 +33,6 @@ export default function Header() {
     } catch (error) {
       console.error("Erreur lecture nom utilisateur:", error);
       return "Utilisateur";
-    }
-  };
-
-  const getNomDepartement = () => {
-    try {
-      const departement = sessionStorage.getItem('departement');
-      if (!departement) {
-        const departementStr = sessionStorage.getItem('departement');
-        if (departementStr) {
-          const departement = JSON.parse(departementStr);
-          return departement || "Département";
-        }
-      }
-      return departement || "Département";
-    } catch(error) {
-      console.error("Erreur lecture nom département:", error);
-      return "Département";
     }
   };
 
@@ -72,6 +53,137 @@ export default function Header() {
     } else if (storedCurrentRole) {
       setCurrentRole(storedCurrentRole);
     }
+  }, []);
+
+  const fetchNotifications = async () => {
+    setLoading(true);
+    try {
+      // const userId = getUserId();
+      // Utiliser le nouveau endpoint avec l'ID utilisateur
+      const response = await axiosInstance.get(`/api/notifications/utilisateur`);
+      
+      if (response.data) {
+        const notificationsData = Array.isArray(response.data) ? response.data : 
+                                 (response.data.content ? response.data.content : []);
+        setNotifications(notificationsData);
+        
+        // Compter les notifications non lues (estLu = false)
+        const unread = notificationsData.filter((notif) => !notif.estLu).length;
+        setUnreadCount(unread);
+        console.log("Notifications recuperees:", notificationsData);
+      }
+    } catch (error) {
+      console.error("Erreur lors de la recuperation des notifications:", error);
+      if (error.response?.status === 401) {
+        console.log("Session expiree");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Compter les notifications non lues via le compteur
+  const fetchUnreadCount = async () => {
+    try {
+      // const userId = getUserId();
+      const response = await axiosInstance.get(`/api/notifications/utilisateur/count-non-lues`);
+      
+      if (response.data && response.data.count !== undefined) {
+        setUnreadCount(response.data.count);
+      }
+    } catch (error) {
+      console.error("Erreur lors du comptage des notifications:", error);
+    }
+  };
+
+  const markAsRead = async (notificationId) => {
+    try {
+      // Utiliser le nouveau endpoint pour marquer comme lue
+      await axiosInstance.put(`/api/notifications/${notificationId}/read`);
+      
+      // Mettre à jour l'état local
+      setNotifications((prevNotifications) =>
+        prevNotifications.map((notif) =>
+          notif.id === notificationId ? { ...notif, estLu: true } : notif
+        )
+      );
+      setUnreadCount((prev) => Math.max(0, prev - 1));
+    } catch (error) {
+      console.error("Erreur lors du marquage de la notification:", error);
+    }
+  };
+
+  const markAllAsRead = async () => {
+    try {
+      // const userId = getUserId();
+      // Utiliser le nouveau endpoint pour marquer toutes comme lues
+      await axiosInstance.put(`/api/notifications/utilisateur/read-all`);
+      
+      // Mettre à jour l'état local
+      setNotifications((prevNotifications) =>
+        prevNotifications.map((notif) => ({ ...notif, estLu: true }))
+      );
+      setUnreadCount(0);
+    } catch (error) {
+      console.error("Erreur lors du marquage de toutes les notifications:", error);
+      // Fallback: mettre à jour localement quand même
+      setNotifications((prevNotifications) =>
+        prevNotifications.map((notif) => ({ ...notif, estLu: true }))
+      );
+      setUnreadCount(0);
+    }
+  };
+
+  // Changer de rôle
+  const switchRole = async (roleType) => {
+    if (roleType === currentRole) {
+      setShowRoleDropdown(false);
+      return;
+    }
+    
+    setRoleSwitching(true);
+    
+    try {
+      const token = sessionStorage.getItem('token');
+      // const userId = sessionStorage.getItem('userId');
+      
+      const response = await axiosInstance.post(
+        '/api/users/switch-role',
+        // { userId, roleType },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      
+      if (response.data.status === 200) {
+        // Mettre à jour le token et le rôle
+        sessionStorage.setItem('token', response.data.token);
+        sessionStorage.setItem('currentRole', response.data.role);
+        setCurrentRole(response.data.role);
+        
+        // Rediriger vers le nouveau dashboard
+        window.location.href = response.data.path;
+      }
+    } catch (error) {
+      console.error('Erreur lors du changement de rôle:', error);
+      alert('Erreur lors du changement de rôle');
+    } finally {
+      setRoleSwitching(false);
+      setShowRoleDropdown(false);
+    }
+  };
+
+  // Gestion du clic en dehors des dropdowns
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (notificationRef.current && !notificationRef.current.contains(event.target)) {
+        setShowNotifications(false);
+      }
+      if (roleDropdownRef.current && !roleDropdownRef.current.contains(event.target)) {
+        setShowRoleDropdown(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   // Fonction pour obtenir l'icône du rôle
@@ -106,75 +218,13 @@ export default function Header() {
     }
   };
 
-  // Changer de rôle
-  const switchRole = async (roleType) => {
-    if (roleType === currentRole) {
-      setShowRoleDropdown(false);
-      return;
-    }
-    
-    setRoleSwitching(true);
-    
-    try {
-      const token = sessionStorage.getItem('token');
-      const userId = sessionStorage.getItem('userId');
-      
-      const response = await axiosInstance.post(
-        '/api/users/switch-role',
-        { userId, roleType },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      
-      if (response.data.status === 200) {
-        // Mettre à jour le token et le rôle
-        sessionStorage.setItem('token', response.data.token);
-        sessionStorage.setItem('currentRole', response.data.role);
-        setCurrentRole(response.data.role);
-        
-        // Rediriger vers le nouveau dashboard
-        window.location.href = response.data.path;
-      }
-    } catch (error) {
-      console.error('Erreur lors du changement de rôle:', error);
-      alert('Erreur lors du changement de rôle');
-    } finally {
-      setRoleSwitching(false);
-      setShowRoleDropdown(false);
-    }
-  };
-
-  // Gestion du clic en dehors des dropdowns
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (roleDropdownRef.current && !roleDropdownRef.current.contains(event.target)) {
-        setShowRoleDropdown(false);
-      }
-      if (notificationRef.current && !notificationRef.current.contains(event.target)) {
-        setShowNotifications(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  // Récupérer les notifications
-  const fetchNotifications = async () => {
-    try {
-      const response = await axiosInstance.get("/api/notifications/utilisateur");
-      if (response.data) {
-        setNotifications(response.data);
-        const unread = response.data.filter((notif) => notif.status === 0).length;
-        setUnreadCount(unread);
-      }
-    } catch (error) {
-      console.error("Erreur lors de la récupération des notifications:", error);
-    }
-  };
-
   useEffect(() => {
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 30000);
+    // Rafraîchir les notifications toutes les 30 secondes
+    const interval = setInterval(() => {
+      fetchUnreadCount(); // Utiliser le compteur pour économiser la bande passante
+      fetchNotifications(); // Rafraîchir la liste complète périodiquement
+    }, 30000);
     return () => clearInterval(interval);
   }, []);
 
@@ -191,55 +241,43 @@ export default function Header() {
     return date.toLocaleDateString();
   };
 
-  const markAsRead = async (notificationId) => {
-    try {
-      await axiosInstance.put(`/api/notifications/${notificationId}/lire`);
-      setNotifications((prevNotifications) =>
-        prevNotifications.map((notif) =>
-          notif.id === notificationId ? { ...notif, status: 1 } : notif
-        )
-      );
-      setUnreadCount((prev) => Math.max(0, prev - 1));
-    } catch (error) {
-      console.error("Erreur lors du marquage de la notification:", error);
-    }
+  const buildNotificationLink = (lien) => {
+    if (!lien) return "";
+    const clean = lien.startsWith("/") ? lien : `/${lien}`;
+    return `/dashboard-Manager${clean}`;
   };
 
-  const markAllAsRead = async () => {
-    try {
-      await axiosInstance.patch("/api/notifications/lire-tous");
-      setNotifications((prevNotifications) =>
-        prevNotifications.map((notif) => ({ ...notif, status: 1 }))
-      );
-      setUnreadCount(0);
-    } catch (error) {
-      console.error("Erreur lors du marquage de toutes les notifications:", error);
-      setNotifications((prevNotifications) =>
-        prevNotifications.map((notif) => ({ ...notif, status: 1 }))
-      );
-      setUnreadCount(0);
+  // Extraire le titre de la notification (depuis le message ou depuis un champ dédié)
+  const getNotificationTitle = (notification) => {
+    // Si le message est long, prendre les premiers mots comme titre
+    const message = notification.message || "";
+    if (message.length > 50) {
+      return message.substring(0, 50) + "...";
     }
+    return message;
   };
 
-  const departement = getNomDepartement();
+  // Extraire le message principal
+  const getNotificationMessage = (notification) => {
+    return notification.message || "";
+  };
+
+  const getBreadcrumbItems = (pathname) => {
+    const routes = [
+      { match: /^\/manager\/?$/, items: ["Accueil"] },
+      { match: /^\/manager\/employes$/, items: ["Accueil", "Employes"] },
+      { match: /^\/manager\/organisation\/.+$/, items: ["Accueil", "Organisation"] },
+      { match: /^\/manager\/conge\/.+$/, items: ["Accueil", "Conges"] },
+      { match: /^\/manager\/presence\/.+$/, items: ["Accueil", "Presence"] },
+    ];
+
+    const matchedRoute = routes.find((route) => route.match.test(pathname));
+    return matchedRoute?.items || ["Accueil"];
+  };
+
+  const breadcrumbItems = getBreadcrumbItems(location.pathname);
   const nomComplet = getNomComplet();
   const hasMultipleRoles = roles.length > 1;
-
-  // Déterminer le titre du portail en fonction du rôle
-  const getPortalTitle = () => {
-    switch (currentRole?.toLowerCase()) {
-      case 'admin':
-        return 'Portail Administrateur';
-      case 'manager':
-        return 'Portail Manager';
-      case 'rh':
-        return 'Portail RH';
-      case 'it':
-        return 'Portail IT';
-      default:
-        return 'Portail Employé';
-    }
-  };
 
   return (
     <nav className="app-header">
@@ -251,16 +289,29 @@ export default function Header() {
               e.preventDefault();
               toggleSidebar();
             }}
-            style={{ borderRadius: '12px', background: 'var(--surface-bg)' }}
+            style={{ borderRadius: "12px", background: "var(--surface-bg)" }}
           >
-            <i className="bi bi-list fs-4" style={{ color: 'var(--bg-primary)' }}></i>
+            <i className="bi bi-list fs-4" style={{ color: "var(--bg-primary)" }}></i>
           </button>
 
           <div className="d-none d-lg-block border-start-0 ps-0 ms-0 ms-lg-3 ps-lg-3 border-lg-start">
-            <h5 className="m-0 fw-bold" style={{ color: 'var(--color-heading)', fontSize: '15px' }}>
-              {getPortalTitle()}
+            <h5 className="m-0 fw-bold" style={{ color: "var(--color-heading)", fontSize: "15px" }}>
+              Portail Manager
             </h5>
-            <p className="m-0 small text-muted" style={{ fontSize: '10px' }}>Département {departement}</p>
+            <div className="m-0 small text-muted" style={{ fontSize: "10px" }}>
+              {breadcrumbItems.map((item, index) => (
+                <React.Fragment key={`${item}-${index}`}>
+                  {index === 0 ? (
+                    <Link to="/manager" className="text-decoration-none" style={{ color: "var(--color-text-muted)" }}>
+                      {item}
+                    </Link>
+                  ) : (
+                    <span>{item}</span>
+                  )}
+                  {index < breadcrumbItems.length - 1 && <span className="mx-1">{">"}</span>}
+                </React.Fragment>
+              ))}
+            </div>
           </div>
         </div>
 
@@ -276,8 +327,7 @@ export default function Header() {
                   padding: "6px 16px",
                   fontSize: "13px",
                   fontWeight: "500",
-                  border: "1px solid var(--color-border)",
-                  backgroundColor: "white"
+                  border: "1px solid var(--color-border)"
                 }}
               >
                 <i className={`${getRoleIcon(currentRole)} me-1`}></i>
@@ -357,7 +407,7 @@ export default function Header() {
               <div
                 className="position-absolute end-0 mt-2 bg-white shadow-lg rounded-3"
                 style={{
-                  width: "360px",
+                  width: "380px",
                   maxHeight: "480px",
                   zIndex: 1000,
                   border: "1px solid var(--color-border)",
@@ -384,82 +434,114 @@ export default function Header() {
                 </div>
 
                 <div style={{ maxHeight: "400px", overflowY: "auto" }}>
-                  {notifications.length === 0 ? (
+                  {loading && notifications.length === 0 ? (
+                    <div className="text-center py-4">
+                      <div className="spinner-border spinner-border-sm text-muted" role="status">
+                        <span className="visually-hidden">Chargement...</span>
+                      </div>
+                    </div>
+                  ) : notifications.length === 0 ? (
                     <div className="text-center py-4">
                       <i className="bi bi-bell-slash fs-1 text-muted"></i>
                       <p className="text-muted small mt-2">Aucune notification</p>
                     </div>
                   ) : (
-                    notifications.map((notification) => (
-                      <div
-                        key={notification.id}
-                        className={`p-3 border-bottom ${notification.status === 0 ? "bg-light" : ""}`}
-                        onClick={() => notification.status === 0 && markAsRead(notification.id)}
-                        style={{
-                          cursor: notification.status === 0 ? "pointer" : "default",
-                          transition: "background-color 0.2s",
-                          ...(notification.status === 0 && {
-                            borderLeft: "3px solid var(--bg-primary)",
-                          }),
-                        }}
-                      >
-                        <div className="d-flex">
-                          <div className="me-3">
-                            {notification.status === 0 ? (
-                              <i className="bi bi-envelope-fill text-primary"></i>
-                            ) : (
-                              <i className="bi bi-envelope-open-fill text-muted"></i>
-                            )}
-                          </div>
-
-                          <div className="flex-grow-1">
-                            <div className="d-flex justify-content-between align-items-start">
-                              <div>
-                                <p className={`mb-1 small fw-bold ${notification.status === 0 ? "text-dark" : "text-muted"}`}>
-                                  {notification.titre || notification.title}
-                                </p>
-                                <p className="mb-1 small text-muted">{notification.message}</p>
-                              </div>
-
-                              {notification.status === 0 && (
-                                <span className="badge bg-primary rounded-pill" style={{ fontSize: "8px" }}>
-                                  Nouveau
-                                </span>
+                    notifications.map((notification) => {
+                      const isUnread = !notification.estLu;
+                      return (
+                        <div
+                          key={notification.id}
+                          className={`p-3 border-bottom ${isUnread ? "bg-light" : ""}`}
+                          onClick={() => isUnread && markAsRead(notification.id)}
+                          style={{
+                            cursor: isUnread ? "pointer" : "default",
+                            transition: "background-color 0.2s",
+                            ...(isUnread && {
+                              borderLeft: "3px solid var(--bg-primary)",
+                            }),
+                          }}
+                        >
+                          <div className="d-flex">
+                            <div className="me-3">
+                              {isUnread ? (
+                                <i className="bi bi-envelope-fill text-primary"></i>
+                              ) : (
+                                <i className="bi bi-envelope-open-fill text-muted"></i>
                               )}
                             </div>
 
-                            <small className="text-muted" style={{ fontSize: "10px" }}>
-                              {formatRelativeTime(notification.createdAt || notification.dateCreation)}
-                            </small>
+                            <div className="flex-grow-1">
+                              <div className="d-flex justify-content-between align-items-start">
+                                <div className="flex-grow-1 me-2">
+                                  <p className={`mb-1 small fw-bold ${isUnread ? "text-dark" : "text-muted"}`}>
+                                    {getNotificationTitle(notification)}
+                                  </p>
+                                  <p className="mb-1 small text-muted" style={{ wordBreak: "break-word" }}>
+                                    {getNotificationMessage(notification)}
+                                  </p>
+                                </div>
+
+                                <div className="text-end">
+                                  {isUnread ? (
+                                    <span className="badge bg-primary rounded-pill" style={{ fontSize: "8px" }}>
+                                      Nouveau
+                                    </span>
+                                  ) : (
+                                    <span className="badge bg-secondary rounded-pill" style={{ fontSize: "8px" }}>
+                                      Lu
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+
+                              <div className="d-flex justify-content-between align-items-center mt-1">
+                                <small className="text-muted" style={{ fontSize: "10px" }}>
+                                  {formatRelativeTime(notification.createdAt)}
+                                </small>
+                                {notification.lien && (
+                                  <Link 
+                                    to={buildNotificationLink(notification.lien)} 
+                                    className="text-decoration-none small"
+                                    style={{ fontSize: "10px", color: "var(--bg-primary)" }}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      if (isUnread) markAsRead(notification.id);
+                                    }}
+                                  >
+                                    Ouvrir l'action
+                                  </Link>
+                                )}
+                              </div>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))
+                      );
+                    })
                   )}
                 </div>
 
                 <div className="p-2 border-top text-center">
-                  <a href="/notifications" className="text-decoration-none small" style={{ color: "var(--bg-primary)" }}>
+                  <Link to="/notifications" className="text-decoration-none small" style={{ color: "var(--bg-primary)" }}>
                     Voir toutes les notifications
-                  </a>
+                  </Link>
                 </div>
               </div>
             )}
           </div>
 
           {/* Profil utilisateur */}
-          <div className="d-flex align-items-center p-1 p-sm-2 rounded-pill bg-light" style={{ border: '1px solid var(--color-border)' }}>
+          <div className="d-flex align-items-center p-1 p-sm-2 rounded-pill bg-light" style={{ border: "1px solid var(--color-border)" }}>
             <img
               src="/assets/img/no_profile_pic.jpg"
               className="rounded-circle shadow-sm"
               alt="User"
-              style={{ width: '32px', height: '32px', objectFit: 'cover' }}
+              style={{ width: "32px", height: "32px", objectFit: "cover" }}
             />
             <div className="ms-2 me-2 d-none d-md-block">
-              <div className="fw-bold" style={{ fontSize: '12px', lineHeight: '1.2', color: 'var(--color-heading)' }}>
+              <div className="fw-bold" style={{ fontSize: "12px", lineHeight: "1.2", color: "var(--color-heading)" }}>
                 {getRoleLibelle(currentRole) || "Utilisateur"}
               </div>
-              <div className="text-muted" style={{ fontSize: '10px' }}>{nomComplet}</div>
+              <div className="text-muted" style={{ fontSize: "10px" }}>{nomComplet}</div>
             </div>
           </div>
         </div>

@@ -18,7 +18,8 @@ import {
   FiberManualRecord, Refresh, HourglassEmpty,
   TaskAlt, Block, VerifiedUser, Close,
   ExpandMore, ExpandLess, DateRange, Today,
-  Download, Print, MoreVert
+  Download, Print, MoreVert,
+  StackedBarChartOutlined
 } from '@mui/icons-material';
 import axiosInstance from './../../utils/AxiosInstance';
 
@@ -53,6 +54,7 @@ const ValidationConges = () => {
   // États pour le calendrier
   const [calendrierEmploye, setCalendrierEmploye] = useState(null);
   const [showCalendrier, setShowCalendrier] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
 
   // Initialisation
   useEffect(() => {
@@ -105,7 +107,6 @@ const ValidationConges = () => {
       console.log("Erreur détaillée:", err);
       
       if (err.response) {
-        // La requête a été faite et le serveur a répondu avec un code d'erreur
         if (err.response.status === 401 || err.response.status === 403) {
           sessionStorage.removeItem('token');
           setError('Session expirée. Veuillez vous reconnecter.');
@@ -113,13 +114,11 @@ const ValidationConges = () => {
             window.location.href = '/';
           }, 2000);
         } else {
-          setError(`Erreur ${err.response.status}: ${err.response.data?.message || 'Erreur serveur'}`);
+          setError(`Erreur ${err.response.status}: ${err.response.data.message || 'Erreur serveur'}`);
         }
       } else if (err.request) {
-        // La requête a été faite mais aucune réponse n'a été reçue
         setError('Erreur de connexion. Vérifiez votre réseau.');
       } else {
-        // Une erreur s'est produite lors de la configuration de la requête
         setError(`Erreur: ${err.message}`);
       }
     } finally {
@@ -132,7 +131,7 @@ const ValidationConges = () => {
     let result = [...demandes];
     
     if (filters.statut) {
-      result = result.filter(d => d.decisionManager === parseInt(filters.statut));
+      result = result.filter(d => d.statut === parseInt(filters.statut));
     }
     
     if (filters.idEmploye) {
@@ -153,7 +152,6 @@ const ValidationConges = () => {
       result = result.filter(d => new Date(d.dateFin) <= dateFilter);
     }
     
-    // Filtre par période
     if (filters.periode !== 'personnalise') {
       const aujourdhui = new Date();
       let jours;
@@ -179,7 +177,6 @@ const ValidationConges = () => {
     }
     
     setFilteredDemandes(result);
-    setLoading(false);
   };
 
   const reinitialiserFiltres = () => {
@@ -202,47 +199,62 @@ const ValidationConges = () => {
     }));
   };
 
-  // Fonction pour valider ou rejeter une demande
+  // Fonction pour valider ou rejeter une demande avec body dans la requête
   const validerDemande = async (decision) => {
     if (!selectedDemande) return;
-    
+
     setValidationLoading(true);
-    
+
     try {
       const validationData = {
-        decisionManager: decision,
-        commentaireManager: commentaireManager || (decision === 1 ? "Demande approuvée" : "Demande rejetée"),
+        ...selectedDemande,
+
+        statut: decision,
+        commentaireManager:
+          commentaireManager ||
+          (decision === 1
+            ? "Demande approuvée par le manager"
+            : "Demande rejetée par le manager"),
+
+        dateValidation: decision === 1 ? new Date().toISOString() : null,
+        modifiedAt: new Date().toISOString()
       };
-      
+
       let response;
-      const url = decision === 1 
-        ? `/api/demandes-conge/validate/${selectedDemande.id}`
-        : `/api/demandes-conge/refuser/${selectedDemande.id}`;
-      
-      response = await axiosInstance.put(url, validationData);
-      
+
+      if (decision === 1) {
+        response = await axiosInstance.put(
+          `/api/demandes-conge/validate/${selectedDemande.id}`,
+          validationData
+        );
+      } else {
+        response = await axiosInstance.put(
+          `/api/demandes-conge/refuser/${selectedDemande.id}`,
+          validationData
+        );
+      }
+
       const result = response.data;
-      
-      // Mettre à jour la liste des demandes
-      const updatedDemandes = demandes.map(d => 
+
+      const updatedDemandes = demandes.map(d =>
         d.id === selectedDemande.id ? result : d
       );
+
       setDemandes(updatedDemandes);
       setFilteredDemandes(updatedDemandes);
-      
-      // Fermer la modal
+
+      // Reset
       setShowValidationModal(false);
       setSelectedDemande(null);
       setCommentaireManager('');
       setValidationDecision(null);
-      
+
       alert(`Demande ${decision === 1 ? 'approuvée' : 'rejetée'} avec succès!`);
-      
     } catch (err) {
       console.error('Erreur validation:', err);
-      
+
       if (err.response) {
-        alert(`Erreur ${err.response.status}: ${err.response.data?.message || 'Erreur serveur'}`);
+        alert(`Erreur ${err.response.status}: ${err.response.data.message || 'Erreur serveur'}`);
       } else if (err.request) {
         alert('Erreur de connexion. Vérifiez votre réseau.');
       } else {
@@ -270,7 +282,7 @@ const ValidationConges = () => {
     return type ? type.intitule : idTypeConge || 'Non spécifié';
   };
 
-  const getStatusConfig = (decisionManager) => {
+  const getStatusConfig = (statut) => {
     const configs = {
       0: { 
         label: 'En attente', 
@@ -279,32 +291,44 @@ const ValidationConges = () => {
         bgColor: '#ff9800'
       },
       1: { 
-        label: 'Approuvé', 
+        label: 'Approuve (attente RH)',
         color: 'success', 
         icon: <TaskAlt sx={{ fontSize: 16 }} />,
         bgColor: '#4caf50'
       },
       2: { 
-        label: 'Rejeté', 
+        label: 'Rejete', 
         color: 'error', 
         icon: <Close sx={{ fontSize: 16 }} />,
         bgColor: '#f44336'
       },
       3: { 
-        label: 'Annulé', 
+        label: 'Annule', 
         color: 'success', 
         icon: <Block sx={{ fontSize: 16 }} />,
         bgColor: '#5c2458'
       },
       5: { 
-        label: 'Terminé', 
+        label: 'Termine', 
         color: 'success', 
         icon: <Block sx={{ fontSize: 16 }} />,
         bgColor: '#b053ad'
       },
+      6: { 
+        label: 'Valide par RH', 
+        color: 'success', 
+        icon: <VerifiedUser sx={{ fontSize: 16 }} />,
+        bgColor: '#2e7d32'
+      },
+      7: { 
+        label: 'Refuse par RH', 
+        color: 'error', 
+        icon: <Close sx={{ fontSize: 16 }} />,
+        bgColor: '#d32f2f'
+      },
     };
     
-    return configs[decisionManager] || { 
+    return configs[statut] || { 
       label: 'Inconnu', 
       color: 'default', 
       icon: null,
@@ -314,9 +338,9 @@ const ValidationConges = () => {
 
   // Calcul des statistiques
   const stats = {
-    enAttente: demandes.filter(d => d.decisionManager === 0).length,
-    approuves: demandes.filter(d => d.decisionManager === 1).length,
-    rejetes: demandes.filter(d => d.decisionManager === 2).length
+    enAttente: demandes.filter(d => d.statut === 0).length,
+    approuves: demandes.filter(d => d.statut === 1).length,
+    rejetes: demandes.filter(d => d.statut === 2).length
   };
 
   if (loading && demandes.length === 0) {
@@ -330,10 +354,12 @@ const ValidationConges = () => {
     );
   }
 
+  const purple = '#b053ad';
+
   return (
-    <Box p={3}>
+    <Box p={3} sx={{ bgcolor: '#f9f1f8', minHeight: '100vh' }}>
       {/* En-tête */}
-      <Card sx={{ mb: 3, bgcolor: 'primary.main', color: 'white' }}>
+      <Card sx={{ mb: 3, bgcolor: purple, color: 'white' }}>
         <CardContent>
           <Grid container alignItems="center" spacing={2}>
             <Grid item>
@@ -363,15 +389,41 @@ const ValidationConges = () => {
               </Breadcrumbs>
             </Grid>
             <Grid item>
-              <Button
-                variant="contained"
-                color="secondary"
-                startIcon={<Refresh />}
-                onClick={chargerDonneesInitiales}
-                disabled={loading}
-              >
-                Actualiser
-              </Button>
+              <Stack direction="row" spacing={1}>
+                <Button
+                  variant="contained"
+                  startIcon={<FilterList />}
+                  onClick={() => setShowFilters(prev => !prev)}
+                  sx={{
+                    bgcolor: purple,
+                    textTransform: 'none',
+                    fontWeight: 600,
+                    boxShadow: 'none',
+                    '&:hover': { bgcolor: purple, boxShadow: 'none' },
+                    '&:active': { bgcolor: purple, boxShadow: 'none' },
+                    '&.Mui-focusVisible': { bgcolor: purple, boxShadow: 'none' }
+                  }}
+                >
+                  Filtre
+                </Button>
+                <Button
+                  variant="contained"
+                  startIcon={<Refresh />}
+                  onClick={chargerDonneesInitiales}
+                  disabled={loading}
+                  sx={{
+                    bgcolor: purple,
+                    textTransform: 'none',
+                    fontWeight: 600,
+                    boxShadow: 'none',
+                    '&:hover': { bgcolor: purple, boxShadow: 'none' },
+                    '&:active': { bgcolor: purple, boxShadow: 'none' },
+                    '&.Mui-focusVisible': { bgcolor: purple, boxShadow: 'none' }
+                  }}
+                >
+                  Actualiser
+                </Button>
+              </Stack>
             </Grid>
           </Grid>
         </CardContent>
@@ -384,261 +436,244 @@ const ValidationConges = () => {
       )}
 
       {/* Statistiques */}
-      <Grid container spacing={3} sx={{ mb: 3 }}>
-        <Grid item xs={12} sm={4}>
-          <Card>
-            <CardContent>
-              <Box display="flex" alignItems="center" mb={2}>
-                <Box sx={{ position: 'relative', mr: 1.5 }}>
-                  <HourglassEmpty color="warning" sx={{ fontSize: 30 }} />
-                  <FiberManualRecord 
-                    sx={{ 
-                      position: 'absolute',
-                      top: -3,
-                      right: -3,
-                      fontSize: 12,
-                      color: '#ff9800'
-                    }} 
-                  />
+      <Box sx={{ mb: 3 }}>
+        <Stack direction="row" spacing={2} flexWrap="wrap">
+          <Card sx={{ minWidth: 220, flex: '1 1 200px', bgcolor: '#f8eff7', borderLeft: '4px solid #ff9800', borderRadius: 3, boxShadow: '0 6px 18px rgba(176,83,173,0.12)' }}>
+            <CardContent sx={{ py: 2 }}>
+              <Box display="flex" alignItems="center" gap={2}>
+                <HourglassEmpty sx={{ color: '#ff9800' }} />
+                <Box>
+                  <Typography variant="subtitle1" sx={{ color: '#7a4b73' }}>En attente</Typography>
+                  <Typography variant="h4" sx={{ color: '#ff9800', fontWeight: 700 }}>{stats.enAttente}</Typography>
                 </Box>
-                <Typography variant="h6" color="textSecondary">
-                  En attente
-                </Typography>
               </Box>
-              <Typography variant="h3" color="warning.main" fontWeight="bold" align="center">
-                {stats.enAttente}
-              </Typography>
-              <LinearProgress 
-                variant="determinate" 
-                value={stats.enAttente > 0 ? 100 : 0}
-                sx={{ 
-                  mt: 1,
-                  height: 4,
-                  backgroundColor: 'rgba(255, 152, 0, 0.1)',
-                  '& .MuiLinearProgress-bar': {
-                    backgroundColor: '#ff9800'
-                  }
-                }}
-              />
             </CardContent>
           </Card>
-        </Grid>
 
-        <Grid item xs={12} sm={4}>
-          <Card>
-            <CardContent>
-              <Box display="flex" alignItems="center" mb={2}>
-                <Box sx={{ position: 'relative', mr: 1.5 }}>
-                  <TaskAlt color="success" sx={{ fontSize: 30 }} />
-                  <FiberManualRecord 
-                    sx={{ 
-                      position: 'absolute',
-                      top: -3,
-                      right: -3,
-                      fontSize: 12,
-                      color: '#4caf50'
-                    }} 
-                  />
+          <Card sx={{ minWidth: 220, flex: '1 1 200px', bgcolor: '#f8eff7', borderLeft: '4px solid #4caf50', borderRadius: 3, boxShadow: '0 6px 18px rgba(176,83,173,0.12)' }}>
+            <CardContent sx={{ py: 2 }}>
+              <Box display="flex" alignItems="center" gap={2}>
+                <TaskAlt sx={{ color: '#4caf50' }} />
+                <Box>
+                  <Typography variant="subtitle1" sx={{ color: '#7a4b73' }}>Approuves</Typography>
+                  <Typography variant="h4" sx={{ color: '#4caf50', fontWeight: 700 }}>{stats.approuves}</Typography>
                 </Box>
-                <Typography variant="h6" color="textSecondary">
-                  Approuvés
-                </Typography>
               </Box>
-              <Typography variant="h3" color="success.main" fontWeight="bold" align="center">
-                {stats.approuves}
-              </Typography>
-              <LinearProgress 
-                variant="determinate" 
-                value={stats.approuves > 0 ? 100 : 0}
-                sx={{ 
-                  mt: 1,
-                  height: 4,
-                  backgroundColor: 'rgba(76, 175, 80, 0.1)',
-                  '& .MuiLinearProgress-bar': {
-                    backgroundColor: '#4caf50'
-                  }
-                }}
-              />
             </CardContent>
           </Card>
-        </Grid>
 
-        <Grid item xs={12} sm={4}>
-          <Card>
-            <CardContent>
-              <Box display="flex" alignItems="center" mb={2}>
-                <Box sx={{ position: 'relative', mr: 1.5 }}>
-                  <Close color="error" sx={{ fontSize: 30 }} />
-                  <FiberManualRecord 
-                    sx={{ 
-                      position: 'absolute',
-                      top: -3,
-                      right: -3,
-                      fontSize: 12,
-                      color: '#f44336'
-                    }} 
-                  />
+          <Card sx={{ minWidth: 220, flex: '1 1 200px', bgcolor: '#f8eff7', borderLeft: '4px solid #f44336', borderRadius: 3, boxShadow: '0 6px 18px rgba(176,83,173,0.12)' }}>
+            <CardContent sx={{ py: 2 }}>
+              <Box display="flex" alignItems="center" gap={2}>
+                <Close sx={{ color: '#f44336' }} />
+                <Box>
+                  <Typography variant="subtitle1" sx={{ color: '#7a4b73' }}>Rejetes</Typography>
+                  <Typography variant="h4" sx={{ color: '#f44336', fontWeight: 700 }}>{stats.rejetes}</Typography>
                 </Box>
-                <Typography variant="h6" color="textSecondary">
-                  Rejetés
-                </Typography>
               </Box>
-              <Typography variant="h3" color="error.main" fontWeight="bold" align="center">
-                {stats.rejetes}
-              </Typography>
-              <LinearProgress 
-                variant="determinate" 
-                value={stats.rejetes > 0 ? 100 : 0}
-                sx={{ 
-                  mt: 1,
-                  height: 4,
-                  backgroundColor: 'rgba(244, 67, 54, 0.1)',
-                  '& .MuiLinearProgress-bar': {
-                    backgroundColor: '#f44336'
-                  }
-                }}
-              />
             </CardContent>
           </Card>
-        </Grid>
-      </Grid>
+        </Stack>
+      </Box>
 
       {/* Filtres */}
-      <Card sx={{ mb: 3 }}>
-        <CardContent>
-          <Typography variant="h6" gutterBottom>
-            <FilterList sx={{ mr: 1, verticalAlign: 'middle' }} />
-            Filtres Multicritères
-          </Typography>
-          
-          <Grid container spacing={2} alignItems="center">
-            <Grid item xs={12} md={3}>
-              <FormControl fullWidth size="small">
-                <InputLabel>Statut</InputLabel>
-                <Select
-                  name="statut"
-                  value={filters.statut}
-                  onChange={handleFilterChange}
-                  label="Statut"
-                >
-                  <MenuItem value="">Tous les statuts</MenuItem>
-                  <MenuItem value="0">En attente</MenuItem>
-                  <MenuItem value="1">Approuvé</MenuItem>
-                  <MenuItem value="2">Rejeté</MenuItem>
-                  <MenuItem value="3">Annulé</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
+      {showFilters && (
+        <Card sx={{ mb: 3, bgcolor: '#f8eff7', border: '1px solid #e2c9df', borderRadius: 3, boxShadow: '0 6px 18px rgba(176,83,173,0.12)' }}>
+          <CardContent>
+            <Typography variant="h6" gutterBottom sx={{ color: '#7a4b73' }}>
+              <FilterList sx={{ mr: 1, verticalAlign: 'middle', color: purple }} />
+              Filtres Multicriteres
+            </Typography>
             
-            <Grid item xs={12} md={3}>
-              <FormControl fullWidth size="small">
-                <InputLabel>Employé</InputLabel>
-                <Select
-                  name="idEmploye"
-                  value={filters.idEmploye}
-                  onChange={handleFilterChange}
-                  label="Employé"
-                >
-                  <MenuItem value="">Tous les employés</MenuItem>
-                  {employes.map(emp => (
-                    <MenuItem key={emp.id} value={emp.id}>
-                      {emp.nom || `Employé ${emp.id}`}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-            
-            <Grid item xs={12} md={3}>
-              <FormControl fullWidth size="small">
-                <InputLabel>Type de congé</InputLabel>
-                <Select
-                  name="typeConge"
-                  value={filters.typeConge}
-                  onChange={handleFilterChange}
-                  label="Type de congé"
-                >
-                  <MenuItem value="">Tous les types</MenuItem>
-                  {typesConge.map(type => (
-                    <MenuItem key={type.id} value={type.id}>
-                      {type.intitule}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-            
-            <Grid item xs={12} md={3}>
-              <FormControl fullWidth size="small">
-                <InputLabel>Période</InputLabel>
-                <Select
-                  name="periode"
-                  value={filters.periode}
-                  onChange={handleFilterChange}
-                  label="Période"
-                >
-                  <MenuItem value="7jours">7 derniers jours</MenuItem>
-                  <MenuItem value="30jours">30 derniers jours</MenuItem>
-                  <MenuItem value="90jours">90 derniers jours</MenuItem>
-                  <MenuItem value="personnalise">Période personnalisée</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-            
-            {filters.periode === 'personnalise' && (
-              <>
-                <Grid item xs={12} md={3}>
-                  <TextField
-                    fullWidth
-                    size="small"
-                    type="date"
-                    name="dateDebut"
-                    label="Date début"
-                    value={filters.dateDebut}
+            <Grid container spacing={2} alignItems="center">
+              <Grid item xs={12} md={3}>
+                <FormControl fullWidth size="small" sx={{
+                  '& .MuiInputLabel-root': { color: '#7a4b73' },
+                  '& .MuiOutlinedInput-root': {
+                    '& fieldset': { borderColor: '#d8b8d6' },
+                    '&:hover fieldset': { borderColor: purple },
+                    '&.Mui-focused fieldset': { borderColor: purple }
+                  }
+                }}>
+                  <InputLabel>Statut</InputLabel>
+                  <Select
+                    name="statut"
+                    value={filters.statut}
                     onChange={handleFilterChange}
-                    InputLabelProps={{ shrink: true }}
-                  />
-                </Grid>
-                <Grid item xs={12} md={3}>
-                  <TextField
-                    fullWidth
-                    size="small"
-                    type="date"
-                    name="dateFin"
-                    label="Date fin"
-                    value={filters.dateFin}
+                    label="Statut"
+                  >
+                    <MenuItem value="">Tous les statuts</MenuItem>
+                    <MenuItem value="0">En attente</MenuItem>
+                    <MenuItem value="1">Approuve</MenuItem>
+                    <MenuItem value="2">Rejete</MenuItem>
+                    <MenuItem value="3">Annule</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+              
+              <Grid item xs={12} md={3}>
+                <FormControl fullWidth size="small" sx={{
+                  '& .MuiInputLabel-root': { color: '#7a4b73' },
+                  '& .MuiOutlinedInput-root': {
+                    '& fieldset': { borderColor: '#d8b8d6' },
+                    '&:hover fieldset': { borderColor: purple },
+                    '&.Mui-focused fieldset': { borderColor: purple }
+                  }
+                }}>
+                  <InputLabel>Employe</InputLabel>
+                  <Select
+                    name="idEmploye"
+                    value={filters.idEmploye}
                     onChange={handleFilterChange}
-                    InputLabelProps={{ shrink: true }}
-                  />
-                </Grid>
-              </>
-            )}
-            
-            <Grid item xs={12} md={2}>
-              <Button
-                fullWidth
-                variant="contained"
-                onClick={appliquerFiltres}
-                disabled={loading}
-                startIcon={<FilterList />}
-              >
-                Appliquer
-              </Button>
+                    label="Employe"
+                  >
+                    <MenuItem value="">Tous les employes</MenuItem>
+                    {employes.map(emp => (
+                      <MenuItem key={emp.id} value={emp.id}>
+                        {emp.nom || `Employe ${emp.id}`}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+              
+              <Grid item xs={12} md={3}>
+                <FormControl fullWidth size="small" sx={{
+                  '& .MuiInputLabel-root': { color: '#7a4b73' },
+                  '& .MuiOutlinedInput-root': {
+                    '& fieldset': { borderColor: '#d8b8d6' },
+                    '&:hover fieldset': { borderColor: purple },
+                    '&.Mui-focused fieldset': { borderColor: purple }
+                  }
+                }}>
+                  <InputLabel>Type de conge</InputLabel>
+                  <Select
+                    name="typeConge"
+                    value={filters.typeConge}
+                    onChange={handleFilterChange}
+                    label="Type de conge"
+                  >
+                    <MenuItem value="">Tous les types</MenuItem>
+                    {typesConge.map(type => (
+                      <MenuItem key={type.id} value={type.id}>
+                        {type.intitule}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+              
+              <Grid item xs={12} md={3}>
+                <FormControl fullWidth size="small" sx={{
+                  '& .MuiInputLabel-root': { color: '#7a4b73' },
+                  '& .MuiOutlinedInput-root': {
+                    '& fieldset': { borderColor: '#d8b8d6' },
+                    '&:hover fieldset': { borderColor: purple },
+                    '&.Mui-focused fieldset': { borderColor: purple }
+                  }
+                }}>
+                  <InputLabel>Periode</InputLabel>
+                  <Select
+                    name="periode"
+                    value={filters.periode}
+                    onChange={handleFilterChange}
+                    label="Periode"
+                  >
+                    <MenuItem value="7jours">7 derniers jours</MenuItem>
+                    <MenuItem value="30jours">30 derniers jours</MenuItem>
+                    <MenuItem value="90jours">90 derniers jours</MenuItem>
+                    <MenuItem value="personnalise">Periode personnalisee</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+              
+              {filters.periode === 'personnalise' && (
+                <>
+                  <Grid item xs={12} md={3}>
+                    <TextField
+                      fullWidth
+                      size="small"
+                      type="date"
+                      name="dateDebut"
+                      label="Date debut"
+                      value={filters.dateDebut}
+                      onChange={handleFilterChange}
+                      InputLabelProps={{ shrink: true }}
+                      sx={{
+                        '& .MuiInputLabel-root': { color: '#7a4b73' },
+                        '& .MuiOutlinedInput-root': {
+                          '& fieldset': { borderColor: '#d8b8d6' },
+                          '&:hover fieldset': { borderColor: purple },
+                          '&.Mui-focused fieldset': { borderColor: purple }
+                        }
+                      }}
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={3}>
+                    <TextField
+                      fullWidth
+                      size="small"
+                      type="date"
+                      name="dateFin"
+                      label="Date fin"
+                      value={filters.dateFin}
+                      onChange={handleFilterChange}
+                      InputLabelProps={{ shrink: true }}
+                      sx={{
+                        '& .MuiInputLabel-root': { color: '#7a4b73' },
+                        '& .MuiOutlinedInput-root': {
+                          '& fieldset': { borderColor: '#d8b8d6' },
+                          '&:hover fieldset': { borderColor: purple },
+                          '&.Mui-focused fieldset': { borderColor: purple }
+                        }
+                      }}
+                    />
+                  </Grid>
+                </>
+              )}
+              
+              <Grid item xs={12} md={2}>
+                <Button
+                  fullWidth
+                  variant="contained"
+                  onClick={appliquerFiltres}
+                  disabled={loading}
+                  startIcon={<FilterList />}
+                  sx={{
+                    bgcolor: purple,
+                    textTransform: 'none',
+                    fontWeight: 600,
+                    boxShadow: 'none',
+                    '&:hover': { bgcolor: purple, boxShadow: 'none' },
+                    '&:active': { bgcolor: purple, boxShadow: 'none' },
+                    '&.Mui-focusVisible': { bgcolor: purple, boxShadow: 'none' }
+                  }}
+                >
+                  Appliquer
+                </Button>
+              </Grid>
+              
+              <Grid item xs={12} md={2}>
+                <Button
+                  fullWidth
+                  variant="outlined"
+                  onClick={reinitialiserFiltres}
+                  startIcon={<Refresh />}
+                  sx={{
+                    borderColor: purple,
+                    color: purple,
+                    textTransform: 'none',
+                    fontWeight: 600,
+                    '&:hover': { borderColor: purple, color: purple, bgcolor: 'transparent' }
+                  }}
+                >
+                  Reinitialiser
+                </Button>
+              </Grid>
             </Grid>
-            
-            <Grid item xs={12} md={2}>
-              <Button
-                fullWidth
-                variant="outlined"
-                onClick={reinitialiserFiltres}
-                startIcon={<Refresh />}
-              >
-                Réinitialiser
-              </Button>
-            </Grid>
-          </Grid>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Liste des demandes */}
       <Card>
@@ -646,7 +681,7 @@ const ValidationConges = () => {
           <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
             <Typography variant="h6">
               <CalendarToday sx={{ mr: 1, verticalAlign: 'middle' }} />
-              Demandes à valider ({filteredDemandes.filter(d => d.decisionManager === 0).length} en attente)
+              Demandes à valider ({filteredDemandes.filter(d => d.statut === 0).length} en attente)
             </Typography>
             
             <Stack direction="row" spacing={1}>
@@ -664,7 +699,15 @@ const ValidationConges = () => {
           </Box>
 
           {filteredDemandes.length === 0 ? (
-            <Alert severity="info">
+            <Alert
+              severity="info"
+              sx={{
+                bgcolor: '#f8eff7',
+                border: '1px solid #e2c9df',
+                color: '#7a4b73',
+                '& .MuiAlert-icon': { color: purple }
+              }}
+            >
               Aucune demande trouvée correspondant aux critères de recherche.
             </Alert>
           ) : (
@@ -683,7 +726,7 @@ const ValidationConges = () => {
                 </TableHead>
                 <TableBody>
                   {filteredDemandes.map((demande) => {
-                    const statusConfig = getStatusConfig(demande.decisionManager);
+                    const statusConfig = getStatusConfig(demande.statut);
                     
                     return (
                       <TableRow key={demande.id} hover>
@@ -693,7 +736,7 @@ const ValidationConges = () => {
                               width: 32, 
                               height: 32, 
                               mr: 1,
-                              bgcolor: 'primary.main',
+                              bgcolor: purple,
                               fontSize: '0.875rem'
                             }}>
                               {demande.employe?.prenom?.charAt(0) || 'E'}
@@ -715,7 +758,7 @@ const ValidationConges = () => {
                         </TableCell>
                         <TableCell>
                           <Box display="flex" alignItems="center">
-                            <Event color="primary" sx={{ mr: 1, fontSize: 'small' }} />
+                            <Event sx={{ mr: 1, fontSize: 'small', color: purple }} />
                             <Box>
                               <Typography variant="body2">
                                 {formatDate(demande.dateDebut)} → {formatDate(demande.dateFin)}
@@ -764,7 +807,7 @@ const ValidationConges = () => {
                               </IconButton>
                             </Tooltip>
                             
-                            {demande.decisionManager === 0 && (
+                            {demande.statut === 0 && (
                               <>
                                 <Tooltip title="Valider">
                                   <IconButton aria-label="Valider" 
@@ -891,8 +934,8 @@ const ValidationConges = () => {
                     value={commentaireManager}
                     onChange={(e) => setCommentaireManager(e.target.value)}
                     placeholder={
-                      validationDecision === 1 
-                      ? "Commentaire optionnel (ex: Bonne demande, congés approuvés)..."
+                      validationDecision === 1 ?
+                       "Commentaire optionnel (ex: Bonne demande, congés approuvés)..."
                       : "Raison du rejet (ex: Période de forte activité)..."
                     }
                     size="small"
@@ -928,7 +971,7 @@ const ValidationConges = () => {
                validationDecision === 1 ? 'Confirmer validation' : 
                'Confirmer rejet'}
             </Button>
-          ) : selectedDemande?.decisionManager === 0 ? (
+          ) : selectedDemande?.statut === 0 ? (
             <>
               <Button 
                 variant="outlined"

@@ -6,16 +6,18 @@ import AbsenceListPage from "../Employe/Demandes/ListeAbsence";
 import HeaderEmploye from "../Employe/Header/HeaderEmploye";
 import Pointage from "../Employe/presence/pointage";
 import EmployeeInfosPro from "../Employe/informations_personnelles/fiche-personnel";
+import DemandeMouvement from "../Employe/Mouvements/DemandeMouvement";
 
 const RouterEmploye = () => {
     return (
         <Routes>
             <Route path="" element={<HeaderEmploye />}>
                 <Route path="conge/demande" element={<DemandeConge />} />
-                <Route path="absence/demande" element={<DemandeAbsence />} />
-                <Route path="absence/liste/demande" element={<AbsenceListPage /> } />
-                <Route path="presence/pointage" element={<Pointage />} />
-                <Route path="infos/fiche-perso" element={<EmployeeInfosPro />} />
+            <Route path="absence/demande" element={<DemandeAbsence />} />
+            <Route path="absence/liste/demande" element={<AbsenceListPage /> } />
+            <Route path="mouvement/demande" element={<DemandeMouvement />} />
+            <Route path="presence/pointage" element={<Pointage />} />
+            <Route path="infos/fiche-perso" element={<EmployeeInfosPro />} />
             </Route>
         </Routes>
     );
