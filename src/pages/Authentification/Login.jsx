@@ -1,33 +1,27 @@
-import React, { useState, useEffect } from 'react'; // Ajoutez useEffect
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { useNavigate, useLocation } from 'react-router-dom'; // Ajoutez useLocation
+import { useNavigate, useLocation } from 'react-router-dom';
 
 function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [userType, setUserType] = useState('employee'); // unused but kept for compatibility
+  const [userType, setUserType] = useState('employee');
   const [rememberMe, setRememberMe] = useState(false);
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
-  const location = useLocation(); // Pour accéder aux query params
+  const location = useLocation();
 
-  // Ajoutez cet useEffect pour récupérer le message de l'URL
+  // Récupérer le message de l'URL
   useEffect(() => {
-    // Récupérer les paramètres d'URL
     const searchParams = new URLSearchParams(location.search);
     const urlMessage = searchParams.get('message');
     
     if (urlMessage) {
-      // Décoder le message (il a été encodé avec encodeURIComponent)
       const decodedMessage = decodeURIComponent(urlMessage);
-      
-      // Afficher le message
       setMessage(decodedMessage);
-      
-      // Nettoyer l'URL (enlever le paramètre)
-      navigate('/', { replace: true }); // ou window.history.replaceState({}, '', '/');
+      navigate('/', { replace: true });
     }
   }, [location, navigate]);
 
@@ -36,26 +30,68 @@ function LoginPage() {
     setLoading(true);
     setMessage('');
 
-    const user = { email, password, userType, rememberMe };
+    // Créer l'objet UserRequest avec la structure attendue par le backend
+    const userRequest = {
+      user: {
+        email: email,
+        password: password,
+        rememberMe: rememberMe
+      },
+      typeUser: null // Premier envoi, typeUser null
+    };
+
+    console.log('Envoi de la requête:', userRequest);
 
     try {
-      const response = await axios.post('http://localhost:8080/api/users/auth', user);
-      if (response.data.token) {
+      const response = await axios.post('http://localhost:8080/api/users/auth', userRequest);
+      console.log("Réponse reçue:", response.data);
+      
+      if (response.data.status === 200 && response.data.token) {
+        // Stocker le token
         sessionStorage.setItem('token', response.data.token);
-        sessionStorage.setItem('nomComplet', response.data.user.nomComplet);
-        sessionStorage.setItem('matricule', response.data.user.matricule || '');
-        sessionStorage.setItem('département', response.data.infosPro.departement.nom);
-        window.location.href = response.data.path;
+        sessionStorage.setItem('email', email);
+        sessionStorage.setItem('userId', response.data.user?.id || '');
+        sessionStorage.setItem('nomComplet', response.data.user?.nomComplet || '');
+        sessionStorage.setItem('matricule', response.data.user?.matricule || '');
+        sessionStorage.setItem('departement', response.data.infosPro?.departement?.nom || '');
+        
+        // Stocker les informations des rôles
+        if (response.data.roles && response.data.roles.length > 0) {
+          sessionStorage.setItem('userRoles', JSON.stringify(response.data.roles));
+          sessionStorage.setItem('currentRole', response.data.currentRole || response.data.roles[0].type);
+          sessionStorage.setItem('hasMultipleRoles', response.data.hasMultipleRoles ? 'true' : 'false');
+        }
+        
+        // Redirection vers le path par défaut
+        const redirectPath = response.data.path || '/dashboard-RH';
+        console.log('Redirection vers:', redirectPath);
+        window.location.href = redirectPath;
+        
       } else {
-        setMessage(response.data.message || 'Connexion réussie !');
+        // Afficher le message d'erreur du backend
+        setMessage(response.data.message || 'Erreur lors de la connexion');
       }
     } catch (error) {
-      console.error(error);
-      setMessage(
-        error.response?.data?.message
-          ? `Erreur: ${error.response.data.message}`
-          : 'Erreur lors de la connexion.'
-      );
+      console.error('Erreur complète:', error);
+      console.error('Réponse d\'erreur:', error.response?.data);
+      
+      // Afficher l'erreur reçue du backend
+      if (error.response?.data) {
+        // Si le backend a renvoyé un message d'erreur
+        if (typeof error.response.data === 'object') {
+          setMessage(error.response.data.message || error.response.data.error || 'Erreur lors de la connexion');
+        } else if (typeof error.response.data === 'string') {
+          setMessage(error.response.data);
+        } else {
+          setMessage('Erreur lors de la connexion. Veuillez réessayer.');
+        }
+      } else if (error.request) {
+        // La requête a été faite mais pas de réponse
+        setMessage('Impossible de contacter le serveur. Vérifiez votre connexion.');
+      } else {
+        // Erreur lors de la configuration de la requête
+        setMessage('Erreur lors de la préparation de la requête.');
+      }
     } finally {
       setLoading(false);
     }
@@ -90,9 +126,10 @@ function LoginPage() {
         </div>
 
         {message && (
-          <div className={`alert ${message.startsWith('Erreur') || message.includes('expirée') || message.includes('non authentifié')  ? 'alert-danger' : 'alert-success'} py-3 mb-4 small border-0 shadow-sm`} style={{ borderRadius: '15px' }}>
+          <div className={`alert ${message.includes('Erreur') || message.includes('incorrect') || message.includes('trouvé') || message.includes('expiré') || message.includes('serveur') ? 'alert-danger' : 'alert-success'} py-3 mb-4 small border-0 shadow-sm`} 
+            style={{ borderRadius: '15px' }}>
             <div className="d-flex align-items-center">
-              <i className={`bi ${message.startsWith('Erreur') || message.includes('expirée') || message.includes('non authentifié') ? 'bi-exclamation-triangle-fill' : 'bi-check-circle-fill'} me-2`}></i>
+              <i className={`bi ${message.includes('Erreur') || message.includes('incorrect') || message.includes('trouvé') || message.includes('expiré') || message.includes('serveur') ? 'bi-exclamation-triangle-fill' : 'bi-check-circle-fill'} me-2`}></i>
               <span>{message}</span>
             </div>
           </div>
@@ -149,7 +186,7 @@ function LoginPage() {
                 Mémoriser
               </label>
             </div>
-            <a href="/forgot-password" size="sm" className="text-decoration-none small fw-bold" style={{ color: 'var(--bg-primary)' }}>Oublié ?</a>
+            <a href="/forgot-password" className="text-decoration-none small fw-bold" style={{ color: 'var(--bg-primary)' }}>Oublié ?</a>
           </div>
 
           <button type="submit" className="btn btn-primary w-100 py-3 mb-4 rounded-pill" disabled={loading}>
@@ -165,7 +202,7 @@ function LoginPage() {
           <p className="small text-muted mb-0">Besoin d'aide ? <a href="/contact" className="text-decoration-none fw-bold" style={{ color: 'var(--bg-primary)' }}>Support RH</a></p>
         </div>
       </div>
-    </div >
+    </div>
   );
 }
 

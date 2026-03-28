@@ -7,6 +7,7 @@ import RouterRH from "./pages/router/RH";
 import RouterInscription from "./pages/router/inscription";
 import RouterManager from "./pages/router/Manager";
 import RouterEmploye from "./pages/router/employe";
+import SelectRolePage from "./pages/Authentification/SelectRolePage";
 
 // CSS
 import "bootstrap/dist/css/bootstrap.min.css";
@@ -27,6 +28,7 @@ function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<LoginPage />} />
+          <Route path="/select-role" element={<SelectRolePage />} />
           <Route path="/dashboard-RH/*" element={<RouterRH />} />
           <Route path="/inscription/*" element={<RouterInscription />} />
           <Route path="/dashboard-Manager/*" element={<RouterManager />} />

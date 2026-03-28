@@ -16,13 +16,15 @@ import {
   Badge,
   Dropdown,
   Pagination,
-  Modal
+  Modal,
+  OverlayTrigger,
+  Tooltip
 } from 'react-bootstrap';
 import {
   Search,
   Download,
   Eye,
-  FileText,
+  Folder,
   Briefcase,
   User,
   UserCheck,
@@ -36,7 +38,8 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronsLeft,
-  ChevronsRight
+  ChevronsRight,
+  MoreVertical
 } from 'react-feather';
 import {
   FaArchive,
@@ -1018,7 +1021,7 @@ function Employees() {
                   <th className="py-2">Contrat</th>
                   <th className="py-2">Salaire</th>
                   <th className="py-2 text-center">Statut</th>
-                  <th className="py-2 pe-3 text-end">Actions</th>
+                  <th className="py-2 pe-3 text-center">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -1078,46 +1081,58 @@ function Employees() {
                             </Badge>
                           )}
                         </td>
+
                         <td className="py-2 pe-3 text-end">
                           <div className="d-flex justify-content-end gap-1">
-                            <Button
-                              variant="outline-info"
-                              size="sm"
-                              onClick={() => navigate(`/dashboard-RH/employees/${employe.id}/personnel`)}
-                              className="px-2"
-                              aria-label="Voir"
-                            >
-                              <Eye size={12} />
-                            </Button>
-                            <Button
-                              variant="outline-secondary"
-                              size="sm"
-                              onClick={() => navigate(`/dashboard-RH/employees/${employe.id}/documents`)}
-                              className="px-2"
-                              aria-label="Documents"
-                            >
-                              <FileText size={12} />
-                            </Button>
-                            {!isManager && (
-                              <Button
-                                variant="outline-success"
+                            <Dropdown align="end">
+                              <Dropdown.Toggle
+                                variant=""
                                 size="sm"
-                                onClick={() => handleOpenManagerModal(empDto)}
-                                className="px-2"
-                                aria-label="Promouvoir manager"
-                                title="Promouvoir en manager"
+                                className="px-2 d-inline-flex align-items-center gap-1"
+                                style={{ borderColor: '#d6b3d3', color: '#5c2458' }}
                               >
-                                <FaUserTie size={12} />
-                              </Button>
+                                
+                                <MoreVertical size={14} />
+                              </Dropdown.Toggle>
+                              <Dropdown.Menu>
+                                <Dropdown.Item onClick={() => navigate(`/dashboard-RH/employees/${employe.id}/personnel`)}>
+                                  <Eye size={14} className="me-2" />
+                                  Voir details
+                                </Dropdown.Item>
+                                <Dropdown.Item onClick={() => navigate(`/dashboard-RH/employees/${employe.id}/documents`)}>
+                                  <Folder size={14} className="me-2" />
+                                  Voir documents
+                                </Dropdown.Item>
+                              </Dropdown.Menu>
+                            </Dropdown>
+                            {!isManager && (
+                              <OverlayTrigger
+                                placement="top"
+                                overlay={<Tooltip id={`tooltip-manager-${employe.id}`}>Promouvoir en manager</Tooltip>}
+                              >
+                                <Button
+                                  variant="outline-success"
+                                  size="sm"
+                                  onClick={() => handleOpenManagerModal(empDto)}
+                                  className="px-2"
+                                >
+                                  <FaUserTie size={12} />
+                                </Button>
+                              </OverlayTrigger>
                             )}
-                            <Button
-                              variant="outline-warning"
-                              size="sm"
-                              onClick={() => handleOpenArchive(employe.id)}
-                              className="px-2"
+                            <OverlayTrigger
+                              placement="top"
+                              overlay={<Tooltip id={`tooltip-archive-${employe.id}`}>Archiver</Tooltip>}
                             >
-                              <FaArchive size={12} />
-                            </Button>
+                              <Button
+                                variant="outline-warning"
+                                size="sm"
+                                onClick={() => handleOpenArchive(employe.id)}
+                                className="px-2"
+                              >
+                                <FaArchive size={12} />
+                              </Button>
+                            </OverlayTrigger>
                           </div>
                         </td>
                       </tr>
