@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import axiosInstance from './../../../utils/AxiosInstance';
 import "../../../../assets/css/ReglesConges.css";
 
 const ReglesConges = () => {
@@ -12,7 +12,8 @@ const ReglesConges = () => {
         ancienneteRequis: 0,
         soldeMensuel: 2.08, // 25 jours / 12 mois = 2.08
         isWeekEndInclus: false,
-        limiteReportAnnuel: 10 // Nouveau nom correspondant à la table
+        limiteReportAnnuel: 10,
+        dureeAnneeReport: 1
     });
     
     const [isEditing, setIsEditing] = useState(false);
@@ -26,7 +27,7 @@ const ReglesConges = () => {
     const chargerRegles = async () => {
         setLoading(true);
         try {
-            const response = await axios.get('http://localhost:8080/api/regles-conges');
+            const response = await axiosInstance.get('/api/regles-conges');
             setRegles(response.data);
         } catch (err) {
             setError('Erreur lors du chargement des règles');
@@ -54,15 +55,16 @@ const ReglesConges = () => {
                 ancienneteRequis: formData.ancienneteRequis,
                 soldeMensuel: formData.soldeMensuel,
                 isWeekEndInclus: formData.isWeekEndInclus,
-                limiteReportAnnuel: formData.limiteReportAnnuel
+                limiteReportAnnuel: formData.limiteReportAnnuel,
+                dureeAnneeReport: formData.dureeAnneeReport
             };
 
             if (isEditing) {
                 // Mettre à jour la règle existante
-                await axios.put(`http://localhost:8080/api/regles-conges/${currentRegleId}`, donneesAEnvoyer);
+                await axiosInstance.put(`/api/regles-conges/${currentRegleId}`, donneesAEnvoyer);
             } else {
                 // Créer une nouvelle règle
-                await axios.post('http://localhost:8080/api/regles-conges', donneesAEnvoyer);
+                await axiosInstance.post('/api/regles-conges', donneesAEnvoyer);
             }
             
             // Réinitialiser le formulaire et recharger les règles
@@ -82,7 +84,8 @@ const ReglesConges = () => {
             ancienneteRequis: regle.anciennete_requis || regle.ancienneteRequis || 0,
             soldeMensuel: regle.solde_mensuel || regle.soldeMensuel || 2.08,
             isWeekEndInclus: regle.is_week_end_inclus || regle.isWeekEndInclus || false,
-            limiteReportAnnuel: regle.limite_report_annuel || regle.limiteReportAnnuel || 10
+            limiteReportAnnuel: regle.limite_report_annuel || regle.limiteReportAnnuel || 10,
+            dureeAnneeReport: regle.duree_annee_report || regle.dureeAnneeReport || 1
         });
         setIsEditing(true);
         setCurrentRegleId(regle.id);
@@ -91,7 +94,7 @@ const ReglesConges = () => {
     const handleDelete = async (id) => {
         if (window.confirm('Êtes-vous sûr de vouloir supprimer cette règle?')) {
             try {
-                await axios.delete(`http://localhost:8080/api/regles-conges/${id}`);
+                await axiosInstance.delete(`/api/regles-conges/${id}`);
                 chargerRegles();
                 alert('Règle supprimée avec succès!');
             } catch (err) {
@@ -106,7 +109,8 @@ const ReglesConges = () => {
             ancienneteRequis: 0,
             soldeMensuel: 2.08,
             isWeekEndInclus: false,
-            limiteReportAnnuel: 10
+            limiteReportAnnuel: 10,
+            dureeAnneeReport: 1
         });
         setIsEditing(false);
         setCurrentRegleId(null);
@@ -227,6 +231,31 @@ const ReglesConges = () => {
                                 </div>
                             </div>
 
+
+                            <div className="form-group">
+                                <label htmlFor="dureeAnneeReport">
+                                    Duree d'annee reportable (annees)
+                                    <span className="help-text">
+                                        Duree maximale pour utiliser les jours reportes
+                                        <br/>1 = report valable jusqu'a l'annee suivante
+                                    </span>
+                                </label>
+                                <input
+                                    type="number"
+                                    id="dureeAnneeReport"
+                                    name="dureeAnneeReport"
+                                    value={formData.dureeAnneeReport}
+                                    onChange={handleInputChange}
+                                    min="0"
+                                    step="1"
+                                    required
+                                />
+                                <div className="info-text">
+                                    {formData.dureeAnneeReport === 0
+                                        ? "Report non autorise"
+                                        : `Report valable ${formData.dureeAnneeReport} an${formData.dureeAnneeReport > 1 ? 's' : ''}`}
+                                </div>
+                            </div>
                             <div className="form-group checkbox-group">
                                 <label className="checkbox-label">
                                     <input
@@ -279,6 +308,7 @@ const ReglesConges = () => {
                                         <th>Mensuel</th>
                                         <th>Annuel</th>
                                         <th>Limite Report</th>
+                                        <th>Duree Report</th>
                                         <th>Week-end</th>
                                         <th>Actions</th>
                                     </tr>
@@ -290,6 +320,7 @@ const ReglesConges = () => {
                                         );
                                         const anciennete = regle.anciennete_requis || regle.ancienneteRequis;
                                         const limiteReport = regle.limite_report_annuel || regle.limiteReportAnnuel;
+                                        const dureeAnneeReport = regle.duree_annee_report || regle.dureeAnneeReport;
                                         const weekEndInclus = regle.is_week_end_inclus || regle.isWeekEndInclus;
                                         
                                         return (
@@ -320,6 +351,14 @@ const ReglesConges = () => {
                                                             {limiteReport}
                                                         </strong>
                                                         <span className="unit">jours</span>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div className="value-cell">
+                                                        <strong className={dureeAnneeReport === 0 ? 'no-report' : 'with-report'}>
+                                                            {dureeAnneeReport}
+                                                        </strong>
+                                                        <span className="unit">an{dureeAnneeReport > 1 ? 's' : ''}</span>
                                                     </div>
                                                 </td>
                                                 <td>

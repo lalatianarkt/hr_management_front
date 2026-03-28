@@ -441,7 +441,7 @@ function Employees() {
   // Chargement des données pour les filtres
   const fetchFilterData = useCallback(async () => {
     try {
-      const deptResponse = await axiosInstance.get('/api/departements');
+      const deptResponse = await axiosInstance.get('/api/departements/actif');
       setDepartements(deptResponse.data);
       
       const typeContratsResponse = await axiosInstance.get('/api/type-contrats');

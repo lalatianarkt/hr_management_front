@@ -31,14 +31,15 @@ const ReglesConges = ({ showNotification }) => {
   const [showModal, setShowModal] = useState(false);
   const [editingRegle, setEditingRegle] = useState(null);
   const [formData, setFormData] = useState({
-    ancienneteRequis: 12,
-    soldeMensuel: 2.5,
-    isWeekEndInclus: true,
-    limiteReportAnnuel: 90,
-    primeAnciennete: 1000,
-    ancienneteRequisPrime: 5,
-    allocationFamiliale: 10000,
-    weekEndInclus: true,
+    ancienneteRequis: 0,
+    soldeMensuel: 0,
+    isWeekEndInclus: false,
+    limiteReportAnnuel: 0,
+    dureeAnneeReport: 0,
+    primeAnciennete: 0,
+    ancienneteRequisPrime: 0,
+    allocationFamiliale: 0,
+    weekEndInclus: false,
     statut: 0
   });
 
@@ -73,14 +74,15 @@ const ReglesConges = ({ showNotification }) => {
   const handleAdd = () => {
     setEditingRegle(null);
     setFormData({
-      ancienneteRequis: 12,
-      soldeMensuel: 2.5,
-      isWeekEndInclus: true,
-      limiteReportAnnuel: 90,
-      primeAnciennete: 1000,
-      ancienneteRequisPrime: 5,
-      allocationFamiliale: 10000,
-      weekEndInclus: true,
+      ancienneteRequis: 0,
+      soldeMensuel: 0,
+      isWeekEndInclus: false,
+      limiteReportAnnuel: 0,
+      dureeAnneeReport: 0,
+      primeAnciennete: 0,
+      ancienneteRequisPrime: 0,
+      allocationFamiliale: 0,
+      weekEndInclus: false,
       statut: 0
     });
     setShowModal(true);
@@ -90,15 +92,16 @@ const ReglesConges = ({ showNotification }) => {
   const handleEdit = (regle) => {
     setEditingRegle(regle);
     setFormData({
-      ancienneteRequis: regle.ancienneteRequis,
-      soldeMensuel: regle.soldeMensuel,
-      isWeekEndInclus: regle.isWeekEndInclus,
-      limiteReportAnnuel: regle.limiteReportAnnuel,
-      primeAnciennete: regle.primeAnciennete,
-      ancienneteRequisPrime: regle.ancienneteRequisPrime,
-      allocationFamiliale: regle.allocationFamiliale,
-      weekEndInclus: regle.weekEndInclus,
-      statut: regle.statut
+      ancienneteRequis: regle.ancienneteRequis ?? regle.anciennete_requis ?? 0,
+      soldeMensuel: regle.soldeMensuel ?? regle.solde_mensuel ?? 0,
+      isWeekEndInclus: regle.isWeekEndInclus ?? regle.is_week_end_inclus ?? false,
+      limiteReportAnnuel: regle.limiteReportAnnuel ?? regle.limite_report_annuel ?? 0,
+      dureeAnneeReport: regle.dureeAnneeReport ?? regle.duree_annee_report ?? 0,
+      primeAnciennete: regle.primeAnciennete ?? regle.prime_anciennete ?? 0,
+      ancienneteRequisPrime: regle.ancienneteRequisPrime ?? regle.anciennete_requis_prime ?? 0,
+      allocationFamiliale: regle.allocationFamiliale ?? regle.allocation_familiale ?? 0,
+      weekEndInclus: regle.weekEndInclus ?? regle.week_end_inclus ?? false,
+      statut: regle.statut ?? 0
     });
     setShowModal(true);
   };
@@ -116,7 +119,8 @@ const ReglesConges = ({ showNotification }) => {
 
 
       if (editingRegle) {
-        await ParametrageApi.reglesConges.update(editingRegle.id, formData);
+        const payload = { ...editingRegle, ...formData };
+        await ParametrageApi.reglesConges.update(editingRegle.id, payload);
         showNotification('Règle modifiée avec succès', 'success');
       } else {
         await ParametrageApi.reglesConges.create(formData);
@@ -191,6 +195,7 @@ const ReglesConges = ({ showNotification }) => {
                 <th>Ancienneté requise</th>
                 <th>Solde mensuel</th>
                 <th>Limite report</th>
+                <th>Duree report</th>
                 <th>Prime ancienneté</th>
                 <th>Allocation familiale</th>
                 <th>Week-end inclus</th>
@@ -219,12 +224,13 @@ const ReglesConges = ({ showNotification }) => {
                       </Badge>
                     </td>
                     <td>{regle.limiteReportAnnuel} jours</td>
+                    <td>{(regle.dureeAnneeReport ?? regle.duree_annee_report ?? 0)} an(s)</td>
                     <td>
-                      <DollarSign size={14} className="text-muted me-1" />
+                      {/* <DollarSign size={14} className="text-muted me-1" /> */}
                       {regle.primeAnciennete?.toLocaleString()} Ar
                     </td>
                     <td>
-                      <DollarSign size={14} className="text-muted me-1" />
+                      {/* <DollarSign size={14} className="text-muted me-1" /> */}
                       {regle.allocationFamiliale?.toLocaleString()} Ar
                     </td>
                     <td>
@@ -343,6 +349,24 @@ const ReglesConges = ({ showNotification }) => {
               </Col>
               <Col md={6}>
                 <Form.Group className="mb-3">
+                  <Form.Label>Duree report (annees) *</Form.Label>
+                  <InputGroup>
+                    <InputGroup.Text>
+                      <Calendar size={14} />
+                    </InputGroup.Text>
+                    <Form.Control
+                      type="number"
+                      name="dureeAnneeReport"
+                      value={formData.dureeAnneeReport}
+                      onChange={handleChange}
+                      min="0"
+                      required
+                    />
+                  </InputGroup>
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group className="mb-3">
                   <Form.Label>Prime d'ancienneté (Ar) *</Form.Label>
                   <InputGroup>
                     <InputGroup.Text>
@@ -436,3 +460,10 @@ const ReglesConges = ({ showNotification }) => {
 };
 
 export default ReglesConges;
+
+
+
+
+
+
+

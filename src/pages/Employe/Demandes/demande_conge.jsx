@@ -28,7 +28,11 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import dayjs from 'dayjs';
+import 'dayjs/locale/fr';
 import axiosInstance from './../../utils/AxiosInstance';
+import UpdateModalDemandeConge from './UpdateModalDemandeConge';
+
+dayjs.locale('fr');
 
 const DemandeConge = () => {
     const navigate = useNavigate();
@@ -47,6 +51,8 @@ const DemandeConge = () => {
     
     // États pour le modal de création
     const [showCreateModal, setShowCreateModal] = useState(false);
+    const [showUpdateModal, setShowUpdateModal] = useState(false);
+    const [editingDemande, setEditingDemande] = useState(null);
     const [formData, setFormData] = useState({
         dateDebut: '',
         dateFin: '',
@@ -164,6 +170,21 @@ const DemandeConge = () => {
     const handleCloseCreateModal = () => {
         setShowCreateModal(false);
         setFormError('');
+    };
+
+    const handleOpenUpdateModal = (demande) => {
+        setEditingDemande(demande);
+        setShowUpdateModal(true);
+    };
+
+    const handleCloseUpdateModal = () => {
+        setShowUpdateModal(false);
+        setEditingDemande(null);
+    };
+
+    const handleUpdatedDemande = () => {
+        // Recharge la liste complÃ¨te pour rÃ©cupÃ©rer les relations (ex: typeConge)
+        loadDemandes();
     };
 
     const handleInputChange = (e) => {
@@ -736,7 +757,17 @@ const DemandeConge = () => {
                                                                 <Visibility fontSize="small" />
                                                             </IconButton>
                                                         </Tooltip>
-                                                        
+
+                                                        <Tooltip title="Modifier">
+                                                            <IconButton
+                                                                size="small"
+                                                                color="primary"
+                                                                onClick={() => handleOpenUpdateModal(demande)}
+                                                            >
+                                                                <Edit fontSize="small" />
+                                                            </IconButton>
+                                                        </Tooltip>
+
                                                         {peutAnnuler && (
                                                             <Tooltip title="Annuler la demande">
                                                                 <IconButton 
@@ -778,11 +809,12 @@ const DemandeConge = () => {
                     <Box component="form" onSubmit={handleSubmit}>
                         <Grid container spacing={2}>
                             <Grid item xs={12} md={6}>
-                                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                                <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="fr">
                                     <DemoContainer components={['DatePicker']}>
                                         <DatePicker
                                             label="Date de début *"
                                             value={formData.dateDebut ? dayjs(formData.dateDebut) : null}
+                                            format="DD/MM/YYYY"
                                             onChange={(newValue) => handleInputChange({
                                                 target: { name: 'dateDebut', value: newValue ? newValue.format('YYYY-MM-DD') : '' }
                                             })}
@@ -793,11 +825,12 @@ const DemandeConge = () => {
                             </Grid>
                             
                             <Grid item xs={12} md={6}>
-                                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                                <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="fr">
                                     <DemoContainer components={['DatePicker']}>
                                         <DatePicker
                                             label="Date de fin *"
                                             value={formData.dateFin ? dayjs(formData.dateFin) : null}
+                                            format="DD/MM/YYYY"
                                             onChange={(newValue) => handleInputChange({
                                                 target: { name: 'dateFin', value: newValue ? newValue.format('YYYY-MM-DD') : '' }
                                             })}
@@ -899,6 +932,14 @@ const DemandeConge = () => {
             </Dialog>
 
             {/* MODAL D'ANNULATION */}
+            <UpdateModalDemandeConge
+                open={showUpdateModal}
+                onClose={handleCloseUpdateModal}
+                demande={editingDemande}
+                typesConge={typesConge}
+                onUpdated={handleUpdatedDemande}
+            />
+
             <Dialog open={showAnnulationModal} onClose={() => setShowAnnulationModal(false)} maxWidth="sm" fullWidth>
                 <DialogTitle>
                     <Box display="flex" alignItems="center" gap={1}>
@@ -957,7 +998,7 @@ const DemandeConge = () => {
             </Dialog>
 
             {/* MODAL DE DÉTAILS */}
-            <Dialog open={!!selectedDemande && !showAnnulationModal && !showCreateModal} onClose={() => setSelectedDemande(null)} maxWidth="sm" fullWidth>
+            <Dialog open={!!selectedDemande && !showAnnulationModal && !showCreateModal && !showUpdateModal} onClose={() => setSelectedDemande(null)} maxWidth="sm" fullWidth>
                 <DialogTitle>
                     <Box display="flex" alignItems="center" gap={1}>
                         <Visibility color="primary" />

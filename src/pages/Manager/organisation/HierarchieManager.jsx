@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Alert, Avatar, Badge, Button, Card, Empty, Spin, Tag, Tooltip } from "antd";
 import {
   ArrowDownOutlined,
@@ -18,7 +18,6 @@ const getRangColor = (rang) => {
   return "#5c2458";
 };
 
-const getManagerMatricule = () => sessionStorage.getItem("matricule") || "";
 const getDepartmentName = () => sessionStorage.getItem("département") || "";
 
 export default function HierarchieManager() {
@@ -28,40 +27,46 @@ export default function HierarchieManager() {
   const [departmentName, setDepartmentName] = useState("");
   const [expanded, setExpanded] = useState(true);
 
-  useEffect(() => {
-    const fetchHierarchie = async () => {
-      const managerMatricule = getManagerMatricule();
-      const sessionDepartment = getDepartmentName();
+  const fetchHierarchie = useCallback(async () => {
+    const sessionDepartment = getDepartmentName();
 
-      if (!managerMatricule) {
-        setError("Le matricule du manager connecte est introuvable dans la session.");
-        setLoading(false);
+    try {
+      setLoading(true);
+      setError("");
+
+      const response = await axiosInstance.get("/api/hierarchie/organigramme-compact/manager");
+      const data = response.data;
+
+      if (data?.manager) {
+        setManagerData(data.manager);
+        setDepartmentName(data.departement || sessionDepartment);
         return;
       }
 
-      try {
-        setLoading(true);
-        setError("");
-
-        const response = await axiosInstance.get(`/api/hierarchie/manager/matricule/${encodeURIComponent(managerMatricule)}`);
-        const data = response.data;
-
-        if (data?.status !== "success" || !data?.manager) {
-          setError(data?.message || "Impossible de charger la vue hierarchique.");
-          return;
-        }
-
-        setManagerData(data.manager);
-        setDepartmentName(data.departement || sessionDepartment);
-      } catch (err) {
-        setError(err.response?.data?.message || "Impossible de charger la vue hierarchique du manager.");
-      } finally {
-        setLoading(false);
+      if (data?.status && data.status !== "success") {
+        setError(data?.message || "Impossible de charger la vue hierarchique.");
+        return;
       }
-    };
 
-    fetchHierarchie();
+      setError("Impossible de charger la vue hierarchique.");
+    } catch (err) {
+      if (err.response?.status === 401) {
+        setError("Session expiree. Veuillez vous reconnecter.");
+      } else if (err.response?.status === 403) {
+        setError("Vous n'avez pas les droits pour acceder a ces donnees.");
+      } else if (err.code === "ECONNABORTED") {
+        setError("La requete a pris trop de temps. Veuillez reessayer.");
+      } else {
+        setError(err.response?.data?.message || "Impossible de charger la vue hierarchique du manager.");
+      }
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchHierarchie();
+  }, [fetchHierarchie]);
 
   const groupedSubordinates = useMemo(() => {
     const subordonnes = managerData?.subordonnesCompacts || [];
@@ -246,7 +251,19 @@ export default function HierarchieManager() {
   }
 
   if (error) {
-    return <Alert type="error" message={error} showIcon />;
+    return (
+      <Alert
+        type="error"
+        message="Erreur"
+        description={error}
+        showIcon
+        action={
+          <Button size="small" onClick={fetchHierarchie}>
+            Reessayer
+          </Button>
+        }
+      />
+    );
   }
 
   if (!managerData) {
