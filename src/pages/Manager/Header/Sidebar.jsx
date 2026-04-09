@@ -95,6 +95,24 @@ export default function Sidebar() {
                 )}
               </li>
 
+              {/* Suivi de mouvements */}
+              <li className="nav-item">
+                <button
+                  className={`nav-link w-100 bg-transparent border-0 text-start d-flex align-items-center ${openSection === 'mouvements' ? 'section-open' : ''}`}
+                  onClick={() => toggleSection('mouvements')}
+                >
+                  <Clock size={18} className="me-2" />
+                  <span className="m-0 flex-grow-1 nav-label">Mouvements</span>
+                  {openSection === 'mouvements' ? <ChevronDown size={16} className="opacity-50" /> : <ChevronRight size={16} className="opacity-50" />}
+                </button>
+                {openSection === 'mouvements' && (
+                  <ul className="nav flex-column submenu">
+                    <li><Link to="/dashboard-Manager/mouvements/validation" className="nav-link small"><Dot size={18} className="me-1" /> <span className="nav-label">Validation des mouvements</span></Link></li>
+                  </ul>
+                )}
+              </li>
+
+
               <li className="nav-item">
                 <Link to="/dashboard-Manager/organisation/hierarchie" className="nav-link">
                   <Network size={18} className="me-2" />

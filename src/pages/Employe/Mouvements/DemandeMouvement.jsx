@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Container, Row, Col, Card, Button, Alert, Spinner, Badge, Modal, Form } from 'react-bootstrap';
-import { ArrowUpRight, Briefcase, Building2, UserCircle } from 'lucide-react';
+import { Plus, Briefcase, Building2, UserCircle } from 'lucide-react';
 import { FaEdit, FaTrash, FaTimes } from 'react-icons/fa';
 import axiosInstance from './../../utils/AxiosInstance';
 import AddMouvementModalEmploye from './AddMouvementModalEmploye';
@@ -60,6 +60,7 @@ const DemandeMouvement = () => {
       setLoadingMouvements(true);
       setErrorMouvements('');
       const response = await axiosInstance.get(`/api/mouvements/employe/${id}`);
+      console.log('Mouvements response:', response.data);
       const data = response?.data?.data || response?.data || [];
       setMouvements(Array.isArray(data) ? data : []);
     } catch (err) {
@@ -112,6 +113,28 @@ const DemandeMouvement = () => {
       'Non specifie';
   };
 
+  const getStatutBadge = (statut) => {
+    if (statut === undefined || statut === null) {
+      return <Badge bg="secondary">Inconnu</Badge>;
+    }
+    switch (statut) {
+      case 1:
+        return <Badge bg="warning">En attente</Badge>;
+      case 2:
+        return <Badge bg="info">Validé par Manager</Badge>;
+      case 3:
+        return <Badge bg="danger">Refusé par Manager</Badge>;
+      case 4:
+        return <Badge bg="success">Validé par RH</Badge>;
+      case 5:
+        return <Badge bg="danger">Refusé par RH</Badge>;
+      case 6:
+        return <Badge bg="secondary">Annulé par le demandeur</Badge>;
+      default:
+        return <Badge bg="secondary">Inconnu ({statut})</Badge>;
+    }
+  };
+
   const getPosteDemande = (mouvement) => {
     return mouvement?.infosProPropose?.poste?.nom ||
       mouvement?.infosProPropose?.poste?.libelle ||
@@ -124,9 +147,14 @@ const DemandeMouvement = () => {
       'Non specifie';
   };
 
-  const getTypeContratDemande = (mouvement) => {
-    return mouvement?.infosProPropose?.typeContrat?.libelle ||
-      mouvement?.infosProPropose?.typeContrat?.nom ||
+  const getTypeMouvementDemande = (mouvement) => {
+    return mouvement?.typeMouvement?.type ||
+      mouvement?.typeMouvement?.libelle ||
+      mouvement?.typeMouvement?.nom ||
+      mouvement?.type ||
+      mouvement?.motif ||
+      mouvement?.infosProPropose?.typeMouvement?.type ||
+      mouvement?.infosProPropose?.typeMouvement?.nom ||
       'Non specifie';
   };
 
@@ -175,7 +203,8 @@ const DemandeMouvement = () => {
           employe: { id: employeId },
           statut: 3,
           dateDebutAssignationPoste: editForm.dateDebutAssignationPoste,
-          poste: { id: editForm.nouveauPosteId }
+          poste: { id: editForm.nouveauPosteId },
+          salaireBase: editForm.salaireBase || null
         }
       };
 
@@ -270,7 +299,7 @@ const DemandeMouvement = () => {
                   onClick={() => setShowModal(true)}
                   disabled={!employeId}
                 >
-                  <ArrowUpRight size={16} />
+                  <span className="fw-bold">+</span>
                   Nouvelle demande
                 </Button>
                 {!employeId && (
@@ -300,63 +329,89 @@ const DemandeMouvement = () => {
               {mouvements.map((mouvement) => (
                 <Card key={mouvement.id || `${mouvement.typeMouvement?.id}-${mouvement.dateDemande}`} className="border">
                   <Card.Body className="py-3">
-                    <Row className="g-3 align-items-center">
-                      <Col md={4}>
-                        <div className="fw-semibold">{getTypeLabel(mouvement)}</div>
-                        <div className="text-muted small">Demande le: {formatDate(mouvement.dateDemande)}</div>
-                      </Col>
-                      <Col md={4}>
-                        <div className="text-muted small">Poste demande</div>
-                        <div className="small fw-semibold">{getPosteDemande(mouvement)}</div>
-                      </Col>
-                    </Row>
+                    {(() => {
+                      const canModify = mouvement?.statut === 1;
+                      return (
+                    <div>
+                      <Row className="g-3 align-items-center">
+                        <Col md={4}>
+                          <div className="fw-semibold">{getTypeLabel(mouvement)}</div>
+                          <div className="text-muted small">Demandé le: {formatDate(mouvement.dateDemande)}</div>
+                          <div className="mt-2">{getStatutBadge(mouvement.statut)}</div>
+                        </Col>
+                        <Col md={4}>
+                          <div className="text-muted small">Poste demandé</div>
+                          <div className="small fw-semibold">{getPosteDemande(mouvement)}</div>
+                        </Col>
+                      </Row>
 
                     <Row className="g-3 mt-2">
                       <Col md={4}>
-                        <div className="text-muted small">Departement demande</div>
+                        <div className="text-muted small">Département demandé</div>
                         <div className="small">{getDepartementDemande(mouvement)}</div>
                       </Col>
                       <Col md={4}>
-                        <div className="text-muted small">Type contrat demande</div>
-                        <div className="small">{getTypeContratDemande(mouvement)}</div>
+                        <div className="text-muted small">Type mouvement</div>
+                        <div className="small">{getTypeMouvementDemande(mouvement)}</div>
                       </Col>
                       <Col md={4}>
-                        <div className="text-muted small">Date debut assignation</div>
+                        <div className="text-muted small">Date début souhaitée</div>
                         <div className="small">{formatDate(mouvement?.infosProPropose?.dateDebutAssignationPoste)}</div>
                       </Col>
                     </Row>
 
-                    <Row className="g-3 mt-2">
-                      <Col md={4}>
+                      <Row className="g-3 mt-2">
+                      {/* <Col md={4}>
                         <div className="text-muted small">Poste actuel</div>
                         <div className="small">{getPosteActuel(mouvement)}</div>
                       </Col>
                       <Col md={4}>
-                        <div className="text-muted small">Departement actuel</div>
+                        <div className="text-muted small">Département actuel</div>
                         <div className="small">{getDepartementActuel(mouvement)}</div>
-                      </Col>
+                      </Col> */}
                       <Col md={4}>
                         <div className="text-muted small">Motif</div>
                         <div className="small">{mouvement.motif || 'Non specifie'}</div>
                       </Col>
-                    </Row>
+                      </Row>
 
-                    <Row className="g-3 mt-3">
+                      <Row className="g-3 mt-3">
                       <Col className="d-flex gap-2">
-                        <Button variant="outline-primary" size="sm" className="d-inline-flex align-items-center gap-2" onClick={() => openEditModal(mouvement)}>
+                        <Button
+                          variant="outline-primary"
+                          size="sm"
+                          className="d-inline-flex align-items-center gap-2"
+                          onClick={() => canModify && openEditModal(mouvement)}
+                          disabled={!canModify}
+                        >
                           <FaEdit />
                           Modifier
                         </Button>
-                        <Button variant="outline-warning" size="sm" className="d-inline-flex align-items-center gap-2" onClick={() => handleAnnuler(mouvement)}>
+                        <Button
+                          variant="outline-warning"
+                          size="sm"
+                          className="d-inline-flex align-items-center gap-2"
+                          onClick={() => canModify && handleAnnuler(mouvement)}
+                          disabled={!canModify}
+                        >
                           <FaTimes />
                           Annuler
                         </Button>
-                        <Button variant="outline-danger" size="sm" className="d-inline-flex align-items-center gap-2" onClick={() => handleSupprimer(mouvement)}>
+                        <Button
+                          variant="outline-danger"
+                          size="sm"
+                          className="d-inline-flex align-items-center gap-2"
+                          onClick={() => canModify && handleSupprimer(mouvement)}
+                          disabled={!canModify}
+                        >
                           <FaTrash />
                           Supprimer
                         </Button>
                       </Col>
-                    </Row>
+                      </Row>
+                    </div>
+                      );
+                    })()}
 
                   </Card.Body>
                 </Card>
@@ -367,7 +422,7 @@ const DemandeMouvement = () => {
       </Card>
 
       <Modal show={editModalOpen} onHide={() => setEditModalOpen(false)} centered>
-        <Modal.Header closeButton>
+        <Modal.Header closeButton closeLabel="Fermer">
           <Modal.Title>Modifier la demande</Modal.Title>
         </Modal.Header>
         <Modal.Body>
@@ -431,3 +486,4 @@ const DemandeMouvement = () => {
 };
 
 export default DemandeMouvement;
+

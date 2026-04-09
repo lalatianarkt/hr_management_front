@@ -47,6 +47,7 @@ export default function Sidebar() {
     if (
       path.startsWith('/dashboard-RH/employees') ||
       path.startsWith('/dashboard-RH/departements') ||
+      path.startsWith('/dashboard-RH/liste/poste') ||
       path.startsWith('/dashboard-RH/managers') ||
       path.startsWith('/dashboard-RH/présence') ||
       path.startsWith('/dashboard-RH/presence') ||
@@ -105,6 +106,7 @@ export default function Sidebar() {
                 <ul className="nav flex-column submenu">
                   <li><Link to="/dashboard-RH/employees" className={`nav-link small ${isActive('/dashboard-RH/employees') ? 'active' : ''}`}><Dot size={18} className="me-1" /> <span className="nav-label">Salariés</span></Link></li>
                   <li><Link to="/dashboard-RH/departements" className={`nav-link small ${isActive('/dashboard-RH/departements') ? 'active' : ''}`}><Dot size={18} className="me-1" /> <span className="nav-label">Départements</span></Link></li>
+                  <li><Link to="/dashboard-RH/liste/poste" className={`nav-link small ${isActive('/dashboard-RH/liste/poste') ? 'active' : ''}`}><Dot size={18} className="me-1" /> <span className="nav-label">Postes</span></Link></li>
                   <li><Link to="/dashboard-RH/managers" className={`nav-link small ${isActive('/dashboard-RH/managers') ? 'active' : ''}`}><Dot size={18} className="me-1" /> <span className="nav-label">Managers</span></Link></li>
                   <li><Link to="/dashboard-RH/présence" className={`nav-link small ${isActive('/dashboard-RH/présence') ? 'active' : ''}`}><Dot size={18} className="me-1" /> <span className="nav-label">Pointages</span></Link></li>
                   <li><Link to="/dashboard-RH/conge" className={`nav-link small ${isActive('/dashboard-RH/conge') ? 'active' : ''}`}><Dot size={18} className="me-1" /> <span className="nav-label">Congés</span></Link></li>

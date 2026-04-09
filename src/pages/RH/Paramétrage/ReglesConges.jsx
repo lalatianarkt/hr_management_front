@@ -284,7 +284,7 @@ const ReglesConges = ({ showNotification }) => {
 
       {/* Modal d'ajout/modification */}
       <Modal show={showModal} onHide={() => setShowModal(false)} size="lg">
-        <Modal.Header closeButton>
+        <Modal.Header closeButton closeLabel="Fermer">
           <Modal.Title>
             {editingRegle ? 'Modifier' : 'Ajouter'} une règle de congés
           </Modal.Title>
@@ -460,6 +460,7 @@ const ReglesConges = ({ showNotification }) => {
 };
 
 export default ReglesConges;
+
 
 
 

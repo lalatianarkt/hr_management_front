@@ -14,7 +14,8 @@ import {
   Alert,
   Badge,
   Dropdown,
-  Pagination
+  Pagination,
+  Modal
 } from 'react-bootstrap';
 import {
   Search,
@@ -49,6 +50,14 @@ function Pointages() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showFilters, setShowFilters] = useState(false);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [selectedPointage, setSelectedPointage] = useState(null);
+  const [pointageFilles, setPointageFilles] = useState([]);
+  const [loadingDetails, setLoadingDetails] = useState(false);
+  const [detailsError, setDetailsError] = useState('');
+  const [editingFilleId, setEditingFilleId] = useState(null);
+  const [editingDateTime, setEditingDateTime] = useState('');
+  const [editingComment, setEditingComment] = useState('');
 
   // États de pagination
   const [pagination, setPagination] = useState({
@@ -279,6 +288,109 @@ function Pointages() {
     });
   };
 
+  const formatDateTimeLocal = (dateTimeString) => {
+    if (!dateTimeString) return '';
+    const d = new Date(dateTimeString);
+    const pad = (n) => n.toString().padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  };
+
+  const formatDateTimeDisplay = (dateTimeString) => {
+    if (!dateTimeString) return '-';
+    return new Date(dateTimeString).toLocaleString('fr-FR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const getEntreeSortie = (items) => {
+    const entree = items.find((p) => p.typeAction === 'IN' || p.typeAction === 'DEB');
+    const sortie = [...items].reverse().find((p) => p.typeAction === 'OUT' || p.typeAction === 'END');
+    return {
+      entree: entree?.dateHeurePointage || null,
+      sortie: sortie?.dateHeurePointage || null
+    };
+  };
+
+  const handleOpenDetails = async (pointage) => {
+    setSelectedPointage(pointage);
+    setShowDetailsModal(true);
+    setDetailsError('');
+    setLoadingDetails(true);
+    setEditingFilleId(null);
+    setEditingDateTime('');
+    setEditingComment('');
+
+    try {
+    const response = await axiosInstance.get(
+      `/api/pointages-filles/employe/${pointage.idEmploye}/date/${pointage.datePointage}`
+    );
+      console.log("données : ", response.data);
+      setPointageFilles(response.data || []);
+    } catch (err) {
+      console.error('Erreur chargement détails pointage:', err);
+      setDetailsError("Erreur lors du chargement des détails du pointage");
+      setPointageFilles([]);
+    } finally {
+      setLoadingDetails(false);
+    }
+  };
+
+  const handleCloseDetails = () => {
+    setShowDetailsModal(false);
+    setSelectedPointage(null);
+    setPointageFilles([]);
+    setEditingFilleId(null);
+    setEditingDateTime('');
+    setEditingComment('');
+    setDetailsError('');
+  };
+
+  const handleStartEdit = (fille) => {
+    setEditingFilleId(fille.id);
+    setEditingDateTime(formatDateTimeLocal(fille.dateHeurePointage));
+    setEditingComment('');
+  };
+
+  const handleCancelEdit = () => {
+    setEditingFilleId(null);
+    setEditingDateTime('');
+    setEditingComment('');
+  };
+
+  const handleSaveEdit = async (fille) => {
+    if (!editingDateTime) return;
+    if (!editingComment || !editingComment.trim()) {
+      setDetailsError("Le commentaire est obligatoire pour modifier un pointage");
+      return;
+    }
+    try {
+      const payload = {
+        id: fille.id,
+        dateHeurePointage: editingDateTime,
+        typeAction: fille.typeAction,
+        source: fille.source,
+        commentaire: editingComment.trim()
+      };
+      await axiosInstance.put(`/api/pointages-filles/${fille.id}`, payload);
+
+      setPointageFilles((prev) =>
+        prev.map((p) =>
+          p.id === fille.id ? { ...p, dateHeurePointage: editingDateTime } : p
+        )
+      );
+      setEditingFilleId(null);
+      setEditingDateTime('');
+      setEditingComment('');
+    } catch (err) {
+      console.error('Erreur mise à jour pointage fille:', err);
+      setDetailsError("Erreur lors de la modification du pointage");
+    }
+  };
+
   // Calculer la durée travaillée
   const calculateWorkDuration = (heureArrivee, heureDepart) => {
     if (!heureArrivee || !heureDepart) return '-';
@@ -290,6 +402,56 @@ function Pointages() {
     const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
     
     return `${diffHrs}h ${diffMins}min`;
+  };
+
+  const handleExport = async () => {
+    try {
+      const params = {};
+      if (filters.matricule && filters.matricule.trim() !== '') params.matricule = filters.matricule.trim();
+      if (filters.startDate) params.startDate = filters.startDate;
+      if (filters.endDate) params.endDate = filters.endDate;
+      if (filters.idDepartement) params.idDepartement = filters.idDepartement;
+
+      const response = await axiosInstance.get('/api/v2/pointages/export', { params });
+      const rows = Array.isArray(response.data) ? response.data : [];
+
+      const header = [
+        'Matricule',
+        'Nom',
+        'Date',
+        'Duree_travaillee_min',
+        'Retard_min',
+        'Heures_sup_min',
+        'Departement'
+      ];
+
+      const csvRows = [
+        header.join(';'),
+        ...rows.map((p) => ([
+          p.matricule || '',
+          p.nomComplet || '',
+          p.datePointage || '',
+          p.dureeHeureTravaillee ?? '',
+          p.dureeRetard ?? '',
+          p.dureeHeureSup ?? '',
+          p.departementNom || ''
+        ].join(';')))
+      ];
+
+      const csvContent = csvRows.join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'pointages_export.csv');
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Erreur export pointages:', err);
+      setError("Erreur lors de l'export des pointages");
+    }
   };
 
   if (loading && pointages.length === 0) {
@@ -331,9 +493,9 @@ function Pointages() {
                 <span className="d-none d-sm-inline">Exporter</span>
               </Dropdown.Toggle>
               <Dropdown.Menu>
-                <Dropdown.Item onClick={() => window.open('/api/v2/pointages/export')}>
-                  Exporter les pointages
-                </Dropdown.Item>
+            <Dropdown.Item onClick={handleExport}>
+              Exporter les pointages
+            </Dropdown.Item>
               </Dropdown.Menu>
             </Dropdown>
           </div>
@@ -516,6 +678,7 @@ function Pointages() {
                   <th className="py-2">Durée</th>
                   <th className="py-2">Retard</th>
                   <th className="py-2">Heures sup.</th>
+                  <th className="py-2 text-end pe-3">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -566,11 +729,22 @@ function Pointages() {
                           <Badge bg="secondary">0 min</Badge>
                         )}
                       </td>
+                      <td className="py-2 text-end pe-3">
+                        <Button
+                          variant="outline-primary"
+                          size="sm"
+                          className="d-inline-flex align-items-center gap-1"
+                          onClick={() => handleOpenDetails(pointage)}
+                        >
+                          <Eye size={14} />
+                          Voir détails
+                        </Button>
+                      </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="6" className="text-center py-4">
+                    <td colSpan="7" className="text-center py-4">
                       <div className="d-flex flex-column align-items-center">
                         <FaInfoCircle size={24} className="text-muted mb-2" />
                         <small className="text-muted">Aucun pointage trouvé</small>
@@ -619,6 +793,154 @@ function Pointages() {
           </Card.Body>
         </Card>
       )}
+
+      {/* Modal Détails Pointage */}
+      <Modal show={showDetailsModal} onHide={handleCloseDetails} size="lg" centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Détails du pointage</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {selectedPointage && (
+            <div className="mb-3">
+              <div className="d-flex flex-wrap gap-3">
+                <div>
+                  <div className="small text-muted">Employé</div>
+                  <div className="fw-medium">{selectedPointage.nomComplet || '-'}</div>
+                </div>
+                <div>
+                  <div className="small text-muted">Matricule</div>
+                  <div className="fw-medium">{selectedPointage.matricule || '-'}</div>
+                </div>
+                <div>
+                  <div className="small text-muted">Date</div>
+                  <div className="fw-medium">{formatDate(selectedPointage.datePointage)}</div>
+                </div>
+                {(() => {
+                  const { entree, sortie } = getEntreeSortie(pointageFilles);
+                  return (
+                    <>
+                      <div>
+                        <div className="small text-muted">Heure d'entrée</div>
+                        <div className="fw-medium">{formatTime(entree)}</div>
+                      </div>
+                      <div>
+                        <div className="small text-muted">Heure de sortie</div>
+                        <div className="fw-medium">{formatTime(sortie)}</div>
+                      </div>
+                    </>
+                  );
+                })()}
+              </div>
+            </div>
+          )}
+
+          {detailsError && (
+            <Alert variant="danger" size="sm" className="mb-3">
+              {detailsError}
+            </Alert>
+          )}
+
+          {loadingDetails ? (
+            <div className="d-flex align-items-center gap-2">
+              <Spinner animation="border" size="sm" />
+              <span>Chargement des détails...</span>
+            </div>
+          ) : (
+            <div className="table-responsive">
+              <Table hover size="sm" className="mb-0">
+                <thead className="bg-light">
+                  <tr>
+                    <th>Type</th>
+                    <th>Date & Heure</th>
+                    <th>Source</th>
+                    <th className="text-end">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pointageFilles.length > 0 ? (
+                    pointageFilles.map((fille) => (
+                      <tr key={fille.id}>
+                        <td>
+                          <Badge bg={fille.typeAction === 'IN' ? 'success' : fille.typeAction === 'OUT' ? 'primary' : 'secondary'}>
+                            {fille.typeAction || '-'}
+                          </Badge>
+                        </td>
+                        <td>
+                          {editingFilleId === fille.id ? (
+                            <Form.Control
+                              type="datetime-local"
+                              size="sm"
+                              value={editingDateTime}
+                              onChange={(e) => setEditingDateTime(e.target.value)}
+                            />
+                          ) : (
+                            <span>{formatDateTimeDisplay(fille.dateHeurePointage)}</span>
+                          )}
+                        </td>
+                        <td>{fille.source || '-'}</td>
+                        <td className="text-end">
+                          {editingFilleId === fille.id ? (
+                            <div className="d-inline-flex gap-2">
+                              <Button
+                                variant="success"
+                                size="sm"
+                                onClick={() => handleSaveEdit(fille)}
+                              >
+                                Enregistrer
+                              </Button>
+                              <Button
+                                variant="outline-secondary"
+                                size="sm"
+                                onClick={handleCancelEdit}
+                              >
+                                Annuler
+                              </Button>
+                            </div>
+                          ) : (
+                            <Button
+                              variant="outline-primary"
+                              size="sm"
+                              onClick={() => handleStartEdit(fille)}
+                            >
+                              Modifier
+                            </Button>
+                          )}
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="4" className="text-center py-3">
+                        <small className="text-muted">Aucun détail disponible</small>
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </Table>
+            </div>
+          )}
+
+          {editingFilleId && (
+            <div className="mt-3">
+              <Form.Group>
+                <Form.Label className="fw-medium">Commentaire de modification (obligatoire)</Form.Label>
+                <Form.Control
+                  as="textarea"
+                  rows={2}
+                  value={editingComment}
+                  onChange={(e) => setEditingComment(e.target.value)}
+                  placeholder="Ex: Correction de l'heure de sortie"
+                />
+              </Form.Group>
+            </div>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={handleCloseDetails}>
+            Fermer
+          </Button>
+        </Modal.Footer>
+      </Modal>
 
       <style jsx>{`
         .pagination {

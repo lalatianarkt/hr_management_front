@@ -97,7 +97,9 @@ function Employees() {
     nb_departement: 0,
     nb_contrat_cdi: 0,
     nb_contrat_cdd: 0,
+    nb_contrat_autre: 0,
     nb_employe: 0,
+    nb_employe_inactif: 0,
     nb_poste: 0,
     nb_employes_en_conges: 0,
     nb_competences_employes: 0,
@@ -113,7 +115,7 @@ function Employees() {
     departement: '',
     poste: '',
     typeContrat: '',
-    statutId: '',
+    statutId: '0',
     managerFilter: ''
   });
 
@@ -222,7 +224,8 @@ function Employees() {
 
   // Charger initialement
   useEffect(() => {
-    fetchEmployees();
+    // Charger par défaut les employés actifs
+    handleSearchSubmit();
     fetchFilterData();
   }, []);
 
@@ -469,7 +472,7 @@ function Employees() {
       departement: '',
       poste: '',
       typeContrat: '',
-      statutId: '',
+      statutId: '0',
       managerFilter: ''
     });
     fetchEmployees(0, pagination.pageSize, pagination.sortBy, pagination.direction);
@@ -733,66 +736,102 @@ function Employees() {
       {/* Statistiques */}
       <Row className="mb-4">
         <Col>
-          <div className="d-flex flex-wrap gap-3">
-            <div className="stat-card bg-primary bg-opacity-10 border-start border-primary border-3">
-              <div className="d-flex align-items-center">
-                <div className="stat-icon bg-primary bg-opacity-25 p-2 rounded me-3">
-                  <Users size={20} className="text-primary" />
-                </div>
-                <div>
-                  <div className="stat-value h4 mb-0 fw-bold">{statistiques.nb_employe || 0}</div>
-                  <div className="stat-label text-muted small">Employés</div>
-                </div>
-              </div>
-            </div>
-
-            <div className="stat-card bg-secondary bg-opacity-10 border-start border-secondary border-3">
-              <div className="d-flex align-items-center">
-                <div className="stat-icon bg-secondary bg-opacity-25 p-2 rounded me-3">
-                  <Briefcase size={20} className="text-secondary" />
-                </div>
-                <div>
-                  <div className="stat-value h4 mb-0 fw-bold">{statistiques.nb_departement || 0}</div>
-                  <div className="stat-label text-muted small">Départements</div>
+          <div className="kpi-row">
+            <div className="kpi-col">
+              <div className="stat-card kpi-card bg-primary bg-opacity-10 border-start border-primary border-3 h-100">
+                <div className="d-flex align-items-center">
+                  <div className="stat-icon bg-primary bg-opacity-25 p-2 rounded me-3">
+                    <Users size={20} className="text-primary" />
+                  </div>
+                  <div>
+                    <div className="stat-value h4 mb-0 fw-bold">{statistiques.nb_employe || 0}</div>
+                    <div className="stat-label text-muted small">Employés actifs</div>
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div className="stat-card bg-primary bg-opacity-10 border-start border-primary border-3">
-              <div className="d-flex align-items-center">
-                <div className="stat-icon bg-primary bg-opacity-25 p-2 rounded me-3">
-                  <UserCheck size={20} className="text-primary" />
-                </div>
-                <div>
-                  <div className="stat-value h4 mb-0 fw-bold">{statistiques.nb_manager || 0}</div>
-                  <div className="stat-label text-muted small">Managers</div>
-                </div>
-              </div>
-            </div>
-
-            <div className="stat-card bg-warning bg-opacity-10 border-start border-warning border-3">
-              <div className="d-flex align-items-center">
-                <div className="stat-icon bg-warning bg-opacity-25 p-2 rounded me-3">
-                  <Award size={20} className="text-warning" />
-                </div>
-                <div>
-                  <div className="stat-value h4 mb-0 fw-bold">{statistiques.nb_poste || 0}</div>
-                  <div className="stat-label text-muted small">Postes</div>
+            <div className="kpi-col">
+              <div className="stat-card kpi-card bg-danger bg-opacity-10 border-start border-danger border-3 h-100">
+                <div className="d-flex align-items-center">
+                  <div className="stat-icon bg-danger bg-opacity-25 p-2 rounded me-3">
+                    <X size={20} className="text-danger" />
+                  </div>
+                  <div>
+                    <div className="stat-value h4 mb-0 fw-bold">{statistiques.nb_employe_inactif || 0}</div>
+                    <div className="stat-label text-muted small">Employés inactifs</div>
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* <div className="stat-card bg-danger bg-opacity-10 border-start border-danger border-3">
-              <div className="d-flex align-items-center">
-                <div className="stat-icon bg-danger bg-opacity-25 p-2 rounded me-3">
-                  <Calendar size={20} className="text-danger" />
-                </div>
-                <div>
-                  <div className="stat-value h4 mb-0 fw-bold">{statistiques.nb_employes_en_conges || 0}</div>
-                  <div className="stat-label text-muted small">En congés</div>
+            <div className="kpi-col">
+              <div className="stat-card kpi-card bg-secondary bg-opacity-10 border-start border-secondary border-3 h-100">
+                <div className="d-flex align-items-center">
+                  <div className="stat-icon bg-secondary bg-opacity-25 p-2 rounded me-3">
+                    <Briefcase size={20} className="text-secondary" />
+                  </div>
+                  <div>
+                    <div className="stat-value h4 mb-0 fw-bold">{statistiques.nb_departement || 0}</div>
+                    <div className="stat-label text-muted small">Départements</div>
+                  </div>
                 </div>
               </div>
-            </div> */}
+            </div>
+
+            <div className="kpi-col">
+              <div className="stat-card kpi-card bg-primary bg-opacity-10 border-start border-primary border-3 h-100">
+                <div className="d-flex align-items-center">
+                  <div className="stat-icon bg-primary bg-opacity-25 p-2 rounded me-3">
+                    <UserCheck size={20} className="text-primary" />
+                  </div>
+                  <div>
+                    <div className="stat-value h4 mb-0 fw-bold">{statistiques.nb_manager || 0}</div>
+                    <div className="stat-label text-muted small">Managers</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="kpi-col">
+              <div className="stat-card kpi-card bg-warning bg-opacity-10 border-start border-warning border-3 h-100">
+                <div className="d-flex align-items-center">
+                  <div className="stat-icon bg-warning bg-opacity-25 p-2 rounded me-3">
+                    <Award size={20} className="text-warning" />
+                  </div>
+                  <div>
+                    <div className="stat-value h4 mb-0 fw-bold">{statistiques.nb_poste || 0}</div>
+                    <div className="stat-label text-muted small">Postes</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="kpi-col">
+              <div className="stat-card kpi-card kpi-contracts bg-light border-start border-3 h-100">
+                <div className="d-flex align-items-center kpi-contracts-header">
+                  <div className="stat-icon bg-light p-2 rounded me-2">
+                    <Award size={16} className="text-muted" />
+                  </div>
+                  <div className="stat-label text-muted small">Contrats</div>
+                </div>
+                <div className="kpi-contracts-grid">
+                  <div className="kpi-contracts-col">
+                    <div className="kpi-contracts-label">CDI</div>
+                    <div className="kpi-contracts-value">{statistiques.nb_contrat_cdi || 0}</div>
+                  </div>
+                  <div className="kpi-contracts-col">
+                    <div className="kpi-contracts-label">CDD</div>
+                    <div className="kpi-contracts-value">{statistiques.nb_contrat_cdd || 0}</div>
+                  </div>
+                  <div className="kpi-contracts-col">
+                    <div className="kpi-contracts-label">Autres</div>
+                    <div className="kpi-contracts-value">{statistiques.nb_contrat_autre || 0}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
           </div>
         </Col>
       </Row>
@@ -910,6 +949,26 @@ function Employees() {
 
               <Col xs={12} sm={6} md={4} lg={2}>
                 <Form.Group>
+                  <Form.Label className="small fw-medium mb-1">Statut</Form.Label>
+                  <InputGroup size="sm">
+                    <InputGroup.Text className="bg-light">
+                      <FaCheckCircle size={14} />
+                    </InputGroup.Text>
+                    <Form.Select
+                      value={filters.statutId || ''}
+                      onChange={(e) => handleFilterChange('statutId', e.target.value)}
+                      size="sm"
+                    >
+                      <option value="">Tous les statuts</option>
+                      <option value="0">Actif</option>
+                      <option value="2">Inactif</option>
+                    </Form.Select>
+                  </InputGroup>
+                </Form.Group>
+              </Col>
+
+              <Col xs={12} sm={6} md={4} lg={2}>
+                <Form.Group>
                   <Form.Label className="small fw-medium mb-1">Fonction</Form.Label>
                   <InputGroup size="sm">
                     <InputGroup.Text className="bg-light">
@@ -936,6 +995,11 @@ function Employees() {
                 {filters.managerFilter && (
                   <span className="ms-2 text-primary">
                     ({filters.managerFilter === 'manager' ? 'Managers uniquement' : 'Employés uniquement'})
+                  </span>
+                )}
+                {filters.statutId && (
+                  <span className="ms-2 text-primary">
+                    ({filters.statutId === '0' ? 'Actifs uniquement' : 'Inactifs uniquement'})
                   </span>
                 )}
               </div>
@@ -1006,20 +1070,22 @@ function Employees() {
             <Table hover size="sm" className="mb-0">
               <thead className="bg-light">
                 <tr>
+                  <th className="py-2 ps-3">Matricule</th>
                   <th 
-                    className="py-2 ps-3" 
+                    className="py-2" 
                     style={{ cursor: 'pointer' }}
                     onClick={() => handleSort('nom')}
                   >
                     Nom
                     {pagination.sortBy === 'nom' && (
-                      <span className="ms-1">{pagination.direction === 'asc' ? '↑' : '↓'}</span>
+                      <span className="ms-1">{pagination.direction === 'asc' ? '^' : 'v'}</span>
                     )}
                   </th>
-                  <th className="py-2">Départ</th>
+                  <th className="py-2">Département</th>
                   <th className="py-2">Poste</th>
                   <th className="py-2">Contrat</th>
                   <th className="py-2">Salaire</th>
+                  <th className="py-2 text-center">Fonction</th>
                   <th className="py-2 text-center">Statut</th>
                   <th className="py-2 pe-3 text-center">Actions</th>
                 </tr>
@@ -1047,14 +1113,21 @@ function Employees() {
                     
                     const salaire = infosPro.salaireBase || 0;
                     const isManager = empDto.manager || false;
+                    const rawStatutId = employe.statutId ?? employe.statut ?? empDto.statutId ?? empDto.statut ?? infosPro.statutId ?? null;
+                    const statutValue = rawStatutId !== null && rawStatutId !== undefined && rawStatutId !== '' ? Number(rawStatutId) : null;
+                    const statutBadge = statutValue === 0
+                      ? <Badge bg="success">Actif</Badge>
+                      : statutValue === 2
+                        ? <Badge bg="secondary">Inactif</Badge>
+                        : <Badge bg="light" text="dark">-</Badge>;
                     
                     return (
                       <tr key={employe.id}>
                         <td className="py-2 ps-3">
-                          <div>
-                            <div className="fw-medium">{employe.nom} {employe.prenom}</div>
-                            <small className="text-muted">{infosPro.matricule || '-'}</small>
-                          </div>
+                          <small className="text-muted fw-medium">{infosPro.matricule || '-'}</small>
+                        </td>
+                        <td className="py-2">
+                          <div className="fw-medium">{employe.nom} {employe.prenom}</div>
                         </td>
                         <td className="py-2">
                           <small>{departement}</small>
@@ -1080,6 +1153,9 @@ function Employees() {
                               <span>Employé</span>
                             </Badge>
                           )}
+                        </td>
+                        <td className="py-2 text-center">
+                          {statutBadge}
                         </td>
 
                         <td className="py-2 pe-3 text-end">
@@ -1140,7 +1216,7 @@ function Employees() {
                   })
                 ) : (
                   <tr>
-                    <td colSpan="7" className="text-center py-4">
+                    <td colSpan="9" className="text-center py-4">
                       <div className="d-flex flex-column align-items-center">
                         <Search size={24} className="text-muted mb-2" />
                         <small className="text-muted">Aucun employé trouvé</small>
@@ -1274,7 +1350,7 @@ function Employees() {
 
       {/* Modal d'affectation manager */}
       <Modal show={showManagerModal} onHide={handleCancelManager} centered size="lg">
-        <Modal.Header closeButton className="bg-success text-white">
+        <Modal.Header closeButton closeLabel="Fermer" className="bg-success text-white">
           <Modal.Title className="d-flex align-items-center">
             <FaUserTie className="me-2" />
             Promouvoir en Manager
@@ -1486,9 +1562,23 @@ function Employees() {
         .pagination { margin-bottom: 0; }
         .pagination .page-item { margin: 0 2px; }
         .pagination .page-link { border-radius: 4px; padding: 0.25rem 0.5rem; font-size: 0.875rem; }
+        .kpi-row { display: flex; gap: 6px; flex-wrap: nowrap; overflow: hidden; align-items: stretch; }
+        .kpi-col { flex: 1 1 0; min-width: 90px; }
+        .kpi-card { padding: 0.3rem 0.4rem; min-height: 10px; }
+        .kpi-card .stat-value { font-size: 0.85rem; line-height: 1.05; }
+        .kpi-card .stat-label { font-size: 0.58rem; letter-spacing: 0.2px; }
+        .kpi-card .stat-icon { padding: 0.2rem !important; }
+        .kpi-card svg { width: 12px; height: 12px; }
+        .kpi-contracts { padding-top: 0.2rem; min-width: 120px; }
+        .kpi-contracts-header { margin-bottom: 0.15rem; }
+        .kpi-contracts-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px; text-align: center; }
+        .kpi-contracts-col { background: #f8f4f8; border-radius: 5px; padding: 3px 3px; border: 1px solid #ead7e7; }
+        .kpi-contracts-label { font-size: 0.52rem; color: #6b5a6a; text-transform: uppercase; letter-spacing: 0.3px; }
+        .kpi-contracts-value { font-size: 0.72rem; font-weight: 700; color: #3a1438; }
       `}</style>
     </Container>
   );
 }
 
 export default Employees;
+

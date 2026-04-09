@@ -934,7 +934,7 @@ function AddEmployeeModal({ show, onHide, onSuccess, refreshEmployees }) {
 
   return (
     <Modal show={show} onHide={onHide} size="xl" centered backdrop="static">
-      <Modal.Header closeButton className="border-bottom">
+      <Modal.Header closeButton closeLabel="Fermer" className="border-bottom">
         <Modal.Title className="d-flex align-items-center gap-2">
           <PersonFill className="text-primary" />
           <span>Ajouter un nouvel employé</span>

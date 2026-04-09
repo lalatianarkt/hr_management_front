@@ -368,7 +368,7 @@
 }
 
 .submenu .nav-link.active {
-  background: rgba(97, 18, 202, 0.05);
+  background: rgba(176, 83, 173, 0.12);
   color: var(--bg-primary);
   border-left: 3px solid var(--bg-primary);
   box-shadow: none;
@@ -380,7 +380,7 @@
   margin-bottom: 1rem;
   padding-top: 1rem;
   border-top: 1px solid #e1b2db;
-  color: #ef4444 !important;
+  color: #d36a5a !important;
 }
 
 .section-open {
@@ -432,6 +432,21 @@
   background: rgba(255, 255, 255, 0.1);
   border-radius: 50%;
   filter: blur(50px);
+}
+
+/* Bulletin Paie hero card: keep intended gradient background */
+.bulletin-hero-card {
+  background: var(--bg-gradient) !important;
+  color: #ffffff !important;
+  background-image: none !important;
+}
+
+/* Bulletin Paie hero action button: improve contrast on gradient */
+.bulletin-hero-action {
+  background: #ffffff !important;
+  color: #3a1438 !important;
+  border: 1px solid rgba(255, 255, 255, 0.7) !important;
+  box-shadow: 0 6px 16px rgba(58, 20, 56, 0.18) !important;
 }
 
 .kpi-card-premium {
@@ -714,6 +729,22 @@ small,
 .modal-header .btn-close {
   filter: brightness(0) invert(1) !important;
   opacity: 1 !important;
+  color: inherit;
+  width: auto;
+  height: auto;
+  padding: 0.25rem 0.5rem 0.25rem 1.6rem;
+  background-position: left 0.5rem center;
+  background-size: 1rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.modal-header .btn-close::after {
+  content: attr(aria-label);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: inherit;
 }
 
 .modal-body {

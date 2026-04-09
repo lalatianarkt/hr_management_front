@@ -714,7 +714,7 @@ const AbsenceConge = () => {
 
       {/* Modal Détails de l'absence/congé */}
       <Modal show={showDetailsModal} onHide={() => setShowDetailsModal(false)}>
-        <Modal.Header closeButton className="bg-primary text-white">
+        <Modal.Header closeButton closeLabel="Fermer" className="bg-primary text-white">
           <Modal.Title>
             {selectedAbsence && getTypeIcon(selectedAbsence.typeAbsence)}
             <span className="ms-2">

@@ -507,7 +507,7 @@ const ManagerList = () => {
 
       {/* Modal de confirmation */}
       <Modal show={showConfirmModal} onHide={() => setShowConfirmModal(false)}>
-        <Modal.Header closeButton>
+        <Modal.Header closeButton closeLabel="Fermer">
           <Modal.Title>
             {actionType === 'archive' ? 'Archiver le manager' : 'Réactiver le manager'}
           </Modal.Title>
@@ -540,3 +540,4 @@ const ManagerList = () => {
 };
 
 export default ManagerList;
+

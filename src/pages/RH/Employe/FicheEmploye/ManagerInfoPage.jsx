@@ -1,7 +1,7 @@
 // ManagerInfoPage.jsx
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import axiosInstance from '../../../utils/AxiosInstance';
 import {
   Container,
   Row,
@@ -56,13 +56,13 @@ const ManagerInfoPage = () => {
     
     try {
       // Récupérer les détails du manager
-      const response = await axios.get(`http://localhost:8080/api/managers/${idManager}`);
+      const response = await axiosInstance.get(`/api/managers/${idManager}`);
       setManager(response.data);
       
       // Si le manager a un employé associé, récupérer ses infos
       if (response.data.employe?.id) {
         try {
-          const employeResponse = await axios.get(`http://localhost:8080/api/employes/${response.data.employe.id}`);
+          const employeResponse = await axiosInstance.get(`/api/employes/${response.data.employe.id}`);
           setEmployeInfo(employeResponse.data);
         } catch (error) {
           console.warn("Impossible de récupérer les détails de l'employé:", error);
@@ -179,23 +179,23 @@ const ManagerInfoPage = () => {
   return (
     <Container fluid className="py-4">
       {/* Breadcrumb et navigation */}
-      <Breadcrumb className="mb-4">
+      {/* <Breadcrumb className="mb-4">
         <Breadcrumb.Item href="/dashboard-RH">Tableau de bord</Breadcrumb.Item>
         <Breadcrumb.Item href="/dashboard-RH/employees">Employés</Breadcrumb.Item>
         <Breadcrumb.Item active>Manager {idManager}</Breadcrumb.Item>
-      </Breadcrumb>
+      </Breadcrumb> */}
 
       {/* En-tête */}
       <Row className="mb-4 align-items-center">
         <Col>
           <div className="d-flex align-items-center gap-3">
-            {/* <Button 
+            <Button 
               variant="outline-secondary" 
               onClick={() => navigate(-1)}
               className="d-flex align-items-center gap-2"
             >
               <ChevronLeft /> Retour
-            </Button> */}
+            </Button>
             <div>
               <h1 className="h2 mb-2 fw-bold">Fiche du Manager</h1>
               <div className="d-flex align-items-center gap-3 flex-wrap">
@@ -221,7 +221,9 @@ const ManagerInfoPage = () => {
           <Button 
             variant="outline-primary" 
             className="d-flex align-items-center gap-2"
-            onClick={() => window.open(`http://localhost:8080/api/export/manager/${idManager}`)}
+            onClick={() => {
+              window.location.href = `${axiosInstance.defaults?.baseURL || ''}/api/export/manager/${idManager}`;
+            }}
           >
             <Download /> Exporter en PDF
           </Button>
@@ -464,7 +466,7 @@ const ManagerInfoPage = () => {
       </Row>
 
       {/* Informations système */}
-      <Row className="mt-4">
+      {/* <Row className="mt-4">
         <Col>
           <Card className="border-0 shadow-sm">
             <Card.Header className="bg-light py-3">
@@ -484,12 +486,6 @@ const ManagerInfoPage = () => {
                   <div className="mb-3">
                     <small className="text-muted">Créé le:</small>
                     <p className="fw-semibold mb-0">{formatDate(manager.createdAt)}</p>
-                  </div>
-                </Col>
-                <Col md={4}>
-                  <div className="mb-3">
-                    <small className="text-muted">Modifié le:</small>
-                    <p className="fw-semibold mb-0">{formatDate(manager.modifiedAt)}</p>
                   </div>
                 </Col>
               </Row>
@@ -518,15 +514,7 @@ const ManagerInfoPage = () => {
               </Row>
             </Card.Body>
             <Card.Footer className="bg-light border-0 py-3">
-              <div className="d-flex justify-content-between">
-                <Button 
-                  variant="outline-secondary" 
-                  onClick={() => navigate(-1)}
-                  className="d-flex align-items-center gap-2"
-                >
-                  <ChevronLeft /> Retour
-                </Button>
-                
+              <div className="d-flex justify-content-end">
                 {manager.employe?.id && (
                   <Button 
                     variant="primary"
@@ -541,7 +529,7 @@ const ManagerInfoPage = () => {
             </Card.Footer>
           </Card>
         </Col>
-      </Row>
+      </Row> */}
     </Container>
   );
 };

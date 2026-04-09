@@ -334,7 +334,7 @@ const BaseIrsa = ({ showNotification }) => {
 
       {/* Modal d'ajout/modification */}
       <Modal show={showModal} onHide={() => setShowModal(false)}>
-        <Modal.Header closeButton>
+        <Modal.Header closeButton closeLabel="Fermer">
           <Modal.Title>
             {editingTranche ? 'Modifier' : 'Ajouter'} une tranche IRSA
           </Modal.Title>
@@ -420,7 +420,7 @@ const BaseIrsa = ({ showNotification }) => {
 
       {/* Modal de calcul IRSA */}
       <Modal show={showCalculateModal} onHide={() => setShowCalculateModal(false)}>
-        <Modal.Header closeButton>
+        <Modal.Header closeButton closeLabel="Fermer">
           <Modal.Title>Calculer l'IRSA</Modal.Title>
         </Modal.Header>
         <Modal.Body>

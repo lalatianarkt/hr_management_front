@@ -336,7 +336,7 @@ const AssignManagerModal = ({ show, onHide, onSuccess }) => {
 
   return (
     <Modal show={show} onHide={onHide} size="lg" centered>
-      <Modal.Header closeButton style={{ background: 'var(--bg-gradient)', color: 'white', borderBottom: 'none' }}>
+      <Modal.Header closeButton closeLabel="Fermer" style={{ background: 'var(--bg-gradient)', color: 'white', borderBottom: 'none' }}>
         <Modal.Title>
           <FaUser className="me-2" />
           Affecter un Manager
@@ -628,3 +628,4 @@ const AssignManagerModal = ({ show, onHide, onSuccess }) => {
 };
 
 export default AssignManagerModal;
+

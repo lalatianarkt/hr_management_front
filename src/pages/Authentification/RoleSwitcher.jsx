@@ -26,14 +26,16 @@ function RoleSwitcher() {
     }
     
     setLoading(true);
-    
+    console.log("roleType sélectionné:", roleType);
+    console.log("currentRole avant switch:", currentRole);
+    console.log("token avant switch:", sessionStorage.getItem('token'));
+
     try {
       const token = sessionStorage.getItem('token');
-      const userId = sessionStorage.getItem('userId');
       
       const response = await axios.post(
         'http://localhost:8080/api/users/switch-role',
-        { userId, roleType },
+        { roleType },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       

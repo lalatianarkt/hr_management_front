@@ -1,6 +1,6 @@
 // src/pages/RH/Mouvements/MouvementsEmploye.jsx
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import {
   Container,
   Row,
@@ -14,10 +14,7 @@ import {
   Spinner,
   Alert,
   Modal,
-  Dropdown,
-  DropdownButton,
   Pagination,
-  Breadcrumb,
   Tabs,
   Tab
 } from 'react-bootstrap';
@@ -53,7 +50,8 @@ import {
   FaMoneyBillWave,
   FaCoins,
   FaChartLine,
-  FaInfoCircle
+  FaInfoCircle,
+  FaDotCircle
 } from 'react-icons/fa';
 import axiosInstance from '../../../utils/AxiosInstance';
 import { format } from 'date-fns';
@@ -96,7 +94,7 @@ const MouvementsEmploye = () => {
   const [showAddModal, setShowAddModal] = useState(false);
 
   // État pour les onglets
-  const [activeTab, setActiveTab] = useState('all'); // 'all', 'validated', 'pending'
+  const [activeTab, setActiveTab] = useState('all');
 
   // Charger les données initiales
   useEffect(() => {
@@ -108,7 +106,7 @@ const MouvementsEmploye = () => {
   }, [id]);
 
   // Charger les mouvements de l'employé spécifique
-  const fetchMouvementsEmploye = async () => {
+  const fetchMouvementsEmploye = useCallback(async () => {
     if (!id) return;
     
     setLoading(true);
@@ -133,10 +131,10 @@ const MouvementsEmploye = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
 
   // Charger les informations de l'employé
-  const fetchEmploye = async () => {
+  const fetchEmploye = useCallback(async () => {
     if (!id) return;
     
     setLoadingEmploye(true);
@@ -149,10 +147,10 @@ const MouvementsEmploye = () => {
     } finally {
       setLoadingEmploye(false);
     }
-  };
+  }, [id]);
 
   // Charger les types de mouvement
-  const fetchTypesMouvement = async () => {
+  const fetchTypesMouvement = useCallback(async () => {
     try {
       const response = await axiosInstance.get('/api/type-mouvements');
       console.log("Types de mouvement:", response.data);
@@ -172,17 +170,21 @@ const MouvementsEmploye = () => {
     } catch (err) {
       console.error('Erreur lors du chargement des types de mouvement:', err);
     }
-  };
+  }, []);
 
   // Filtrer les mouvements
   useEffect(() => {
-    let result = mouvements;
+    let result = [...mouvements];
     
     // Filtrer par onglet
     if (activeTab === 'validated') {
-      result = result.filter(mvt => mvt && mvt.statut === 2); // Validés seulement
+      result = result.filter(mvt => mvt && mvt.statut === 2);
     } else if (activeTab === 'pending') {
-      result = result.filter(mvt => mvt && mvt.statut === 1); // En attente seulement
+      result = result.filter(mvt => mvt && mvt.statut === 1);
+    } else if (activeTab === 'applied') {
+      result = result.filter(mvt => mvt && mvt.statut === 3);
+    } else if (activeTab === 'rejected') {
+      result = result.filter(mvt => mvt && mvt.statut === 0);
     }
     
     // Filtrer par recherche
@@ -201,18 +203,18 @@ const MouvementsEmploye = () => {
     }
     
     // Filtrer par statut (si différent de l'onglet)
-    if (statutFilter !== 'all') {
+    if (statutFilter !== 'all' && activeTab === 'all') {
       const statutValue = parseInt(statutFilter);
       result = result.filter(mvt => mvt && mvt.statut === statutValue);
     }
     
     // Filtrer par type
     if (typeFilter !== 'all') {
-      result = result.filter(mvt => mvt && mvt.typeMouvement?.id === typeFilter);
+      result = result.filter(mvt => mvt && mvt.typeMouvement?.id === parseInt(typeFilter));
     }
     
     setFilteredMouvements(result);
-    setCurrentPage(1); // Retour à la première page après filtrage
+    setCurrentPage(1);
   }, [searchTerm, statutFilter, typeFilter, mouvements, activeTab]);
 
   // Formater la date
@@ -242,16 +244,16 @@ const MouvementsEmploye = () => {
     }
     
     switch (statut) {
-      case 1: // En attente
-        return <Badge bg="warning">En attente</Badge>;
-      case 2: // Validé
-        return <Badge bg="success">Validé</Badge>;
-      case 3: // Appliqué
-        return <Badge bg="info">Appliqué</Badge>;
-      case 0: // Rejeté
-        return <Badge bg="danger">Rejeté</Badge>;
+      case 1:
+        return <Badge bg="warning" className="px-3 py-2">En attente</Badge>;
+      case 2:
+        return <Badge bg="success" className="px-3 py-2">Validé</Badge>;
+      case 3:
+        return <Badge bg="info" className="px-3 py-2">Appliqué</Badge>;
+      case 0:
+        return <Badge bg="danger" className="px-3 py-2">Rejeté</Badge>;
       default:
-        return <Badge bg="secondary">Inconnu ({statut})</Badge>;
+        return <Badge bg="secondary" className="px-3 py-2">Inconnu ({statut})</Badge>;
     }
   };
 
@@ -380,7 +382,7 @@ const MouvementsEmploye = () => {
     try {
       const dataToSend = {
         statut: status,
-        commentaire: commentaire || `Mouvement ${status === 2 ? 'validé' : 'rejeté'}`,
+        commentaire: commentaire || `Mouvement ${status === 2 ? 'validé' : status === 0 ? 'rejeté' : 'mis à jour'}`,
         dateValidation: new Date().toISOString().split('T')[0]
       };
 
@@ -388,13 +390,30 @@ const MouvementsEmploye = () => {
       
       await axiosInstance.put(`/api/mouvements/${selectedMouvement.id}/validation`, dataToSend);
       
-      setSuccessMessage(`Mouvement ${status === 2 ? 'validé' : 'rejeté'} avec succès!`);
-      fetchMouvementsEmploye(); // Rafraîchir la liste
+      setSuccessMessage(`Mouvement ${status === 2 ? 'validé' : status === 0 ? 'rejeté' : 'mis à jour'} avec succès!`);
+      await fetchMouvementsEmploye();
       setShowValidationModal(false);
+      setSelectedMouvement(null);
       
       setTimeout(() => setSuccessMessage(''), 3000);
     } catch (err) {
       setError('Erreur lors de la validation du mouvement');
+      console.error('Erreur:', err);
+    }
+  };
+
+  // Appliquer un mouvement validé
+  const handleApplyMouvement = async (mouvement) => {
+    if (!mouvement || mouvement.statut !== 2) return;
+    
+    try {
+      await axiosInstance.post(`/api/mouvements/${mouvement.id}/apply`);
+      setSuccessMessage('Mouvement appliqué avec succès!');
+      await fetchMouvementsEmploye();
+      
+      setTimeout(() => setSuccessMessage(''), 3000);
+    } catch (err) {
+      setError('Erreur lors de l\'application du mouvement');
       console.error('Erreur:', err);
     }
   };
@@ -406,8 +425,9 @@ const MouvementsEmploye = () => {
     try {
       await axiosInstance.delete(`/api/mouvements/${selectedMouvement.id}`);
       setSuccessMessage('Mouvement supprimé avec succès!');
-      fetchMouvementsEmploye(); // Rafraîchir la liste
+      await fetchMouvementsEmploye();
       setShowDeleteModal(false);
+      setSelectedMouvement(null);
       
       setTimeout(() => setSuccessMessage(''), 3000);
     } catch (err) {
@@ -430,7 +450,7 @@ const MouvementsEmploye = () => {
   };
 
   // Statistiques
-  const getStats = () => {
+  const stats = useMemo(() => {
     const total = mouvements.length;
     const enAttente = mouvements.filter(m => m && m.statut === 1).length;
     const valides = mouvements.filter(m => m && m.statut === 2).length;
@@ -438,9 +458,7 @@ const MouvementsEmploye = () => {
     const rejetes = mouvements.filter(m => m && m.statut === 0).length;
     
     return { total, enAttente, valides, appliques, rejetes };
-  };
-
-  const stats = getStats();
+  }, [mouvements]);
 
   // Redirection si pas d'ID
   if (!id) {
@@ -468,182 +486,296 @@ const MouvementsEmploye = () => {
 
   return (
     <Container fluid className="py-4">
-      {/* Fil d'Ariane */}
-      <Breadcrumb className="mb-4">
-        <Breadcrumb.Item linkAs={Link} linkProps={{ to: '/api/employes' }}>
-          <FaUser className="me-1" />
-          Employés
-        </Breadcrumb.Item>
-        {employe && (
-          <Breadcrumb.Item linkAs={Link} linkProps={{ to: `/api/employes/${id}` }}>
-            {employe.nom} {employe.prenom}
-          </Breadcrumb.Item>
-        )}
-        <Breadcrumb.Item active>
-          <FaHistory className="me-1" />
-          Historique des Mouvements
-        </Breadcrumb.Item>
-      </Breadcrumb>
+      {/* Styles CSS améliorés */}
+      <style>{`
+        .stat-card {
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          border-radius: 15px;
+          padding: 1rem;
+          color: white;
+          transition: transform 0.3s ease, box-shadow 0.3s ease;
+          cursor: pointer;
+        }
+        
+        .stat-card:hover {
+          transform: translateY(-5px);
+          box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+        
+        .stat-card .stat-icon {
+          font-size: 2rem;
+          opacity: 0.8;
+          margin-bottom: 0.5rem;
+        }
+        
+        .stat-card .stat-value {
+          font-size: 1.8rem;
+          font-weight: bold;
+          line-height: 1;
+        }
+        
+        .stat-card .stat-label {
+          font-size: 0.85rem;
+          opacity: 0.9;
+          text-transform: uppercase;
+          letter-spacing: 1px;
+        }
+        
+        .table th {
+          font-weight: 600;
+          text-transform: uppercase;
+          font-size: 0.75rem;
+          letter-spacing: 0.5px;
+          color: #4a5568;
+          background-color: #f7fafc;
+          border-bottom: 2px solid #e2e8f0;
+        }
+        
+        .table td {
+          vertical-align: middle;
+          font-size: 0.9rem;
+        }
+        
+        .table-hover tbody tr:hover {
+          background-color: #f7fafc;
+          transition: background-color 0.2s ease;
+        }
+        
+        .badge {
+          font-size: 0.75rem;
+          padding: 0.5rem 0.75rem;
+          font-weight: 500;
+        }
+        
+        .nav-tabs {
+          border-bottom: 2px solid #e2e8f0;
+        }
+        
+        .nav-tabs .nav-link {
+          font-weight: 600;
+          color: #4a5568;
+          border: none;
+          padding: 0.75rem 1.5rem;
+          transition: all 0.3s ease;
+        }
+        
+        .nav-tabs .nav-link:hover {
+          color: #667eea;
+          border: none;
+        }
+        
+        .nav-tabs .nav-link.active {
+          color: #667eea;
+          border: none;
+          border-bottom: 3px solid #667eea;
+          background: transparent;
+        }
+        
+        .btn-new-mouvement {
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          border: none;
+          color: #fff;
+          display: inline-flex;
+          align-items: center;
+          gap: 0;
+          padding: 0.5rem 1rem;
+          transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        
+        .btn-new-mouvement:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-new-mouvement .icon-plus {
+          color: #fff;
+          margin-right: 8px;
+          font-size: 24px;
+          font-weight: 900;
+          line-height: 1;
+          display: inline-block;
+        }
+        
+        .card {
+          border-radius: 15px;
+          overflow: hidden;
+        }
+        
+        .filter-section {
+          background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+          border-radius: 15px;
+          padding: 1.5rem;
+        }
+        
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .fade-in {
+          animation: fadeIn 0.5s ease-out;
+        }
+      `}</style>
 
       {/* En-tête avec informations de l'employé */}
-      <Row className="mb-4 align-items-center">
+      <Row className="mb-4 align-items-center fade-in">
         <Col>
-          <div className="d-flex align-items-center gap-3 mb-2">
+          <div className="d-flex align-items-center gap-3 mb-3">
             <Button
               variant="outline-secondary"
               onClick={() => navigate(`/dashboard-RH/employees/${id}/personnel`)}
-              size="sm"
-              className="d-flex align-items-center"
+              className="d-flex align-items-center rounded-pill"
             >
               <FaArrowLeft className="me-2" />
               Retour à la fiche
             </Button>
-            <h1 className="h3 mb-0">Historique des Mouvements</h1>
+            <div>
+              <h1 className="h3 mb-0 fw-bold">Historique des Mouvements</h1>
+              <p className="text-muted mb-0 mt-1">
+                <FaHistory className="me-1" size={12} />
+                Suivi des changements de poste, département et salaire
+              </p>
+            </div>
           </div>
           
-          {employe && (
-            <Card className="border-0 bg-light">
-              <Card.Body className="py-3">
-                <Row className="align-items-center">
-                  <Col md="auto" className="text-center mb-3 mb-md-0">
-                    <div className="bg-primary text-white rounded-circle p-3 d-inline-block">
-                      <FaUserCircle size={24} />
-                    </div>
-                  </Col>
-                  <Col>
-                    <h5 className="mb-1">
-                      {employe.nom} {employe.prenom}
-                      {employe.matricule && (
-                        <Badge bg="secondary" className="ms-2">
-                          {employe.matricule}
-                        </Badge>
-                      )}
-                    </h5>
-                    <p className="text-muted mb-0">
-                      {employe.infosProfessionnelles?.poste?.nom || 'Poste non défini'} | 
-                      {employe.infosProfessionnelles?.departement?.nom || 'Département non défini'}
-                    </p>
-                  </Col>
-                  <Col md="auto">
-                    <Button
-                      variant="primary"
-                      onClick={() => setShowAddModal(true)}
-                      className="d-flex align-items-center"
-                    >
-                      <FaPlus className="me-2" />
-                      Nouveau Mouvement
-                    </Button>
-                  </Col>
-                </Row>
-              </Card.Body>
-            </Card>
-          )}
+          {employe && (() => {
+            const infosArray = Array.isArray(employe.infosProfessionnelles)
+              ? employe.infosProfessionnelles
+              : [];
+            const currentInfo =
+              infosArray.find((info) => info?.statut === 0) ||
+              infosArray[infosArray.length - 1] ||
+              null;
+            const posteNom = currentInfo?.poste?.nom || 'Poste non défini';
+            const departementNom =
+              currentInfo?.departement?.nom ||
+              currentInfo?.poste?.departement?.nom ||
+              'Département non défini';
+
+            return (
+              <Card className="border-0 shadow-lg rounded-4 mt-3">
+                <Card.Body className="py-3">
+                  <Row className="align-items-center">
+                    <Col md="auto" className="text-center mb-3 mb-md-0">
+                      <div className="bg-gradient-primary text-white rounded-circle p-3 d-inline-block shadow">
+                        <FaUserCircle size={32} />
+                      </div>
+                    </Col>
+                    <Col>
+                      <h5 className="mb-1 fw-bold">
+                        {employe.nom} {employe.prenom}
+                        {employe.matricule && (
+                          <Badge bg="secondary" className="ms-2">
+                            <FaIdCard className="me-1" size={10} />
+                            {employe.matricule}
+                          </Badge>
+                        )}
+                      </h5>
+                      <p className="text-muted mb-0">
+                        <FaBriefcase className="me-1" size={12} />
+                        {posteNom} | 
+                        <FaBuilding className="ms-2 me-1" size={12} />
+                        {departementNom}
+                      </p>
+                    </Col>
+                    <Col md="auto">
+                      <Button
+                        variant="primary"
+                        onClick={() => setShowAddModal(true)}
+                        className="btn-new-mouvement rounded-pill"
+                      >
+                        <span className="icon-plus">+</span>
+                        Nouveau Mouvement
+                      </Button>
+                    </Col>
+                  </Row>
+                </Card.Body>
+              </Card>
+            );
+          })()}
         </Col>
       </Row>
 
       {/* Messages d'alerte */}
       {error && (
-        <Alert variant="danger" dismissible onClose={() => setError('')} className="mb-4">
+        <Alert variant="danger" dismissible onClose={() => setError('')} className="mb-4 rounded-3 fade-in">
           <FaTimes className="me-2" />
           {error}
         </Alert>
       )}
 
       {successMessage && (
-        <Alert variant="success" dismissible onClose={() => setSuccessMessage('')} className="mb-4">
+        <Alert variant="success" dismissible onClose={() => setSuccessMessage('')} className="mb-4 rounded-3 fade-in">
           <FaCheck className="me-2" />
           {successMessage}
         </Alert>
       )}
 
-      {/* Statistiques */}
-      <Row className="mb-4 g-3">
-        <Col xs={6} md={3}>
-          <div className="stat-card">
-            <div className="stat-icon"><FaList /></div>
-            <div className="stat-content">
-              <div className="stat-value">{stats.total}</div>
-              <div className="stat-label">Total</div>
-            </div>
-          </div>
-        </Col>
-        <Col xs={6} md={3}>
-          <div className="stat-card">
-            <div className="stat-icon"><FaHistory /></div>
-            <div className="stat-content">
-              <div className="stat-value">{stats.enAttente}</div>
-              <div className="stat-label">En attente</div>
-            </div>
-          </div>
-        </Col>
-        <Col xs={6} md={3}>
-          <div className="stat-card">
-            <div className="stat-icon"><FaCheck /></div>
-            <div className="stat-content">
-              <div className="stat-value">{stats.valides}</div>
-              <div className="stat-label">Validés</div>
-            </div>
-          </div>
-        </Col>
-        <Col xs={6} md={3}>
-          <div className="stat-card">
-            <div className="stat-icon"><FaCheckCircle /></div>
-            <div className="stat-content">
-              <div className="stat-value">{stats.appliques}</div>
-              <div className="stat-label">Appliqués</div>
-            </div>
-          </div>
-        </Col>
-      </Row>
-
-      {/* Onglets */}
-      <Card className="mb-4 border-0 shadow-sm">
+      {/* Onglets améliorés */}
+      <Card className="mb-4 border-0 shadow-sm rounded-4 fade-in">
         <Card.Body className="py-3">
           <Tabs
             activeKey={activeTab}
-            onSelect={(k) => setActiveTab(k)}
-            className="mb-3"
-            fill
+            onSelect={(k) => {
+              setActiveTab(k);
+              resetFilters();
+            }}
+            className="mb-0"
           >
             <Tab eventKey="all" title={
               <span className="d-flex align-items-center">
                 <FaList className="me-2" />
-                Tous les mouvements
-                <Badge bg="primary" className="ms-2">{stats.total}</Badge>
-              </span>
-            } />
-            <Tab eventKey="validated" title={
-              <span className="d-flex align-items-center">
-                <FaCheck className="me-2" />
-                Mouvements validés
-                <Badge bg="success" className="ms-2">{stats.valides}</Badge>
+                Tous
+                <Badge bg="primary" className="ms-2 rounded-pill">{stats.total}</Badge>
               </span>
             } />
             <Tab eventKey="pending" title={
               <span className="d-flex align-items-center">
                 <FaHistory className="me-2" />
                 En attente
-                <Badge bg="warning" className="ms-2">{stats.enAttente}</Badge>
+                <Badge bg="warning" className="ms-2 rounded-pill">{stats.enAttente}</Badge>
+              </span>
+            } />
+            <Tab eventKey="validated" title={
+              <span className="d-flex align-items-center">
+                <FaCheck className="me-2" />
+                Validés
+                <Badge bg="success" className="ms-2 rounded-pill">{stats.valides}</Badge>
+              </span>
+            } />
+            <Tab eventKey="applied" title={
+              <span className="d-flex align-items-center">
+                <FaCheckCircle className="me-2" />
+                Appliqués
+                <Badge bg="info" className="ms-2 rounded-pill">{stats.appliques}</Badge>
+              </span>
+            } />
+            <Tab eventKey="rejected" title={
+              <span className="d-flex align-items-center">
+                <FaTimes className="me-2" />
+                Rejetés
+                <Badge bg="danger" className="ms-2 rounded-pill">{stats.rejetes}</Badge>
               </span>
             } />
           </Tabs>
         </Card.Body>
       </Card>
 
-      {/* Filtres et recherche */}
-      <Card className="mb-4 border-0 shadow-sm">
+      {/* Filtres et recherche améliorés */}
+      <Card className="mb-4 border-0 shadow-sm rounded-4 fade-in">
         <Card.Body>
           <Row className="g-3">
-            <Col md={6}>
-              <InputGroup>
-                <InputGroup.Text>
-                  <FaSearch />
+            <Col md={5}>
+              <InputGroup className="rounded-pill overflow-hidden shadow-sm">
+                <InputGroup.Text className="bg-white border-0">
+                  <FaSearch className="text-primary" />
                 </InputGroup.Text>
                 <Form.Control
                   type="text"
-                  placeholder="Rechercher par motif, commentaire, type..."
+                  placeholder="Rechercher par motif, commentaire ou type..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
+                  className="border-0"
                 />
               </InputGroup>
             </Col>
@@ -652,6 +784,8 @@ const MouvementsEmploye = () => {
               <Form.Select
                 value={statutFilter}
                 onChange={(e) => setStatutFilter(e.target.value)}
+                className="rounded-pill shadow-sm"
+                disabled={activeTab !== 'all'}
               >
                 <option value="all">Tous les statuts</option>
                 <option value="1">En attente</option>
@@ -665,6 +799,7 @@ const MouvementsEmploye = () => {
               <Form.Select
                 value={typeFilter}
                 onChange={(e) => setTypeFilter(e.target.value)}
+                className="rounded-pill shadow-sm"
               >
                 <option value="all">Tous les types</option>
                 {typesMouvement.map(type => (
@@ -674,49 +809,50 @@ const MouvementsEmploye = () => {
                 ))}
               </Form.Select>
             </Col>
+            
+            <Col md={1}>
+              <Button
+                variant="outline-secondary"
+                onClick={resetFilters}
+                className="w-100 rounded-pill shadow-sm"
+              >
+                <FaSync />
+              </Button>
+            </Col>
           </Row>
           
           <div className="d-flex justify-content-between align-items-center mt-3">
             <div>
-              <small className="text-muted">
+              <Badge bg="light" text="dark" className="rounded-pill">
+                <FaFilter className="me-1" size={10} />
                 {filteredMouvements.length} mouvement{filteredMouvements.length !== 1 ? 's' : ''} trouvé{filteredMouvements.length !== 1 ? 's' : ''}
-              </small>
+              </Badge>
             </div>
-            <div className="d-flex gap-2">
-              <Button
-                variant="outline-secondary"
-                onClick={resetFilters}
-                size="sm"
-              >
-                <FaSync className="me-1" />
-                Réinitialiser
-              </Button>
-              <Button
-                variant="outline-primary"
-                onClick={() => fetchMouvementsEmploye()}
-                size="sm"
-              >
-                <FaSync className="me-1" />
-                Actualiser
-              </Button>
-            </div>
+            <Button
+              variant="link"
+              onClick={() => fetchMouvementsEmploye()}
+              className="text-decoration-none"
+              size="sm"
+            >
+              <FaSync className="me-1" />
+              Actualiser
+            </Button>
           </div>
         </Card.Body>
       </Card>
 
-      {/* Table des mouvements */}
-      <Card className="border-0 shadow-sm">
+      {/* Table des mouvements améliorée */}
+      <Card className="border-0 shadow-sm rounded-4 fade-in overflow-hidden">
         <Card.Body className="p-0">
           <div className="table-responsive">
             <Table hover className="mb-0">
-              <thead className="table-light">
+              <thead>
                 <tr>
                   <th className="py-3 ps-4">ID</th>
                   <th className="py-3">Type</th>
-                  <th className="py-3">Précédent</th>
-                  <th className="py-3">Actuel</th>
-                  <th className="py-3">Motif</th>
-                  <th className="py-3">Date Demande</th>
+                  <th className="py-3">Poste précédent</th>
+                  <th className="py-3">Poste proposé</th>
+                  <th className="py-3">Date demande</th>
                   <th className="py-3">Statut</th>
                   <th className="py-3 pe-4 text-end">Actions</th>
                 </tr>
@@ -724,13 +860,13 @@ const MouvementsEmploye = () => {
               <tbody>
                 {currentItems.length === 0 ? (
                   <tr>
-                    <td colSpan="8" className="text-center py-5">
-                      <FaHistory size={48} className="text-muted mb-3" />
-                      <p className="text-muted">Aucun mouvement trouvé pour cet employé</p>
+                    <td colSpan="7" className="text-center py-5">
+                      <FaHistory size={48} className="text-muted mb-3 opacity-50" />
+                      <p className="text-muted mb-3">Aucun mouvement trouvé pour cet employé</p>
                       <Button
                         variant="primary"
                         onClick={() => setShowAddModal(true)}
-                        className="me-2"
+                        className="me-2 rounded-pill"
                       >
                         <FaPlus className="me-2" />
                         Créer un premier mouvement
@@ -738,6 +874,7 @@ const MouvementsEmploye = () => {
                       <Button
                         variant="outline-secondary"
                         onClick={resetFilters}
+                        className="rounded-pill"
                       >
                         Réinitialiser les filtres
                       </Button>
@@ -749,103 +886,120 @@ const MouvementsEmploye = () => {
                     const currentInfo = getCurrentInfo(mouvement);
                     
                     return (
-                      <tr key={mouvement?.id || Math.random()}>
+                      <tr key={mouvement?.id || Math.random()} className="align-middle">
                         <td className="py-3 ps-4">
-                          <small className="fw-bold">{mouvement?.id || 'N/A'}</small>
+                          <code className="fw-bold">#{mouvement?.id || 'N/A'}</code>
                         </td>
                         <td className="py-3">
                           <div className="d-flex align-items-center gap-2">
                             {getTypeIcon(mouvement?.typeMouvement)}
-                            <span>{getTypeLabel(mouvement?.typeMouvement)}</span>
+                            <span className="fw-medium">{getTypeLabel(mouvement?.typeMouvement)}</span>
                           </div>
                         </td>
-                        
-                        {/* Colonne Précédent */}
                         <td className="py-3">
-                          <div className="small">
+                          <div>
                             <div className="mb-1">
                               <FaBriefcase className="me-1 text-muted" size={12} />
-                              <strong>Poste:</strong> {previousInfo.poste}
+                              <span className="small">{previousInfo.poste}</span>
                             </div>
-                            <div className="mb-1">
-                              <FaBuilding className="me-1 text-muted" size={12} />
-                              <strong>Dépt:</strong> {previousInfo.departement}
-                            </div>
-                            <div>
-                              <FaCoins className="me-1 text-muted" size={12} />
-                              <strong>Salaire:</strong> {formatAmount(previousInfo.salaire)}
-                            </div>
+                            {previousInfo.salaire !== 'Non spécifié' && (
+                              <div>
+                                <FaCoins className="me-1 text-muted" size={12} />
+                                <span className="small">{formatAmount(previousInfo.salaire)}</span>
+                              </div>
+                            )}
                           </div>
                         </td>
-                        
-                        {/* Colonne Actuel */}
                         <td className="py-3">
-                          <div className="small">
+                          <div>
                             <div className="mb-1">
                               <FaBriefcase className="me-1 text-success" size={12} />
-                              <strong>Poste:</strong> {currentInfo.poste}
+                              <span className="small fw-medium text-success">{currentInfo.poste}</span>
                             </div>
-                            <div className="mb-1">
-                              <FaBuilding className="me-1 text-primary" size={12} />
-                              <strong>Dépt:</strong> {currentInfo.departement}
-                            </div>
-                            <div>
-                              <FaCoins className="me-1 text-warning" size={12} />
-                              <strong>Salaire:</strong> {formatAmount(currentInfo.salaire)}
-                            </div>
-                          </div>
-                        </td>
-                        
-                        <td className="py-3">
-                          <div className="text-truncate" style={{ maxWidth: '200px' }}>
-                            {mouvement?.motif || 'Non spécifié'}
+                            {currentInfo.salaire !== 'Non spécifié' && (
+                              <div>
+                                <FaCoins className="me-1 text-warning" size={12} />
+                                <span className="small">{formatAmount(currentInfo.salaire)}</span>
+                              </div>
+                            )}
                           </div>
                         </td>
                         <td className="py-3">
                           <div className="d-flex align-items-center gap-2">
-                            <FaCalendarAlt className="text-muted" />
-                            {formatDate(mouvement?.dateDemande)}
+                            <FaCalendarAlt className="text-muted" size={12} />
+                            <span className="small">{formatDate(mouvement?.dateDemande)}</span>
                           </div>
                         </td>
                         <td className="py-3">
                           {getStatutBadge(mouvement?.statut)}
                         </td>
-                        <td className="py-3 pe-4 text-end">
-                          <div className="d-flex justify-content-end gap-2">
-                            {/* Bouton Voir détails - toujours visible */}
+                        <td className="py-3 pe-4">
+                          <div className="d-flex gap-2 justify-content-end">
                             <Button
                               variant="outline-primary"
                               size="sm"
                               onClick={() => handleViewDetails(mouvement)}
-                              aria-label="Voir détails"
+                              className="rounded-circle"
+                              style={{ width: '32px', height: '32px', padding: 0 }}
+                              title="Voir détails"
                             >
-                              <FaEye />
+                              <FaEye size={14} />
                             </Button>
                             
-                            {/* Bouton Valider - visible uniquement pour statut = 1 (En attente) */}
                             {mouvement?.statut === 1 && (
                               <>
                                 <Button
                                   variant="outline-success"
                                   size="sm"
                                   onClick={() => handleOpenValidation(mouvement)}
-                                  aria-label="Valider"
+                                  className="rounded-circle"
+                                  style={{ width: '32px', height: '32px', padding: 0 }}
+                                  title="Valider"
                                 >
-                                  <FaCheck />
+                                  <FaCheck size={14} />
                                 </Button>
                                 <Button
                                   variant="outline-danger"
                                   size="sm"
                                   onClick={() => handleValidateMouvement(0, 'Rejeté par le responsable')}
-                                  aria-label="Rejeter"
+                                  className="rounded-circle"
+                                  style={{ width: '32px', height: '32px', padding: 0 }}
+                                  title="Rejeter"
                                 >
-                                  <FaTimes />
+                                  <FaTimes size={14} />
                                 </Button>
                               </>
                             )}
                             
-                            {/* Bouton Supprimer - visible pour statut = 2 (Validé) ou 3 (Appliqué) */}
-                            {(mouvement?.statut === 2 || mouvement?.statut === 3) && (
+                            {mouvement?.statut === 2 && (
+                              <>
+                                <Button
+                                  variant="outline-info"
+                                  size="sm"
+                                  onClick={() => handleApplyMouvement(mouvement)}
+                                  className="rounded-circle"
+                                  style={{ width: '32px', height: '32px', padding: 0 }}
+                                  title="Appliquer"
+                                >
+                                  <FaCheckCircle size={14} />
+                                </Button>
+                                <Button
+                                  variant="outline-danger"
+                                  size="sm"
+                                  onClick={() => {
+                                    setSelectedMouvement(mouvement);
+                                    setShowDeleteModal(true);
+                                  }}
+                                  className="rounded-circle"
+                                  style={{ width: '32px', height: '32px', padding: 0 }}
+                                  title="Supprimer"
+                                >
+                                  <FaTrash size={14} />
+                                </Button>
+                              </>
+                            )}
+                            
+                            {mouvement?.statut === 3 && (
                               <Button
                                 variant="outline-danger"
                                 size="sm"
@@ -853,9 +1007,11 @@ const MouvementsEmploye = () => {
                                   setSelectedMouvement(mouvement);
                                   setShowDeleteModal(true);
                                 }}
-                                aria-label="Supprimer"
+                                className="rounded-circle"
+                                style={{ width: '32px', height: '32px', padding: 0 }}
+                                title="Supprimer"
                               >
-                                <FaTrash />
+                                <FaTrash size={14} />
                               </Button>
                             )}
                           </div>
@@ -868,9 +1024,9 @@ const MouvementsEmploye = () => {
             </Table>
           </div>
           
-          {/* Pagination */}
+          {/* Pagination améliorée */}
           {filteredMouvements.length > 0 && (
-            <div className="border-top px-4 py-3">
+            <div className="border-top px-4 py-3 bg-light">
               <Row className="align-items-center">
                 <Col md={6}>
                   <div className="d-flex align-items-center gap-3">
@@ -879,6 +1035,7 @@ const MouvementsEmploye = () => {
                       onChange={(e) => setItemsPerPage(parseInt(e.target.value))}
                       style={{ width: 'auto' }}
                       size="sm"
+                      className="rounded-pill"
                     >
                       <option value={5}>5 par page</option>
                       <option value={10}>10 par page</option>
@@ -886,7 +1043,7 @@ const MouvementsEmploye = () => {
                       <option value={50}>50 par page</option>
                     </Form.Select>
                     <small className="text-muted">
-                      Affichage de {indexOfFirstItem + 1} à {Math.min(indexOfLastItem, filteredMouvements.length)} sur {filteredMouvements.length}
+                      {indexOfFirstItem + 1} - {Math.min(indexOfLastItem, filteredMouvements.length)} sur {filteredMouvements.length}
                     </small>
                   </div>
                 </Col>
@@ -896,10 +1053,12 @@ const MouvementsEmploye = () => {
                       <Pagination.First 
                         onClick={() => setCurrentPage(1)} 
                         disabled={currentPage === 1}
+                        className="rounded-circle mx-1"
                       />
                       <Pagination.Prev 
                         onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} 
                         disabled={currentPage === 1}
+                        className="rounded-circle mx-1"
                       />
                       
                       {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
@@ -919,6 +1078,7 @@ const MouvementsEmploye = () => {
                             key={pageNum}
                             active={pageNum === currentPage}
                             onClick={() => setCurrentPage(pageNum)}
+                            className="rounded-circle mx-1"
                           >
                             {pageNum}
                           </Pagination.Item>
@@ -928,10 +1088,12 @@ const MouvementsEmploye = () => {
                       <Pagination.Next 
                         onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} 
                         disabled={currentPage === totalPages}
+                        className="rounded-circle mx-1"
                       />
                       <Pagination.Last 
                         onClick={() => setCurrentPage(totalPages)} 
                         disabled={currentPage === totalPages}
+                        className="rounded-circle mx-1"
                       />
                     </Pagination>
                   </div>
@@ -942,53 +1104,50 @@ const MouvementsEmploye = () => {
         </Card.Body>
       </Card>
 
-      {/* Modal Détails du Mouvement */}
-      <Modal show={showDetailsModal} onHide={() => setShowDetailsModal(false)} size="lg">
-        <Modal.Header closeButton className="bg-primary text-white">
+      {/* Modal Détails du Mouvement - Gardé identique mais avec style amélioré */}
+      <Modal show={showDetailsModal} onHide={() => setShowDetailsModal(false)} size="lg" centered>
+        <Modal.Header closeButton className="bg-gradient-primary text-white" style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
           <Modal.Title>
             <FaEye className="me-2" />
-            Détails du Mouvement
+            Détails du Mouvement #{selectedMouvement?.id}
           </Modal.Title>
         </Modal.Header>
-        <Modal.Body>
+        <Modal.Body className="p-4">
           {selectedMouvement ? (
             <Row>
               <Col md={6}>
-                <div className="mb-3">
-                  <label className="form-label text-muted">ID Mouvement</label>
-                  <p className="fw-bold">{selectedMouvement.id || 'N/A'}</p>
-                </div>
-                
-                <div className="mb-3">
-                  <label className="form-label text-muted">Type de Mouvement</label>
-                  <div className="d-flex align-items-center gap-2">
+                <div className="mb-4">
+                  <label className="text-muted small text-uppercase fw-bold mb-2">Type de Mouvement</label>
+                  <div className="d-flex align-items-center gap-2 p-3 bg-light rounded-3">
                     {getTypeIcon(selectedMouvement.typeMouvement)}
-                    <span className="fw-medium">{getTypeLabel(selectedMouvement.typeMouvement)}</span>
+                    <span className="fw-bold fs-5">{getTypeLabel(selectedMouvement.typeMouvement)}</span>
                   </div>
                 </div>
                 
-                <div className="mb-3">
-                  <label className="form-label text-muted">Motif</label>
-                  <p>{selectedMouvement.motif || 'Non spécifié'}</p>
+                <div className="mb-4">
+                  <label className="text-muted small text-uppercase fw-bold mb-2">Motif</label>
+                  <div className="p-3 bg-light rounded-3">
+                    {selectedMouvement.motif || 'Non spécifié'}
+                  </div>
                 </div>
                 
-                <div className="mb-3">
-                  <label className="form-label text-muted">Commentaire</label>
-                  <div className="p-3 bg-light rounded">
+                <div className="mb-4">
+                  <label className="text-muted small text-uppercase fw-bold mb-2">Commentaire</label>
+                  <div className="p-3 bg-light rounded-3">
                     {selectedMouvement.commentaire || 'Aucun commentaire'}
                   </div>
                 </div>
               </Col>
               
               <Col md={6}>
-                <div className="mb-3">
-                  <label className="form-label text-muted">Statut</label>
-                  <div className="mb-2">{getStatutBadge(selectedMouvement.statut)}</div>
+                <div className="mb-4">
+                  <label className="text-muted small text-uppercase fw-bold mb-2">Statut</label>
+                  <div>{getStatutBadge(selectedMouvement.statut)}</div>
                 </div>
                 
-                <div className="mb-3">
-                  <label className="form-label text-muted">Comparaison</label>
-                  <Card className="border-0 shadow-sm">
+                <div className="mb-4">
+                  <label className="text-muted small text-uppercase fw-bold mb-2">Comparaison</label>
+                  <Card className="border-0 shadow-sm rounded-3">
                     <Card.Body className="p-3">
                       <Row>
                         <Col md={6}>
@@ -1019,7 +1178,7 @@ const MouvementsEmploye = () => {
                         <Col md={6}>
                           <h6 className="text-success mb-3">
                             <FaArrowRight className="me-2" />
-                            Actuel
+                            Proposé
                           </h6>
                           {(() => {
                             const currentInfo = getCurrentInfo(selectedMouvement);
@@ -1046,21 +1205,21 @@ const MouvementsEmploye = () => {
                   </Card>
                 </div>
                 
-                <div className="mb-3">
-                  <label className="form-label text-muted">Dates</label>
-                  <div>
-                    <small className="d-block">
-                      <FaCalendarAlt className="me-2 text-muted" />
-                      <strong>Demande:</strong> {formatDate(selectedMouvement.dateDemande)}
-                    </small>
-                    <small className="d-block mt-1">
-                      <FaCalendarAlt className="me-2 text-muted" />
-                      <strong>Validation:</strong> {formatDate(selectedMouvement.dateValidation) || 'Non validé'}
-                    </small>
-                    <small className="d-block mt-1">
-                      <FaCalendarAlt className="me-2 text-muted" />
+                <div className="mb-4">
+                  <label className="text-muted small text-uppercase fw-bold mb-2">Dates importantes</label>
+                  <div className="p-3 bg-light rounded-3">
+                    <div className="mb-2">
+                      <FaCalendarAlt className="me-2 text-muted" size={12} />
+                      <strong>Demande:</strong> {formatDate(selectedMouvement.dateDemande, true)}
+                    </div>
+                    <div className="mb-2">
+                      <FaCalendarAlt className="me-2 text-muted" size={12} />
+                      <strong>Validation:</strong> {formatDate(selectedMouvement.dateValidation, true) || 'Non validé'}
+                    </div>
+                    <div>
+                      <FaCalendarAlt className="me-2 text-muted" size={12} />
                       <strong>Création:</strong> {formatDate(selectedMouvement.createdAt, true)}
-                    </small>
+                    </div>
                   </div>
                 </div>
               </Col>
@@ -1072,7 +1231,7 @@ const MouvementsEmploye = () => {
           )}
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowDetailsModal(false)}>
+          <Button variant="secondary" onClick={() => setShowDetailsModal(false)} className="rounded-pill">
             Fermer
           </Button>
           {selectedMouvement?.statut === 1 && (
@@ -1082,6 +1241,7 @@ const MouvementsEmploye = () => {
                 setShowDetailsModal(false);
                 handleOpenValidation(selectedMouvement);
               }}
+              className="rounded-pill"
             >
               <FaCheck className="me-2" />
               Valider ce mouvement
@@ -1090,9 +1250,9 @@ const MouvementsEmploye = () => {
         </Modal.Footer>
       </Modal>
 
-      {/* Modal Validation */}
-      <Modal show={showValidationModal} onHide={() => setShowValidationModal(false)}>
-        <Modal.Header closeButton className="bg-warning text-dark">
+      {/* Modal Validation - Gardé identique */}
+      <Modal show={showValidationModal} onHide={() => setShowValidationModal(false)} centered>
+        <Modal.Header closeButton className="bg-warning">
           <Modal.Title>
             <FaClipboardCheck className="me-2" />
             Validation du Mouvement
@@ -1101,10 +1261,15 @@ const MouvementsEmploye = () => {
         <Modal.Body>
           {selectedMouvement ? (
             <>
-              <Alert variant="info" className="mb-3">
-                <strong>Mouvement à valider:</strong> {getTypeLabel(selectedMouvement.typeMouvement)}
-                <br />
-                <strong>Employé concerné:</strong> {employe?.nom || ''} {employe?.prenom || ''}
+              <Alert variant="info" className="mb-3 rounded-3">
+                <div className="d-flex align-items-center">
+                  <FaInfoCircle className="me-2" size={20} />
+                  <div>
+                    <strong>Mouvement à valider:</strong> {getTypeLabel(selectedMouvement.typeMouvement)}
+                    <br />
+                    <small>Employé concerné: {employe?.nom || ''} {employe?.prenom || ''}</small>
+                  </div>
+                </div>
               </Alert>
               
               <Form.Group className="mb-3">
@@ -1114,14 +1279,13 @@ const MouvementsEmploye = () => {
                   rows={3}
                   placeholder="Ajouter un commentaire pour la validation..."
                   id="validationComment"
+                  className="rounded-3"
                 />
               </Form.Group>
               
-              <div className="alert alert-warning">
-                <small>
-                  <FaHistory className="me-2" />
-                  Cette action est définitive. Une fois validé, le mouvement pourra être appliqué.
-                </small>
+              <div className="alert alert-warning rounded-3">
+                <FaHistory className="me-2" />
+                <small>Cette action est définitive. Une fois validé, le mouvement pourra être appliqué.</small>
               </div>
             </>
           ) : (
@@ -1129,7 +1293,7 @@ const MouvementsEmploye = () => {
           )}
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowValidationModal(false)}>
+          <Button variant="secondary" onClick={() => setShowValidationModal(false)} className="rounded-pill">
             Annuler
           </Button>
           {selectedMouvement && (
@@ -1140,6 +1304,7 @@ const MouvementsEmploye = () => {
                   const comment = document.getElementById('validationComment')?.value;
                   handleValidateMouvement(0, comment);
                 }}
+                className="rounded-pill"
               >
                 <FaTimes className="me-2" />
                 Rejeter
@@ -1150,6 +1315,7 @@ const MouvementsEmploye = () => {
                   const comment = document.getElementById('validationComment')?.value;
                   handleValidateMouvement(2, comment);
                 }}
+                className="rounded-pill"
               >
                 <FaCheck className="me-2" />
                 Valider
@@ -1159,8 +1325,8 @@ const MouvementsEmploye = () => {
         </Modal.Footer>
       </Modal>
 
-      {/* Modal Suppression */}
-      <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)}>
+      {/* Modal Suppression - Gardé identique */}
+      <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered>
         <Modal.Header closeButton className="bg-danger text-white">
           <Modal.Title>
             <FaTrash className="me-2" />
@@ -1170,12 +1336,12 @@ const MouvementsEmploye = () => {
         <Modal.Body>
           {selectedMouvement ? (
             <>
-              <Alert variant="danger" className="mb-3">
-                <strong>Attention:</strong> Vous êtes sur le point de supprimer définitivement ce mouvement.
+              <Alert variant="danger" className="mb-3 rounded-3">
+                <strong>Attention:</strong> Cette action est irréversible.
               </Alert>
               
               <p className="mb-0">
-                Êtes-vous sûr de vouloir supprimer le mouvement <strong>{selectedMouvement.id}</strong> ?
+                Êtes-vous sûr de vouloir supprimer le mouvement <strong>#{selectedMouvement.id}</strong> ?
                 <br />
                 <small className="text-muted">
                   Type: {getTypeLabel(selectedMouvement.typeMouvement)} | 
@@ -1188,11 +1354,11 @@ const MouvementsEmploye = () => {
           )}
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>
+          <Button variant="secondary" onClick={() => setShowDeleteModal(false)} className="rounded-pill">
             Annuler
           </Button>
           {selectedMouvement && (
-            <Button variant="danger" onClick={handleDeleteMouvement}>
+            <Button variant="danger" onClick={handleDeleteMouvement} className="rounded-pill">
               <FaTrash className="me-2" />
               Supprimer définitivement
             </Button>
@@ -1207,54 +1373,12 @@ const MouvementsEmploye = () => {
         employeId={id}
         employeNom={employe?.nom}
         employePrenom={employe?.prenom}
-        onSuccess={(nouveauMouvement) => {
+        onSuccess={async (nouveauMouvement) => {
           setSuccessMessage('Mouvement créé avec succès!');
-          fetchMouvementsEmploye(); // Rafraîchir la liste
+          await fetchMouvementsEmploye();
           setTimeout(() => setSuccessMessage(''), 3000);
         }}
       />
-
-      {/* Styles CSS */}
-      <style>{`
-        .table th {
-          font-weight: 600;
-          text-transform: uppercase;
-          font-size: 0.8rem;
-          letter-spacing: 0.5px;
-          color: #5c2458;
-        }
-        
-        .table td {
-          vertical-align: middle;
-        }
-        
-        .badge {
-          font-size: 0.75rem;
-          padding: 0.35em 0.65em;
-        }
-        
-        .breadcrumb {
-          background-color: transparent;
-          padding: 0;
-        }
-        
-        .breadcrumb-item a {
-          text-decoration: none;
-          color: #b053ad;
-        }
-        
-        .breadcrumb-item.active {
-          color: #5c2458;
-        }
-        
-        .nav-tabs .nav-link {
-          font-weight: 500;
-        }
-        
-        .nav-tabs .nav-link.active {
-          font-weight: 600;
-        }
-      `}</style>
     </Container>
   );
 };

@@ -88,8 +88,8 @@ const DerniereInfoProfessionnelle = () => {
     return (
       <Container fluid className="py-3">
         <Alert variant="info">
-          <Alert.Heading>Information non trouvee</Alert.Heading>
-          <p>Aucune information professionnelle n'a ete trouvee pour cet employe.</p>
+          <Alert.Heading>Information non trouvée</Alert.Heading>
+          <p>Aucune information professionnelle n'a ete trouvée pour cet employe.</p>
           <Button variant="outline-secondary" size="sm" onClick={() => navigate('/dashboard-RH/archives')} className="d-flex align-items-center gap-1">
             <ArrowLeft size={14} />
             Retour aux archives
@@ -107,7 +107,7 @@ const DerniereInfoProfessionnelle = () => {
             <div className="bg-info bg-opacity-25 p-2 rounded me-2">
               <Briefcase size={20} className="text-info" />
             </div>
-            <h1 className="h4 mb-0">Derniere Information Professionnelle</h1>
+            <h1 className="h4 mb-0">Dernière Information Professionnelle</h1>
             <Badge bg="light" text="dark" className="ms-2">
               ID: {infosPro.id}
             </Badge>
@@ -143,14 +143,14 @@ const DerniereInfoProfessionnelle = () => {
             <Card.Header className="py-2 bg-light">
               <div className="d-flex align-items-center gap-2">
                 <User size={16} className="text-info" />
-                <span className="fw-medium">Informations de l'employe</span>
+                <span className="fw-medium">Informations de l'employé</span>
               </div>
             </Card.Header>
             <Card.Body>
               <Table borderless size="sm" className="mb-0">
                 <tbody>
                   <tr>
-                    <td className="text-muted" width="25%">Employe</td>
+                    <td className="text-muted" width="25%">Employé</td>
                     <td className="fw-semibold">{infosPro.employe?.prenom} {infosPro.employe?.nom}</td>
                   </tr>
                   <tr>
@@ -174,7 +174,7 @@ const DerniereInfoProfessionnelle = () => {
             <Card.Header className="py-2 bg-light">
               <div className="d-flex align-items-center gap-2">
                 <Users size={16} className="text-info" />
-                <span className="fw-medium">Details du poste</span>
+                <span className="fw-medium">Détails du poste</span>
               </div>
             </Card.Header>
             <Card.Body>
@@ -185,12 +185,12 @@ const DerniereInfoProfessionnelle = () => {
                     <td className="fw-semibold">{infosPro.poste?.nom || '-'}</td>
                   </tr>
                   <tr>
-                    <td className="text-muted">Departement</td>
+                    <td className="text-muted">Département</td>
                     <td>{infosPro.departement?.nom || '-'}</td>
                   </tr>
                   <tr>
                     <td className="text-muted">Manager</td>
-                    <td>{infosPro.manager ? `${infosPro.manager.prenom} ${infosPro.manager.nom}` : '-'}</td>
+                    <td>{infosPro.manager ? `${infosPro.manager.employe.prenom} ${infosPro.manager.employe.nom}` : '-'}</td>
                   </tr>
                   <tr>
                     <td className="text-muted">Type de contrat</td>
@@ -205,7 +205,7 @@ const DerniereInfoProfessionnelle = () => {
                     <td>{infosPro.classification || '-'}</td>
                   </tr>
                   <tr>
-                    <td className="text-muted">Categorie professionnelle</td>
+                    <td className="text-muted">Catégorie professionnelle</td>
                     <td>{infosPro.categorieProfessionnelle?.libelle || '-'}</td>
                   </tr>
                   <tr>
@@ -213,7 +213,7 @@ const DerniereInfoProfessionnelle = () => {
                     <td className="fw-semibold">{formatSalaire(infosPro.salaireBase)}</td>
                   </tr>
                   <tr>
-                    <td className="text-muted">Type d'entree</td>
+                    <td className="text-muted">Type d'entrée</td>
                     <td>{infosPro.typeEntree?.nom || '-'}</td>
                   </tr>
                 </tbody>
@@ -253,7 +253,7 @@ const DerniereInfoProfessionnelle = () => {
                   )}
                   {infosPro.motifDepart && (
                     <tr>
-                      <td className="text-muted">Motif depart</td>
+                      <td className="text-muted">Motif départ</td>
                       <td>{infosPro.motifDepart}</td>
                     </tr>
                   )}
@@ -268,21 +268,21 @@ const DerniereInfoProfessionnelle = () => {
             <Card.Header className="py-2 bg-light">
               <div className="d-flex align-items-center gap-2">
                 <Clock size={16} className="text-info" />
-                <span className="fw-medium">Metadonnees</span>
+                <span className="fw-medium">Métadonnees</span>
               </div>
             </Card.Header>
             <Card.Body>
               <Row>
                 <Col md={4}>
-                  <small className="text-muted d-block mb-1">Cree le</small>
+                  <small className="text-muted d-block mb-1">Crée le</small>
                   <span className="fw-semibold">{formatDateTime(infosPro.createdAt)}</span>
                 </Col>
                 <Col md={4}>
-                  <small className="text-muted d-block mb-1">Modifie le</small>
-                  <span className="fw-semibold">{formatDateTime(infosPro.modifiedAt)}</span>
+                  <small className="text-muted d-block mb-1">Modifié le</small>
+                  <span className="fw-semibold">{formatDateTime(infosPro.createdAt)}</span>
                 </Col>
                 <Col md={4}>
-                  <small className="text-muted d-block mb-1">Reference</small>
+                  <small className="text-muted d-block mb-1">Référence</small>
                   <Badge bg="light" text="dark">{infosPro.id}</Badge>
                 </Col>
               </Row>

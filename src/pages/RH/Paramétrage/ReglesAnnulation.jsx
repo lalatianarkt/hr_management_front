@@ -261,7 +261,7 @@ const ReglesAnnulation = ({ showNotification }) => {
 
       {/* Modal d'ajout/modification */}
       <Modal show={showModal} onHide={() => setShowModal(false)}>
-        <Modal.Header closeButton>
+        <Modal.Header closeButton closeLabel="Fermer">
           <Modal.Title>
             {editingRegle ? 'Modifier' : 'Ajouter'} une règle d'annulation
           </Modal.Title>

@@ -54,6 +54,15 @@ function LoginPage() {
         sessionStorage.setItem('matricule', response.data.infosPro?.matricule || '');
         sessionStorage.setItem('poste', response.data.infosPro?.poste?.nom || '');
         sessionStorage.setItem('idEmploye', response.data.infosPro?.employe?.id || '');
+        const userId =
+          response.data.user?.id ||
+          response.data.infosPro?.employe?.user?.id ||
+          response.data.infosPro?.employe?.id ||
+          '';
+        if (userId) {
+          sessionStorage.setItem('userId', userId);
+          localStorage.setItem('userId', userId);
+        }
         sessionStorage.setItem(
           'departement',
           response.data.infosPro?.departement?.nom ||
@@ -67,11 +76,16 @@ function LoginPage() {
           sessionStorage.setItem('userRoles', JSON.stringify(response.data.roles));
           sessionStorage.setItem('currentRole', response.data.currentRole || response.data.roles[0].type);
           sessionStorage.setItem('hasMultipleRoles', response.data.hasMultipleRoles ? 'true' : 'false');
+          localStorage.setItem('userRoles', JSON.stringify(response.data.roles));
+          localStorage.setItem('currentRole', response.data.currentRole || response.data.roles[0].type);
+          localStorage.setItem('hasMultipleRoles', response.data.hasMultipleRoles ? 'true' : 'false');
         }
         
+        // console.log("ato anaty login++++");
+        // console.log("Rôles stockés:", sessionStorage.getItem('userRoles'));
         // Redirection vers le path par défaut
         const redirectPath = response.data.path;
-        console.log('Redirection vers:', redirectPath);
+        // console.log('Redirection vers:', redirectPath);
         window.location.href = redirectPath;
         
       } else {

@@ -16,7 +16,7 @@ import {
   Pencil, // Remplacé Edit par Pencil
   XCircle
 } from "react-bootstrap-icons";
-import axios from "axios";
+import axiosInstance from "../../../utils/AxiosInstance";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
@@ -35,7 +35,7 @@ function DetailsPosteModal({ show, onHide, posteId, onEditRequest }) {
         setError('');
         setPoste(null);
 
-        const response = await axios.get(`http://localhost:8080/api/postes/${posteId}`);
+        const response = await axiosInstance.get(`/api/postes/${posteId}`);
         setPoste(response.data);
 
       } catch (error) {
@@ -88,7 +88,7 @@ function DetailsPosteModal({ show, onHide, posteId, onEditRequest }) {
       size="lg"
       centered
     >
-      <Modal.Header closeButton style={{
+      <Modal.Header closeButton closeLabel="Fermer" style={{
         background: 'var(--bg-gradient)',
         color: 'white'
       }}>
@@ -256,3 +256,4 @@ function DetailsPosteModal({ show, onHide, posteId, onEditRequest }) {
 }
 
 export default DetailsPosteModal;
+

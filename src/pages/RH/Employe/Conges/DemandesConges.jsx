@@ -30,8 +30,8 @@ dayjs.locale('fr');
 // Configuration des statuts en dehors du composant pour éviter les recréations
 const STATUS_CONFIGS = {
     0: { 
-        label: 'Attente validation Manager', 
-        shortLabel: 'Attente Manager',
+        label: 'En attente', 
+        shortLabel: 'En attente',
         color: 'warning',
         icon: <HourglassEmpty sx={{ fontSize: 16 }} />,
         bgColor: '#ed6c02',
@@ -39,8 +39,8 @@ const STATUS_CONFIGS = {
         bgLight: '#fff8e1'
     },
     1: { 
-        label: 'Validé par Manager', 
-        shortLabel: 'Validé Manager',
+        label: 'Validé par manager', 
+        shortLabel: 'Validé manager',
         color: 'info',
         icon: <TaskAlt sx={{ fontSize: 16 }} />,
         bgColor: '#0288d1',
@@ -48,8 +48,8 @@ const STATUS_CONFIGS = {
         bgLight: '#e1f5fe'
     },
     2: { 
-        label: 'Refusé par Manager', 
-        shortLabel: 'Refusé Manager',
+        label: 'Refusé par manager', 
+        shortLabel: 'Refusé manager',
         color: 'error',
         icon: <Close sx={{ fontSize: 16 }} />,
         bgColor: '#d32f2f',
@@ -57,26 +57,26 @@ const STATUS_CONFIGS = {
         bgLight: '#ffebee'
     },
     3: { 
-        label: 'Accepté par RH', 
-        shortLabel: 'Accepté RH',
-        color: 'success',
-        icon: <VerifiedUser sx={{ fontSize: 16 }} />,
-        bgColor: '#2e7d32',
-        borderColor: '#4caf50',
-        bgLight: '#e8f5e9'
+        label: 'Annulé par le demandeur', 
+        shortLabel: 'Annulé demandeur',
+        color: 'default',
+        icon: <Cancel sx={{ fontSize: 16 }} />,
+        bgColor: '#757575',
+        borderColor: '#9e9e9e',
+        bgLight: '#f5f5f5'
     },
     4: { 
-        label: 'Refusé par RH', 
-        shortLabel: 'Refusé RH',
-        color: 'error',
+        label: 'Annulé par le responsable', 
+        shortLabel: 'Annulé responsable',
+        color: 'default',
         icon: <Block sx={{ fontSize: 16 }} />,
-        bgColor: '#c62828',
-        borderColor: '#ef5350',
-        bgLight: '#ffebee'
+        bgColor: '#616161',
+        borderColor: '#9e9e9e',
+        bgLight: '#f5f5f5'
     },
     5: { 
-        label: 'Acquis', 
-        shortLabel: 'Acquis',
+        label: 'Acquis / Terminé', 
+        shortLabel: 'Acquis / Terminé',
         color: 'success',
         icon: <CheckCircle sx={{ fontSize: 16 }} />,
         bgColor: '#388e3c',
@@ -84,13 +84,22 @@ const STATUS_CONFIGS = {
         bgLight: '#e8f5e9'
     },
     6: { 
-        label: 'Annulé', 
-        shortLabel: 'Annulé',
-        color: 'default',
-        icon: <Cancel sx={{ fontSize: 16 }} />,
-        bgColor: '#757575',
-        borderColor: '#9e9e9e',
-        bgLight: '#f5f5f5'
+        label: 'Validé par RH', 
+        shortLabel: 'Validé RH',
+        color: 'success',
+        icon: <VerifiedUser sx={{ fontSize: 16 }} />,
+        bgColor: '#2e7d32',
+        borderColor: '#4caf50',
+        bgLight: '#e8f5e9'
+    },
+    7: { 
+        label: 'Refusé par RH', 
+        shortLabel: 'Refusé RH',
+        color: 'error',
+        icon: <Block sx={{ fontSize: 16 }} />,
+        bgColor: '#c62828',
+        borderColor: '#ef5350',
+        bgLight: '#ffebee'
     }
 };
 
@@ -125,8 +134,8 @@ const DemandesCongeEmploye = () => {
     const [activeTab, setActiveTab] = useState(0);
 
     // Configuration des statuts - version memoized
-    const getStatusConfig = useCallback((decisionManager) => {
-        return STATUS_CONFIGS[decisionManager] || { 
+    const getStatusConfig = useCallback((statut) => {
+        return STATUS_CONFIGS[statut] || { 
             label: 'Inconnu', 
             shortLabel: 'Inconnu',
             color: 'default',
@@ -202,7 +211,7 @@ const DemandesCongeEmploye = () => {
 
         // Filtre statut
         if (statusFilter !== 'all') {
-            filtered = filtered.filter(demande => demande.decisionManager === parseInt(statusFilter));
+            filtered = filtered.filter(demande => demande.statut === parseInt(statusFilter));
         }
 
         // Filtre dates
@@ -222,16 +231,16 @@ const DemandesCongeEmploye = () => {
         // Filtre par onglet
         switch(activeTab) {
             case 1:
-                filtered = filtered.filter(d => [0, 1, 2].includes(d.decisionManager));
+                filtered = filtered.filter(d => [0, 1].includes(d.statut));
                 break;
             case 2:
-                filtered = filtered.filter(d => [3, 4].includes(d.decisionManager));
+                filtered = filtered.filter(d => [6, 7].includes(d.statut));
                 break;
             case 3:
-                filtered = filtered.filter(d => d.decisionManager === 5);
+                filtered = filtered.filter(d => d.statut === 5);
                 break;
             case 4:
-                filtered = filtered.filter(d => d.decisionManager === 6);
+                filtered = filtered.filter(d => [3, 4].includes(d.statut));
                 break;
             default:
                 break;
@@ -249,13 +258,14 @@ const DemandesCongeEmploye = () => {
     // Calcul des statistiques - optimisé avec useMemo
     const stats = useMemo(() => ({
         total: demandes.length,
-        attenteManager: demandes.filter(d => d.decisionManager === 0).length,
-        valideManager: demandes.filter(d => d.decisionManager === 1).length,
-        refuseManager: demandes.filter(d => d.decisionManager === 2).length,
-        accepteRH: demandes.filter(d => d.decisionManager === 3).length,
-        refuseRH: demandes.filter(d => d.decisionManager === 4).length,
-        acquis: demandes.filter(d => d.decisionManager === 5).length,
-        annule: demandes.filter(d => d.decisionManager === 6).length
+        attente: demandes.filter(d => d.statut === 0).length,
+        valideManager: demandes.filter(d => d.statut === 1).length,
+        refuseManager: demandes.filter(d => d.statut === 2).length,
+        annuleDemandeur: demandes.filter(d => d.statut === 3).length,
+        annuleResponsable: demandes.filter(d => d.statut === 4).length,
+        acquis: demandes.filter(d => d.statut === 5).length,
+        valideRH: demandes.filter(d => d.statut === 6).length,
+        refuseRH: demandes.filter(d => d.statut === 7).length
     }), [demandes]);
 
     // Fonctions memoized
@@ -288,7 +298,7 @@ const DemandesCongeEmploye = () => {
             formatDate(d.dateDebut),
             formatDate(d.dateFin),
             d.nbJours,
-            getStatusConfig(d.decisionManager).label,
+            getStatusConfig(d.statut).label,
             d.autreMotif || '-',
             d.commentaireManager || '-',
             d.commentaireRh || '-'
@@ -356,32 +366,35 @@ const DemandesCongeEmploye = () => {
     return (
         <Box p={3}>
             {/* En-tête avec retour */}
-            <Box mb={3}>
+            <Box mb={2}>
                 <Button
                     startIcon={<ArrowBack />}
                     onClick={() => navigate(-1)}
-                    sx={{ mb: 2, color: '#b053ad' }}
+                    size="small"
+                    sx={{ mb: 1, color: '#b053ad', textTransform: 'none' }}
                 >
                     Retour
                 </Button>
                 
-                <Box display="flex" justifyContent="space-between" alignItems="center" flexWrap="wrap">
+                <Box display="flex" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={1.5}>
                     <Box>
-                        <Typography variant="h5" component="h1" gutterBottom>
-                            <CalendarMonth sx={{ mr: 1, verticalAlign: 'middle', color: '#b053ad' }} />
+                            <Typography variant="h6" component="h1" gutterBottom sx={{ mb: 0.75 }}>
+                                <CalendarMonth sx={{ mr: 1, verticalAlign: 'middle', color: '#b053ad', fontSize: 26 }} />
                             Demandes de congé
                         </Typography>
                         {employe && (
-                            <Box display="flex" alignItems="center" gap={2} mt={1}>
+                            <Box display="flex" alignItems="center" gap={1} mt={0.5} flexWrap="wrap">
                                 <Chip
                                     icon={<Person />}
                                     label={`${employe.prenom || ''} ${employe.nom || ''}`}
+                                    size="small"
                                     sx={{ bgcolor: '#f8eff7', color: '#b053ad' }}
                                 />
                                 {employe.departement && (
                                     <Chip
                                         label={`Département: ${employe.departement}`}
                                         variant="outlined"
+                                        size="small"
                                         sx={{ borderColor: '#b053ad', color: '#b053ad' }}
                                     />
                                 )}
@@ -389,12 +402,31 @@ const DemandesCongeEmploye = () => {
                         )}
                     </Box>
                     
-                    <Stack direction="row" spacing={2}>
+                    <Stack direction="row" spacing={1.25} flexWrap="wrap" useFlexGap>
+                        <Button
+                            variant={showFilters ? 'contained' : 'outlined'}
+                            startIcon={<FilterList />}
+                            onClick={() => setShowFilters(!showFilters)}
+                            size="small"
+                            sx={{
+                                borderColor: '#b053ad',
+                                color: showFilters ? '#fff' : '#b053ad',
+                                bgcolor: showFilters ? '#b053ad' : 'transparent',
+                                textTransform: 'none',
+                                '&:hover': {
+                                    borderColor: '#8e3d8b',
+                                    bgcolor: showFilters ? '#8e3d8b' : 'rgba(176, 83, 173, 0.08)'
+                                }
+                            }}
+                        >
+                            {showFilters ? 'Masquer filtres' : 'Filtres'}
+                        </Button>
                         <Button
                             variant="outlined"
                             startIcon={<Print />}
                             onClick={handlePrint}
-                            sx={{ borderColor: '#b053ad', color: '#b053ad' }}
+                            size="small"
+                            sx={{ borderColor: '#b053ad', color: '#b053ad', textTransform: 'none' }}
                         >
                             Imprimer
                         </Button>
@@ -402,7 +434,8 @@ const DemandesCongeEmploye = () => {
                             variant="outlined"
                             startIcon={<Download />}
                             onClick={handleExport}
-                            sx={{ borderColor: '#b053ad', color: '#b053ad' }}
+                            size="small"
+                            sx={{ borderColor: '#b053ad', color: '#b053ad', textTransform: 'none' }}
                         >
                             Exporter CSV
                         </Button>
@@ -411,7 +444,8 @@ const DemandesCongeEmploye = () => {
                             startIcon={<Refresh />}
                             onClick={handleRefresh}
                             disabled={loading}
-                            sx={{ bgcolor: '#b053ad' }}
+                            size="small"
+                            sx={{ bgcolor: '#b053ad', textTransform: 'none' }}
                         >
                             Actualiser
                         </Button>
@@ -427,36 +461,36 @@ const DemandesCongeEmploye = () => {
             )}
 
             {/* Cartes de statistiques */}
-            <Grid container spacing={2} sx={{ mb: 3 }}>
+            <Grid container spacing={1.5} sx={{ mb: 2.5 }}>
                 <Grid item xs={12} sm={6} md={3}>
-                    <Card sx={{ bgcolor: '#f8eff7', borderLeft: '4px solid #ff9800' }}>
-                        <CardContent>
-                            <Typography variant="subtitle2" color="textSecondary">En attente Manager</Typography>
-                            <Typography variant="h4" color="#ed6c02">{stats.attenteManager}</Typography>
+                    <Card sx={{ bgcolor: '#f8eff7', py: 1, px: 1, borderLeft: '4px solid #ff9800' }}>
+                        <CardContent sx={{ py: 1.25, px: 2, minHeight: 84 }}>
+                            <Typography variant="body2" color="textSecondary">En attente</Typography>
+                            <Typography variant="h5" color="#ed6c02" sx={{ lineHeight: 1.1 }}>{stats.attente}</Typography>
                         </CardContent>
                     </Card>
                 </Grid>
                 <Grid item xs={12} sm={6} md={3}>
-                    <Card sx={{ bgcolor: '#f8eff7', borderLeft: '4px solid #03a9f4' }}>
-                        <CardContent>
-                            <Typography variant="subtitle2" color="textSecondary">Validé Manager</Typography>
-                            <Typography variant="h4" color="#0288d1">{stats.valideManager}</Typography>
+                    <Card sx={{ bgcolor: '#f8eff7',  py: 1, px: 1, borderLeft: '4px solid #03a9f4' }}>
+                        <CardContent sx={{ py: 1.25, px: 2, minHeight: 84 }}>
+                            <Typography variant="body2" color="textSecondary">Validé manager</Typography>
+                            <Typography variant="h5" color="#0288d1" sx={{ lineHeight: 1.1 }}>{stats.valideManager}</Typography>
                         </CardContent>
                     </Card>
                 </Grid>
                 <Grid item xs={12} sm={6} md={3}>
-                    <Card sx={{ bgcolor: '#f8eff7', borderLeft: '4px solid #4caf50' }}>
-                        <CardContent>
-                            <Typography variant="subtitle2" color="textSecondary">Accepté RH</Typography>
-                            <Typography variant="h4" color="#2e7d32">{stats.accepteRH}</Typography>
+                    <Card sx={{ bgcolor: '#f8eff7',  py: 1, px: 1, borderLeft: '4px solid #4caf50' }}>
+                        <CardContent sx={{ py: 1.25, px: 2, minHeight: 84 }}>
+                            <Typography variant="body2" color="textSecondary">Validé RH</Typography>
+                            <Typography variant="h5" color="#2e7d32" sx={{ lineHeight: 1.1 }}>{stats.valideRH}</Typography>
                         </CardContent>
                     </Card>
                 </Grid>
                 <Grid item xs={12} sm={6} md={3}>
-                    <Card sx={{ bgcolor: '#f8eff7', borderLeft: '4px solid #66bb6a' }}>
-                        <CardContent>
-                            <Typography variant="subtitle2" color="textSecondary">Acquis</Typography>
-                            <Typography variant="h4" color="#388e3c">{stats.acquis}</Typography>
+                    <Card sx={{ bgcolor: '#f8eff7',  py: 1, px: 1, borderLeft: '4px solid #66bb6a' }}>
+                        <CardContent sx={{ py: 1.25, px: 2, minHeight: 84 }}>
+                            <Typography variant="body2" color="textSecondary">Acquis</Typography>
+                            <Typography variant="h5" color="#388e3c" sx={{ lineHeight: 1.1 }}>{stats.acquis}</Typography>
                         </CardContent>
                     </Card>
                 </Grid>
@@ -471,111 +505,121 @@ const DemandesCongeEmploye = () => {
                     TabIndicatorProps={{ sx: { bgcolor: '#b053ad' } }}
                 >
                     <Tab label={`Toutes (${stats.total})`} sx={{ '&.Mui-selected': { color: '#b053ad' } }} />
-                    <Tab label={`En cours (${stats.attenteManager + stats.valideManager + stats.refuseManager})`} sx={{ '&.Mui-selected': { color: '#b053ad' } }} />
-                    <Tab label={`Traitement RH (${stats.accepteRH + stats.refuseRH})`} sx={{ '&.Mui-selected': { color: '#b053ad' } }} />
+                    <Tab label={`En cours (${stats.attente + stats.valideManager})`} sx={{ '&.Mui-selected': { color: '#b053ad' } }} />
+                    <Tab label={`RH (${stats.valideRH + stats.refuseRH})`} sx={{ '&.Mui-selected': { color: '#b053ad' } }} />
                     <Tab label={`Acquis (${stats.acquis})`} sx={{ '&.Mui-selected': { color: '#b053ad' } }} />
-                    <Tab label={`Annulé (${stats.annule})`} sx={{ '&.Mui-selected': { color: '#b053ad' } }} />
+                    <Tab label={`Annulé (${stats.annuleDemandeur + stats.annuleResponsable})`} sx={{ '&.Mui-selected': { color: '#b053ad' } }} />
                 </Tabs>
             </Paper>
 
             {/* Filtres */}
-            <Card sx={{ mb: 3 }}>
-                <CardContent>
-                    <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
-                        <Box display="flex" alignItems="center" gap={1}>
-                            <FilterList sx={{ color: '#b053ad' }} />
-                            <Typography variant="h6">Filtres</Typography>
-                        </Box>
-                        <Button
-                            size="small"
-                            onClick={() => setShowFilters(!showFilters)}
-                            sx={{ color: '#b053ad' }}
-                        >
-                            {showFilters ? 'Masquer' : 'Afficher'}
-                        </Button>
-                    </Box>
-                    
-                    {showFilters && (
-                        <Grid container spacing={2}>
-                            <Grid item xs={12} md={4}>
-                                <TextField
-                                    fullWidth
-                                    size="small"
-                                    placeholder="Rechercher..."
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                    InputProps={{
-                                        startAdornment: (
-                                            <InputAdornment position="start">
-                                                <Search />
-                                            </InputAdornment>
-                                        ),
-                                    }}
-                                />
-                            </Grid>
-                            
-                            <Grid item xs={12} md={3}>
-                                <FormControl fullWidth size="small">
-                                    <InputLabel>Statut</InputLabel>
-                                    <Select
-                                        value={statusFilter}
-                                        label="Statut"
-                                        onChange={(e) => setStatusFilter(e.target.value)}
+            {showFilters && (
+                <Card sx={{ mb: 3 }}>
+                    <CardContent>
+                        <Stack spacing={3}>
+                            <Box
+                                display="flex"
+                                gap={2}
+                                flexDirection={{ xs: 'column', md: 'row' }}
+                                alignItems={{ xs: 'stretch', md: 'flex-start' }}
+                            >
+                                <Box sx={{ flex: 1, minWidth: { md: 0 } }}>
+                                    <TextField
+                                        fullWidth
+                                        size="small"
+                                        placeholder="Rechercher par type, motif ou commentaire..."
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                        InputProps={{
+                                            startAdornment: (
+                                                <InputAdornment position="start">
+                                                    <Search />
+                                                </InputAdornment>
+                                            ),
+                                        }}
+                                    />
+                                </Box>
+
+                                <Box sx={{ width: { xs: '100%', md: 180 }, flexShrink: 0 }}>
+                                    <FormControl fullWidth size="small">
+                                        <InputLabel>Statut</InputLabel>
+                                        <Select
+                                            value={statusFilter}
+                                            label="Statut"
+                                            onChange={(e) => setStatusFilter(e.target.value)}
+                                        >
+                                            <MenuItem value="all">Tous</MenuItem>
+                                            <MenuItem value="0">En attente</MenuItem>
+                                            <MenuItem value="1">Validé par manager</MenuItem>
+                                            <MenuItem value="2">Refusé par manager</MenuItem>
+                                            <MenuItem value="3">Annulé par le demandeur</MenuItem>
+                                            <MenuItem value="4">Annulé par le responsable</MenuItem>
+                                            <MenuItem value="5">Acquis / Terminé</MenuItem>
+                                            <MenuItem value="6">Validé par RH</MenuItem>
+                                            <MenuItem value="7">Refusé par RH</MenuItem>
+                                        </Select>
+                                    </FormControl>
+                                </Box>
+                            </Box>
+
+                            <Box
+                                display="flex"
+                                gap={2}
+                                flexDirection={{ xs: 'column', md: 'row' }}
+                                alignItems={{ xs: 'stretch', md: 'center' }}
+                            >
+                                <Box sx={{ flex: 1, minWidth: { md: 0 } }}>
+                                    <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="fr">
+                                        <DatePicker
+                                            label="Date début"
+                                            value={dateDebutFilter}
+                                            onChange={setDateDebutFilter}
+                                            slotProps={{ textField: { size: 'small', fullWidth: true } }}
+                                        />
+                                    </LocalizationProvider>
+                                </Box>
+
+                                <Box sx={{ flex: 1, minWidth: { md: 0 } }}>
+                                    <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="fr">
+                                        <DatePicker
+                                            label="Date fin"
+                                            value={dateFinFilter}
+                                            onChange={setDateFinFilter}
+                                            slotProps={{ textField: { size: 'small', fullWidth: true } }}
+                                        />
+                                    </LocalizationProvider>
+                                </Box>
+
+                                <Box sx={{ width: { xs: '100%', md: 160 }, flexShrink: 0 }}>
+                                    <Button
+                                        fullWidth
+                                        variant="outlined"
+                                        onClick={handleResetFilters}
+                                        sx={{
+                                            borderColor: '#b053ad',
+                                            color: '#b053ad',
+                                            height: '40px',
+                                            textTransform: 'none'
+                                        }}
                                     >
-                                        <MenuItem value="all">Tous</MenuItem>
-                                        <MenuItem value="0">Attente Manager</MenuItem>
-                                        <MenuItem value="1">Validé Manager</MenuItem>
-                                        <MenuItem value="2">Refusé Manager</MenuItem>
-                                        <MenuItem value="3">Accepté RH</MenuItem>
-                                        <MenuItem value="4">Refusé RH</MenuItem>
-                                        <MenuItem value="5">Acquis</MenuItem>
-                                        <MenuItem value="6">Annulé</MenuItem>
-                                    </Select>
-                                </FormControl>
-                            </Grid>
-                            
-                            <Grid item xs={12} md={2}>
-                                <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="fr">
-                                    <DatePicker
-                                        label="Date début"
-                                        value={dateDebutFilter}
-                                        onChange={setDateDebutFilter}
-                                        slotProps={{ textField: { size: 'small', fullWidth: true } }}
-                                    />
-                                </LocalizationProvider>
-                            </Grid>
-                            
-                            <Grid item xs={12} md={2}>
-                                <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="fr">
-                                    <DatePicker
-                                        label="Date fin"
-                                        value={dateFinFilter}
-                                        onChange={setDateFinFilter}
-                                        slotProps={{ textField: { size: 'small', fullWidth: true } }}
-                                    />
-                                </LocalizationProvider>
-                            </Grid>
-                            
-                            <Grid item xs={12} md={1}>
-                                <Button
-                                    fullWidth
-                                    variant="outlined"
-                                    onClick={handleResetFilters}
-                                    sx={{ borderColor: '#b053ad', color: '#b053ad' }}
-                                >
-                                    Reset
-                                </Button>
-                            </Grid>
-                        </Grid>
-                    )}
-                    
-                    <Box mt={2}>
-                        <Typography variant="caption" color="textSecondary">
-                            {filteredDemandes.length} demande(s) sur {demandes.length}
-                        </Typography>
-                    </Box>
-                </CardContent>
-            </Card>
+                                        Réinitialiser
+                                    </Button>
+                                </Box>
+                            </Box>
+
+                            <Box
+                                display="flex"
+                                justifyContent="flex-start"
+                                alignItems="center"
+                            >
+                                <Typography variant="caption" color="textSecondary">
+                                    {filteredDemandes.length} demande(s) sur {demandes.length}
+                                </Typography>
+                            </Box>
+                        </Stack>
+                    </CardContent>
+                </Card>
+            )}
 
             {/* Tableau des demandes */}
             <Card>
@@ -603,7 +647,7 @@ const DemandesCongeEmploye = () => {
                                     </TableRow>
                                 ) : (
                                     paginatedDemandes.map((demande) => {
-                                        const statusConfig = getStatusConfig(demande.decisionManager);
+                                        const statusConfig = getStatusConfig(demande.statut);
                                         return (
                                             <TableRow key={demande.id} hover>
                                                 <TableCell>
@@ -685,124 +729,185 @@ const DemandesCongeEmploye = () => {
                 </CardContent>
             </Card>
 
-            {/* Modal de détails - reste identique */}
-            <Dialog open={showDetailsModal} onClose={() => setShowDetailsModal(false)} maxWidth="md" fullWidth>
-                <DialogTitle sx={{ bgcolor: '#f8eff7', color: '#b053ad' }}>
-                    <Box display="flex" alignItems="center" gap={1}>
-                        <Event sx={{ color: '#b053ad' }} />
-                        Détails de la demande
-                    </Box>
-                </DialogTitle>
-                <DialogContent>
-                    {selectedDemande && (
-                        <Grid container spacing={2} sx={{ mt: 1 }}>
-                            <Grid item xs={12} md={6}>
-                                <Typography variant="subtitle2" color="textSecondary">Type de congé</Typography>
-                                <Typography variant="body1">
-                                    {selectedDemande.typeConge?.intitule || 'Non spécifié'}
-                                </Typography>
-                            </Grid>
-                            
-                            <Grid item xs={12} md={6}>
-                                <Typography variant="subtitle2" color="textSecondary">Statut</Typography>
+            {/* Modal de détails */}
+            <Dialog open={showDetailsModal} onClose={() => setShowDetailsModal(false)} maxWidth="lg" fullWidth>
+                {selectedDemande && (
+                    <>
+                        <DialogTitle sx={{ pb: 1.5 }}>
+                            <Box
+                                display="flex"
+                                alignItems={{ xs: 'flex-start', sm: 'center' }}
+                                justifyContent="space-between"
+                                gap={2}
+                                flexDirection={{ xs: 'column', sm: 'row' }}
+                            >
+                                <Box display="flex" alignItems="center" gap={1}>
+                                    <Event sx={{ color: '#b053ad' }} />
+                                    <Typography variant="h6" component="span">
+                                        Détails de la demande
+                                    </Typography>
+                                </Box>
                                 <Chip
-                                    label={getStatusConfig(selectedDemande.decisionManager).label}
+                                    label={getStatusConfig(selectedDemande.statut).label}
                                     size="small"
                                     sx={{
-                                        bgcolor: getStatusConfig(selectedDemande.decisionManager).bgLight,
-                                        color: getStatusConfig(selectedDemande.decisionManager).bgColor,
-                                        border: `1px solid ${getStatusConfig(selectedDemande.decisionManager).borderColor}`,
-                                        fontWeight: 500,
-                                        mt: 0.5
+                                        bgcolor: getStatusConfig(selectedDemande.statut).bgLight,
+                                        color: getStatusConfig(selectedDemande.statut).bgColor,
+                                        border: `1px solid ${getStatusConfig(selectedDemande.statut).borderColor}`,
+                                        fontWeight: 700,
+                                        alignSelf: { xs: 'flex-start', sm: 'center' }
                                     }}
-                                    icon={getStatusConfig(selectedDemande.decisionManager).icon}
+                                    icon={getStatusConfig(selectedDemande.statut).icon}
                                 />
-                            </Grid>
-                            
-                            <Grid item xs={12} md={6}>
-                                <Typography variant="subtitle2" color="textSecondary">Date de début</Typography>
-                                <Typography variant="body1">
-                                    {formatDateLong(selectedDemande.dateDebut)}
-                                </Typography>
-                            </Grid>
-                            
-                            <Grid item xs={12} md={6}>
-                                <Typography variant="subtitle2" color="textSecondary">Date de fin</Typography>
-                                <Typography variant="body1">
-                                    {formatDateLong(selectedDemande.dateFin)}
-                                </Typography>
-                            </Grid>
-                            
-                            <Grid item xs={12}>
-                                <Typography variant="subtitle2" color="textSecondary">Durée totale</Typography>
-                                <Typography variant="body1" fontWeight="bold">
-                                    {selectedDemande.nbJours} jour(s)
-                                </Typography>
-                            </Grid>
-                            
-                            <Grid item xs={12}>
-                                <Divider />
-                            </Grid>
-                            
-                            {selectedDemande.autreMotif && (
-                                <Grid item xs={12}>
-                                    <Typography variant="subtitle2" color="textSecondary">Motif détaillé</Typography>
-                                    <Paper variant="outlined" sx={{ p: 2, bgcolor: '#f8eff7' }}>
-                                        <Typography variant="body2">{selectedDemande.autreMotif}</Typography>
-                                    </Paper>
+                            </Box>
+                        </DialogTitle>
+                        <DialogContent sx={{ pt: 2 }}>
+                            <Stack spacing={2.5}>
+                                <Grid container spacing={2}>
+                                    <Grid item xs={12} sm={6} lg={3}>
+                                        <Paper variant="outlined" sx={{ p: 2.25, borderRadius: 3, height: '100%', bgcolor: '#fff' }}>
+                                            <Typography variant="overline" color="text.secondary">
+                                                Type de congé
+                                            </Typography>
+                                            <Box display="flex" alignItems="flex-start" gap={1.5} mt={0.75}>
+                                                <CalendarMonth sx={{ color: '#b053ad', mt: 0.2 }} />
+                                                <Box>
+                                                    <Typography variant="subtitle1" fontWeight={700}>
+                                                        {selectedDemande.typeConge?.intitule || 'Non spécifié'}
+                                                    </Typography>
+                                                    <Typography variant="body2" color="text.secondary">
+                                                        Date demande: {formatDate(selectedDemande.dateDemande)}
+                                                    </Typography>
+                                                </Box>
+                                            </Box>
+                                        </Paper>
+                                    </Grid>
+
+                                    <Grid item xs={12} sm={6} lg={3}>
+                                        <Paper variant="outlined" sx={{ p: 2.25, borderRadius: 3, height: '100%', bgcolor: '#fff' }}>
+                                            <Typography variant="overline" color="text.secondary">
+                                                Période
+                                            </Typography>
+                                            <Box display="flex" alignItems="flex-start" gap={1.5} mt={0.75}>
+                                                <Event sx={{ color: '#03a9f4', mt: 0.2 }} />
+                                                <Box>
+                                                    <Typography variant="subtitle1" fontWeight={700}>
+                                                        {formatDate(selectedDemande.dateDebut)} → {formatDate(selectedDemande.dateFin)}
+                                                    </Typography>
+                                                    <Typography variant="body2" color="text.secondary">
+                                                        {formatDateLong(selectedDemande.dateDebut)}
+                                                    </Typography>
+                                                </Box>
+                                            </Box>
+                                        </Paper>
+                                    </Grid>
+
+                                    <Grid item xs={12} sm={6} lg={3}>
+                                        <Paper variant="outlined" sx={{ p: 2.25, borderRadius: 3, height: '100%', bgcolor: '#fff' }}>
+                                            <Typography variant="overline" color="text.secondary">
+                                                Fin du congé
+                                            </Typography>
+                                            <Box display="flex" alignItems="flex-start" gap={1.5} mt={0.75}>
+                                                <Today sx={{ color: '#03a9f4', mt: 0.2 }} />
+                                                <Box>
+                                                    <Typography variant="subtitle1" fontWeight={700}>
+                                                        {formatDateLong(selectedDemande.dateFin)}
+                                                    </Typography>
+                                                    <Typography variant="body2" color="text.secondary">
+                                                        Retour prévu après cette date
+                                                    </Typography>
+                                                </Box>
+                                            </Box>
+                                        </Paper>
+                                    </Grid>
+
+                                    <Grid item xs={12} sm={6} lg={3}>
+                                        <Paper variant="outlined" sx={{ p: 2.25, borderRadius: 3, height: '100%', bgcolor: '#fff' }}>
+                                            <Typography variant="overline" color="text.secondary">
+                                                Durée totale
+                                            </Typography>
+                                            <Box display="flex" alignItems="flex-start" gap={1.5} mt={0.75}>
+                                                <AccessTime sx={{ color: '#2e7d32', mt: 0.2 }} />
+                                                <Box>
+                                                    <Typography variant="subtitle1" fontWeight={700} color="#2e7d32">
+                                                        {selectedDemande.nbJours} jour(s)
+                                                    </Typography>
+                                                    <Typography variant="body2" color="text.secondary">
+                                                        Durée calculée de la demande
+                                                    </Typography>
+                                                </Box>
+                                            </Box>
+                                        </Paper>
+                                    </Grid>
                                 </Grid>
-                            )}
-                            
-                            {selectedDemande.commentaireManager && (
-                                <Grid item xs={12}>
-                                    <Typography variant="subtitle2" color="textSecondary">
-                                        Commentaire du Manager
-                                    </Typography>
-                                    <Paper variant="outlined" sx={{ p: 2, bgcolor: '#e1f5fe' }}>
-                                        <Typography variant="body2">{selectedDemande.commentaireManager}</Typography>
+
+                                {selectedDemande.autreMotif && (
+                                    <Paper variant="outlined" sx={{ p: 2.25, borderRadius: 3, bgcolor: '#f8eff7' }}>
+                                        <Typography variant="overline" color="text.secondary">
+                                            Motif détaillé
+                                        </Typography>
+                                        <Typography variant="body2" sx={{ mt: 1.25, whiteSpace: 'pre-wrap' }}>
+                                            {selectedDemande.autreMotif}
+                                        </Typography>
+                                    </Paper>
+                                )}
+
+                                <Box
+                                    sx={{
+                                        display: 'grid',
+                                        gridTemplateColumns: { xs: '1fr', lg: '1fr 1fr' },
+                                        gap: 2,
+                                        width: '100%'
+                                    }}
+                                >
+                                    <Paper variant="outlined" sx={{ p: 2.25, borderRadius: 3, minHeight: 180, bgcolor: '#fff', width: '100%' }}>
+                                        <Typography variant="overline" color="text.secondary">
+                                            Commentaire du manager
+                                        </Typography>
+                                        <Typography variant="body2" sx={{ mt: 1.25, whiteSpace: 'pre-wrap' }}>
+                                            {selectedDemande.commentaireManager || 'Aucun commentaire du manager'}
+                                        </Typography>
                                         {selectedDemande.dateDecisionManager && (
-                                            <Typography variant="caption" color="textSecondary">
+                                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1.25 }}>
                                                 Le {formatDate(selectedDemande.dateDecisionManager)}
                                             </Typography>
                                         )}
                                     </Paper>
-                                </Grid>
-                            )}
-                            
-                            {selectedDemande.commentaireRh && (
-                                <Grid item xs={12}>
-                                    <Typography variant="subtitle2" color="textSecondary">
-                                        Commentaire du RH
-                                    </Typography>
-                                    <Paper variant="outlined" sx={{ p: 2, bgcolor: '#e8f5e9' }}>
-                                        <Typography variant="body2">{selectedDemande.commentaireRh}</Typography>
+
+                                    <Paper variant="outlined" sx={{ p: 2.25, borderRadius: 3, minHeight: 180, bgcolor: '#fff', width: '100%' }}>
+                                        <Typography variant="overline" color="text.secondary">
+                                            Commentaire RH
+                                        </Typography>
+                                        <Typography variant="body2" sx={{ mt: 1.25, whiteSpace: 'pre-wrap' }}>
+                                            {selectedDemande.commentaireRh || 'Aucun commentaire RH'}
+                                        </Typography>
                                         {selectedDemande.dateDecisionRh && (
-                                            <Typography variant="caption" color="textSecondary">
+                                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1.25 }}>
                                                 Le {formatDate(selectedDemande.dateDecisionRh)}
                                             </Typography>
                                         )}
                                     </Paper>
-                                </Grid>
-                            )}
-                            
-                            {selectedDemande.commentaireAnnulation && (
-                                <Grid item xs={12}>
-                                    <Typography variant="subtitle2" color="textSecondary">
-                                        Commentaire d'annulation
-                                    </Typography>
-                                    <Paper variant="outlined" sx={{ p: 2, bgcolor: '#ffebee' }}>
-                                        <Typography variant="body2">{selectedDemande.commentaireAnnulation}</Typography>
+                                </Box>
+
+                                {selectedDemande.commentaireAnnulation && (
+                                    <Paper variant="outlined" sx={{ p: 2.25, borderRadius: 3, bgcolor: '#ffebee' }}>
+                                        <Typography variant="overline" color="text.secondary">
+                                            Commentaire d'annulation
+                                        </Typography>
+                                        <Typography variant="body2" sx={{ mt: 1.25, whiteSpace: 'pre-wrap' }}>
+                                            {selectedDemande.commentaireAnnulation}
+                                        </Typography>
                                     </Paper>
-                                </Grid>
-                            )}
-                        </Grid>
-                    )}
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={() => setShowDetailsModal(false)} sx={{ color: '#b053ad' }}>
-                        Fermer
-                    </Button>
-                </DialogActions>
+                                )}
+                            </Stack>
+                        </DialogContent>
+                        <DialogActions>
+                            <Button onClick={() => setShowDetailsModal(false)} sx={{ color: '#b053ad' }}>
+                                Fermer
+                            </Button>
+                        </DialogActions>
+                    </>
+                )}
             </Dialog>
         </Box>
     );

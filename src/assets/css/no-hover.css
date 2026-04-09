@@ -97,20 +97,20 @@ a:active {
 /* Manager Sidebar: use violet hover background for both <a> and <button> links */
 .app-sidebar .nav-sidebar a.nav-link:hover,
 .app-sidebar .nav-sidebar button.nav-link:hover {
-  background-color: #a250c1 !important; /* violet foncé */
-  color: #fff !important;
+  background-color: rgba(176, 83, 173, 0.08) !important;
+  color: var(--bg-primary) !important;
   transform: translateX(2px) !important;
 }
 
 .app-sidebar .submenu a.nav-link:hover,
 .app-sidebar .submenu button.nav-link:hover {
-  background-color: #a250c1 !important;
-  color: #fff !important;
+  background-color: rgba(176, 83, 173, 0.08) !important;
+  color: var(--bg-primary) !important;
   transform: none !important;
 }
 
 .app-sidebar .logout-link:hover {
-  background-color: #fff !important;
+  background-color: rgba(176, 83, 173, 0.08) !important;
   transform: none !important;
 }
 
@@ -366,7 +366,7 @@ a.btn[aria-label]:not([title])::after,
 body .MuiButton-containedPrimary:hover,
 body .MuiButton-containedPrimary:focus,
 body .MuiButton-containedPrimary:active {
-  background-color: var(--bg-primary) !important;
+  background-color: rgba(176, 83, 173, 0.12) !important;
 }
 
 body .MuiButton-containedSecondary:hover,
@@ -589,5 +589,7 @@ body .MuiIconButton-root:active {
 }
 
 .MuiPaginationItem-root.Mui-selected:hover {
-  background-color: var(--bg-primary) !important;
+  background-color: rgba(176, 83, 173, 0.12) !important;
 }
+
+

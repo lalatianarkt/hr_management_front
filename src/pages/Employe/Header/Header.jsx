@@ -261,7 +261,7 @@ export default function Header() {
   const buildNotificationLink = (lien) => {
     if (!lien) return "";
     const clean = lien.startsWith("/") ? lien : `/${lien}`;
-    return `/dashboard/emp${clean}`;
+    return `/emp${clean}`;
   };
 
   // Extraire le titre de la notification (depuis le message ou depuis un champ dédié)

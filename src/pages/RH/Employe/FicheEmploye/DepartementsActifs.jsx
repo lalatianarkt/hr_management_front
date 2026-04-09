@@ -275,7 +275,7 @@ function DepartementsActifs() {
       <Card className="border">
         <Card.Body className="p-0">
           <div className="table-responsive">
-            <Table hover className="mb-0">
+            <Table hover className="mb-0 departements-table">
               <thead className="bg-light">
                 <tr>
                   <th className="py-3 ps-3">Nom du Département</th>
@@ -291,7 +291,7 @@ function DepartementsActifs() {
                     <tr key={dept.id}>
                       <td className="py-3 ps-3">
                         <div className="d-flex align-items-center gap-2">
-                          <div className="bg-primary text-white p-2 rounded">
+                          <div className="dept-icon">
                             <Home size={16} />
                           </div>
                           <div>
@@ -319,25 +319,29 @@ function DepartementsActifs() {
                           Actif
                         </Badge>
                       </td>
-                      <td className="py-3 pe-3 text-end">
-                        <div className="d-flex justify-content-end gap-1">
+                      <td className="py-3 pe-3 text-end actions-cell">
+                        <div className="d-flex justify-content-end gap-2 action-buttons">
                           <Button
                             variant="outline-primary"
                             size="sm"
                             onClick={() => openEditModal(dept)}
-                            className="px-2"
+                            className="action-btn"
                             aria-label="Modifier"
+                            title="Modifier"
                           >
                             <Edit2 size={12} />
+                            <span>Modifier</span>
                           </Button>
                           <Button
                             variant="outline-danger"
                             size="sm"
                             onClick={() => openDeleteModal(dept)}
-                            className="px-2"
+                            className="action-btn"
                             aria-label="Supprimer"
+                            title="Supprimer"
                           >
                             <Trash2 size={12} />
+                            <span>Supprimer</span>
                           </Button>
                           {/* Menu déroulant supprimé car plus d'options */}
                         </div>
@@ -376,7 +380,7 @@ function DepartementsActifs() {
         setShowAddModal(false);
         setSelectedDepartement(null);
       }}>
-        <Modal.Header closeButton>
+        <Modal.Header closeButton closeLabel="Fermer">
           <Modal.Title>
             {selectedDepartement ? 'Modifier le département' : 'Nouveau département'}
           </Modal.Title>
@@ -425,7 +429,7 @@ function DepartementsActifs() {
 
       {/* Modal de confirmation de suppression */}
       <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)}>
-        <Modal.Header closeButton>
+        <Modal.Header closeButton closeLabel="Fermer">
           <Modal.Title>Confirmer la désactivation</Modal.Title>
         </Modal.Header>
         <Modal.Body>
@@ -527,9 +531,63 @@ function DepartementsActifs() {
           background-color: #b053ad !important;
           color: white !important;
         }
+
+        .dept-icon {
+          width: 34px;
+          height: 34px;
+          border-radius: 10px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          background: #f3e9f7;
+          color: #b053ad;
+          border: 1px solid #e1b2db;
+        }
+
+        .actions-cell {
+          white-space: nowrap;
+          vertical-align: middle;
+        }
+
+        .action-buttons {
+          flex-wrap: nowrap;
+          align-items: center;
+        }
+
+        .action-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          padding: 0.25rem 0.6rem;
+          border-radius: 10px;
+          font-weight: 600;
+          white-space: nowrap;
+        }
+
+        .departements-table td,
+        .departements-table th {
+          vertical-align: middle;
+        }
+
+        @media (max-width: 768px) {
+          .actions-cell {
+            width: 1%;
+          }
+
+          .action-buttons {
+            flex-direction: column;
+            align-items: flex-end;
+          }
+
+          .action-btn {
+            width: 100%;
+            justify-content: flex-end;
+          }
+        }
       `}</style>
     </Container>
   );
 }
 
 export default DepartementsActifs;
+

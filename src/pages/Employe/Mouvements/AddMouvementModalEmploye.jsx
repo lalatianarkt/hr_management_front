@@ -171,7 +171,7 @@ const AddMouvementModalEmploye = ({ show, onHide, employeId, employeNom, employe
 
   return (
     <Modal show={show} onHide={onHide} size="lg" centered backdrop="static">
-      <Modal.Header closeButton>
+      <Modal.Header closeButton closeLabel="Fermer">
         <Modal.Title>Nouvelle demande de mouvement</Modal.Title>
       </Modal.Header>
 
@@ -250,3 +250,4 @@ const AddMouvementModalEmploye = ({ show, onHide, employeId, employeNom, employe
 };
 
 export default AddMouvementModalEmploye;
+

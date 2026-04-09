@@ -36,6 +36,20 @@ export default function Header() {
     }
   };
 
+  const getDepartementPoste = () => {
+    try {
+      const departement = sessionStorage.getItem("departement") || "";
+      const poste = sessionStorage.getItem("poste") || "";
+      if (departement && poste) return `${departement} - ${poste}`;
+      if (departement) return departement;
+      if (poste) return poste;
+      return "—";
+    } catch (error) {
+      console.error("Erreur lecture departement/poste:", error);
+      return "—";
+    }
+  };
+
   // Récupérer les rôles au chargement
   useEffect(() => {
     const storedRoles = sessionStorage.getItem('userRoles');
@@ -261,6 +275,7 @@ export default function Header() {
     const routes = [
       { match: /^\/dashboard-RH\/?$/, items: ["Accueil"] },
       { match: /^\/dashboard-RH\/employees$/, items: ["Accueil", "Gestion Listes", "Salaries"] },
+      { match: /^\/dashboard-RH\/employees\/[^/]+\/mouvements$/, items: ["Accueil", "Gestion Listes", "Salaries", "Mouvements"] },
       { match: /^\/dashboard-RH\/employees\/[^/]+\/personnel$/, items: ["Accueil", "Gestion Listes", "Salaries", "Fiche personnelle"] },
       { match: /^\/dashboard-RH\/employees\/[^/]+\/documents$/, items: ["Accueil", "Gestion Listes", "Salaries", "Documents"] },
       { match: /^\/dashboard-RH\/departements$/, items: ["Accueil", "Gestion Listes", "Departements"] },
@@ -289,6 +304,7 @@ export default function Header() {
 
   const breadcrumbItems = getBreadcrumbItems(location.pathname);
   const nomComplet = getNomComplet();
+  const departementPoste = getDepartementPoste();
   const hasMultipleRoles = roles.length > 1;
 
   return (
@@ -397,8 +413,24 @@ export default function Header() {
             </div>
           )}
 
+          {/* Profil utilisateur */}
+          <div className="d-flex align-items-center p-1 p-sm-2 rounded-pill bg-light" style={{ border: "1px solid var(--color-border)" }}>
+            <img
+              src="/assets/img/no_profile_pic.jpg"
+              className="rounded-circle shadow-sm"
+              alt="User"
+              style={{ width: "32px", height: "32px", objectFit: "cover" }}
+            />
+            <div className="ms-2 me-2 d-none d-md-block">
+              <div className="fw-bold" style={{ fontSize: "12px", lineHeight: "1.2", color: "var(--color-heading)" }}>
+                {nomComplet || "Utilisateur"}
+              </div>
+              <div className="text-muted" style={{ fontSize: "10px" }}>{departementPoste}</div>
+            </div>
+          </div>
+
           {/* Notifications */}
-          <div className="position-relative me-1" ref={notificationRef}>
+          <div className="position-relative ms-1" ref={notificationRef}>
             <button
               className="btn btn-link text-muted position-relative"
               onClick={() => setShowNotifications(!showNotifications)}
@@ -539,22 +571,6 @@ export default function Header() {
                 </div>
               </div>
             )}
-          </div>
-
-          {/* Profil utilisateur */}
-          <div className="d-flex align-items-center p-1 p-sm-2 rounded-pill bg-light" style={{ border: "1px solid var(--color-border)" }}>
-            <img
-              src="/assets/img/no_profile_pic.jpg"
-              className="rounded-circle shadow-sm"
-              alt="User"
-              style={{ width: "32px", height: "32px", objectFit: "cover" }}
-            />
-            <div className="ms-2 me-2 d-none d-md-block">
-              <div className="fw-bold" style={{ fontSize: "12px", lineHeight: "1.2", color: "var(--color-heading)" }}>
-                {getRoleLibelle(currentRole) || "Utilisateur"}
-              </div>
-              <div className="text-muted" style={{ fontSize: "10px" }}>{nomComplet}</div>
-            </div>
           </div>
         </div>
       </div>

@@ -16,7 +16,7 @@ import {
   ChevronRight,
   CheckCircleFill
 } from "react-bootstrap-icons";
-import axios from "axios";
+import axiosInstance from "../../../utils/AxiosInstance";
 
 function AddPosteModal({ show, onHide, onSuccess, refreshPostes }) {
   const [loading, setLoading] = useState(false);
@@ -45,8 +45,8 @@ function AddPosteModal({ show, onHide, onSuccess, refreshPostes }) {
           departementsResponse,
           niveauxResponse
         ] = await Promise.all([
-          axios.get("http://localhost:8080/api/departements"),
-          axios.get("http://localhost:8080/api/niveaux")
+          axiosInstance.get("/api/departements"),
+          axiosInstance.get("/api/niveaux")
         ]);
 
         setDepartements(departementsResponse.data);
@@ -108,7 +108,7 @@ function AddPosteModal({ show, onHide, onSuccess, refreshPostes }) {
 
       console.log("Payload d'ajout de poste:", payload);
 
-      const response = await axios.post("http://localhost:8080/api/postes", payload);
+      const response = await axiosInstance.post("/api/postes", payload);
       
       if (onSuccess) {
         onSuccess(response.data);

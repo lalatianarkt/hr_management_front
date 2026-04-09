@@ -143,7 +143,7 @@ function BulletinDepartementPage() {
   return (
     <div className="container-fluid py-4">
       {/* En-tête Hero */}
-      <Card className="mb-4 border-0 shadow-lg" style={{ background: 'var(--bg-gradient)', borderRadius: '20px', overflow: 'hidden' }}>
+      <Card className="mb-4 border-0 shadow-lg bulletin-hero-card" style={{ background: 'var(--bg-gradient)', borderRadius: '20px', overflow: 'hidden' }}>
         <Card.Body className="p-4 p-lg-5">
           <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center">
             <div className="text-white">
@@ -164,7 +164,7 @@ function BulletinDepartementPage() {
                 variant="primary"
                 size="sm"
                 onClick={fetchBulletins}
-                className="btn-unified d-flex align-items-center gap-1"
+                className="btn-unified d-flex align-items-center gap-1 bulletin-hero-action"
               >
                 <RefreshCw size={14} />
                 Actualiser

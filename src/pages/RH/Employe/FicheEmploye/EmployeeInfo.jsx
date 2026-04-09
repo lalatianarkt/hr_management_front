@@ -1,7 +1,8 @@
-// src/pages/EmployeeInfo.jsx
+﻿// src/pages/EmployeeInfo.jsx
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axiosInstance from "../../../utils/AxiosInstance";
+import axios from "axios";
 import {
   Container,
   Row,
@@ -100,7 +101,7 @@ const InfoPanel = ({ title, children }) => (
 );
 
 const InfoItem = ({ label, value, icon: Icon, type = 'text', linkTo = null }) => {
-  const displayValue = value || 'Non specifie';
+  const displayValue = value || 'Non spécifié';
 
   const content = type === 'badge' ? (
     <Badge bg="light" text="dark" className="fw-semibold border">{displayValue}</Badge>
@@ -109,7 +110,7 @@ const InfoItem = ({ label, value, icon: Icon, type = 'text', linkTo = null }) =>
   ) : type === 'phone' ? (
     <a href={`tel:${value}`} className="text-decoration-none text-primary fw-medium">{displayValue}</a>
   ) : type === 'money' ? (
-    <span className="fw-semibold text-dark">{value ? new Intl.NumberFormat('fr-MG', { style: 'currency', currency: 'MGA' }).format(value) : 'Non specifie'}</span>
+    <span className="fw-semibold text-dark">{value ? new Intl.NumberFormat('fr-MG', { style: 'currency', currency: 'MGA' }).format(value) : 'Non spécifié'}</span>
   ) : linkTo ? (
     <Link to={linkTo} className="text-decoration-none text-primary fw-medium" style={{ wordBreak: 'break-word' }}>{displayValue}</Link>
   ) : (
@@ -493,17 +494,23 @@ const ProModal = ({ show, onClose, proData, onDataChange, onSave, isSubmitting, 
 const ContactModal = ({ show, onClose, contactData, onDataChange, onSave, isSubmitting }) => (
   <BaseModal show={show} onClose={onClose} title="Modifier le contact d'urgence" onSave={onSave} isSubmitting={isSubmitting}>
     <div className="row g-3">
-      <div className="col-md-6">
-        <Form.Group className="mb-3">
-          <Form.Label>Nom complet <span className="text-danger">*</span></Form.Label>
-          <Form.Control value={contactData.nom || ''} onChange={(e) => onDataChange('nom', e.target.value)} required placeholder="Nom et prénom" />
-        </Form.Group>
-      </div>
-      <div className="col-md-6">
-        <Form.Group className="mb-3">
-          <Form.Label>Téléphone <span className="text-danger">*</span></Form.Label>
-          <Form.Control value={contactData.contact || ''} onChange={(e) => onDataChange('contact', e.target.value)} required placeholder="Numéro de téléphone" />
-        </Form.Group>
+        <div className="col-md-6">
+          <Form.Group className="mb-3">
+            <Form.Label>Nom complet <span className="text-danger">*</span></Form.Label>
+            <Form.Control value={contactData.nom || ''} onChange={(e) => onDataChange('nom', e.target.value)} required placeholder="Nom et prénom" />
+          </Form.Group>
+        </div>
+        <div className="col-md-6">
+          <Form.Group className="mb-3">
+            <Form.Label>Lien de parenté</Form.Label>
+            <Form.Control value={contactData.lienParente || ''} onChange={(e) => onDataChange('lienParente', e.target.value)} placeholder="Ex : Père, Mère, Conjoint(e)" />
+          </Form.Group>
+        </div>
+        <div className="col-md-6">
+          <Form.Group className="mb-3">
+            <Form.Label>Téléphone <span className="text-danger">*</span></Form.Label>
+            <Form.Control value={contactData.contact || ''} onChange={(e) => onDataChange('contact', e.target.value)} required placeholder="Numéro de téléphone" />
+          </Form.Group>
       </div>
       <div className="col-md-6">
         <Form.Group className="mb-3">
@@ -1343,8 +1350,10 @@ function EmployeeInfo() {
 
   const handleExportPDF = async (employeId) => {
     try {
-      const response = await axiosInstance.get(`/api/export/${employeId}`, {
-        responseType: 'blob' 
+      const token = sessionStorage.getItem('token');
+      const response = await axios.get(`http://localhost:8080/api/export/${employeId}`, {
+        responseType: 'blob',
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined
       });
       
       const blob = new Blob([response.data], { type: 'application/pdf' });
@@ -1456,7 +1465,14 @@ function EmployeeInfo() {
 
   const openContactModal = () => {
     const employe = employeeData?.employe;
-    setContactData({ id: employe?.emergencyContact?.id, nom: employe?.emergencyContact?.nom || '', contact: employe?.emergencyContact?.contact || '', email: employe?.emergencyContact?.email || '', adresse: employe?.emergencyContact?.adresse || '' });
+    setContactData({
+      id: employe?.emergencyContact?.id,
+      nom: employe?.emergencyContact?.nom || '',
+      lienParente: employe?.emergencyContact?.lienParente || '',
+      contact: employe?.emergencyContact?.contact || '',
+      email: employe?.emergencyContact?.email || '',
+      adresse: employe?.emergencyContact?.adresse || ''
+    });
     setShowContactModal(true);
   };
 
@@ -1631,8 +1647,8 @@ function EmployeeInfo() {
         theme="colored"
       />
             
-<Card className="border mb-4 position-relative">
-      <Card.Body className="p-3">
+    <Card className="border mb-4 position-relative overflow-visible">
+      <Card.Body className="p-3 overflow-visible">
         <div className="d-flex justify-content-between align-items-start gap-4 flex-wrap">
           <div style={{ maxWidth: "760px" }}>
             <div className="d-flex align-items-center gap-3 mb-3">
@@ -1641,7 +1657,7 @@ function EmployeeInfo() {
               </div>
               <div>
                 <h1 className="h4 mb-1 fw-bold">{employe.prenom} {employe.nom}</h1>
-                <div className="text-muted small">Fiche employe</div>
+                <div className="text-muted small">Fiche employé</div>
               </div>
             </div>
             <div className="d-flex flex-wrap gap-2">
@@ -1669,7 +1685,7 @@ function EmployeeInfo() {
             <Dropdown.Toggle variant="outline-primary" className="d-flex align-items-center gap-2">
               <Download size={16} /> Actions
             </Dropdown.Toggle>
-            <Dropdown.Menu>
+            <Dropdown.Menu style={{ zIndex: 1050 }}>
               <Dropdown.Item onClick={() => handleExportPDF(employe.id)}>
                 <FileEarmarkTextFill className="me-2" />
                 Exporter en PDF
@@ -1688,7 +1704,7 @@ function EmployeeInfo() {
                 Voir les soldes de conge
               </Dropdown.Item>
               <Dropdown.Item onClick={() => navigate(`/dashboard-RH/employees/${id}/mouvements`)}>
-                <CalendarFill className="me-2" />
+                <ClockHistory className="me-2" />
                 Voir les mouvements
               </Dropdown.Item>
             </Dropdown.Menu>
@@ -1706,23 +1722,23 @@ function EmployeeInfo() {
           <Tabs activeKey={activeKey} onSelect={(k) => setActiveKey(k)} className="border-0" fill>
             <Tab eventKey="personnel" title={<span className="d-flex align-items-center gap-2"><PersonFill /> Personnel</span>}>
               <div className="p-3">
-                <InfoCard title="Informations Personnelles" icon={PersonFill} onEdit={openPersonnelModal}>
+                <InfoCard title="Informations personnelles" icon={PersonFill} onEdit={openPersonnelModal}>
                   <Row className="g-3">
                     <Col md={6}>
-                      <InfoPanel title="Identite">
+                      <InfoPanel title="Identité">
                         <InfoItem label="Nom" value={employe.nom} />
-                        <InfoItem label="Prenom" value={employe.prenom} />
+                        <InfoItem label="Prénom" value={employe.prenom} />
                         <InfoItem label="Date de naissance" value={formatDate(employe.dateNaissance)} icon={CalendarFill} />
                         <InfoItem label="Lieu de naissance" value={employe.lieuNaissance} />
                         <InfoItem label="Sexe" value={employe.sexe?.sexe} />
-                        <InfoItem label="Nationalite" value={employe.nationalite?.nationalite} />
+                        <InfoItem label="Nationalité" value={employe.nationalite?.nationalite} />
                       </InfoPanel>
                     </Col>
                     <Col md={6}>
                       <InfoPanel title="Famille">
-                        <InfoItem label="Nom du pere" value={employe.nomPere} />
-                        <InfoItem label="Nom de la mere" value={employe.nomMere} />
-                        <InfoItem label="Etat civil" value={getEtatCivilLibelle(employe.etatCivil)} />
+                        <InfoItem label="Nom du père" value={employe.nomPere} />
+                        <InfoItem label="Nom de la mère" value={employe.nomMere} />
+                        <InfoItem label="État civil" value={getEtatCivilLibelle(employe.etatCivil)} />
                         <InfoItem label="Nombre d'enfants" value={employe.nbEnfants} />
                         {employe.nomConjoint && <InfoItem label="Nom du conjoint" value={employe.nomConjoint} />}
                       </InfoPanel>
@@ -1735,20 +1751,20 @@ function EmployeeInfo() {
               <div className="p-3">
                 <Row className="g-4">
                   <Col lg={7}>
-                    <InfoCard title="Documents Administratifs" icon={FileEarmarkTextFill} onEdit={openPersonnelModal}>
-                      <InfoPanel title="Pieces administratives">
+                    <InfoCard title="Documents administratifs" icon={FileEarmarkTextFill} onEdit={openPersonnelModal}>
+                      <InfoPanel title="Pièces administratives">
                         <InfoItem label="CIN" value={employe.cin} />
-                        <InfoItem label="Numero CNAPS" value={employe.numCnaps || '-'} />
-                        <InfoItem label="Numero OSTIE" value={employe.numOstie || '-'} />
+                        <InfoItem label="Numéro CNAPS" value={employe.numCnaps || '-'} />
+                        <InfoItem label="Numéro OSTIE" value={employe.numOstie || '-'} />
                       </InfoPanel>
                     </InfoCard>
                   </Col>
                   <Col lg={5}>
-                    <InfoCard title="Modes de Paiement" icon={CreditCardFill} onEdit={openModesPaiementModal} editLabel="Gerer les modes de paiement">
+                    <InfoCard title="Modes de paiement" icon={CreditCardFill} onEdit={openModesPaiementModal} editLabel="Gérer les modes de paiement">
                       {loadingModes ? (
                         <div className="text-center py-3"><Spinner size="sm" animation="border" variant="primary" /><p className="mt-2 text-muted small">Chargement...</p></div>
                       ) : modesPaiement.length === 0 ? (
-                        <Alert variant="info" className="py-2"><small>Aucun mode de paiement enregistre.</small></Alert>
+                        <Alert variant="info" className="py-2"><small>Aucun mode de paiement enregistré.</small></Alert>
                       ) : (
                         <div>
                           {modesPaiement.slice(0, 3).map(mode => (
@@ -1760,7 +1776,7 @@ function EmployeeInfo() {
                                   {mode.typePaiement?.id === 'TP003' && <Cash size={16} className="text-warning" />}
                                   <div>
                                     <small className="d-block fw-semibold">{typesPaiement.find(t => t.id === mode.typePaiement?.id)?.libelle || 'Mode de paiement'}</small>
-                                    {mode.typePaiement?.id === 'TP001' && <small className="text-muted">{mode.nomBanque} ???? {mode.numeroCompte?.slice(-4)}</small>}
+                                    {mode.typePaiement?.id === 'TP001' && <small className="text-muted">{mode.nomBanque} **** {mode.numeroCompte?.slice(-4)}</small>}
                                     {mode.typePaiement?.id === 'TP002' && <small className="text-muted">{mode.telephoneMobile}</small>}
                                   </div>
                                 </div>
@@ -1784,23 +1800,24 @@ function EmployeeInfo() {
               <div className="p-3">
                 <Row className="g-4">
                   <Col lg={6}>
-                    <InfoCard title="Coordonnees" icon={TelephoneFill} onEdit={openPersonnelModal}>
-                      <InfoPanel title="Coordonnees principales">
+                    <InfoCard title="Coordonnées" icon={TelephoneFill} onEdit={openPersonnelModal}>
+                      <InfoPanel title="Coordonnées principales">
                         <InfoItem label="Email" value={employe.email} type="email" icon={EnvelopeFill} />
-                        <InfoItem label="Telephone" value={employe.telephone} type="phone" icon={TelephoneFill} />
+                        <InfoItem label="Téléphone" value={employe.telephone} type="phone" icon={TelephoneFill} />
                         <InfoItem label="Adresse" value={employe.adresse} icon={GeoAltFill} />
-                        <InfoItem label="Region" value={employe.region?.nom} />
+                        <InfoItem label="Région" value={employe.region?.nom} />
                         <InfoItem label="Code postal" value={employe.codePostal} />
                       </InfoPanel>
                     </InfoCard>
                   </Col>
                   <Col lg={6}>
                     <InfoCard title="Contact d'urgence" icon={PeopleFill} onEdit={openContactModal}>
-                      <InfoPanel title="Personne a contacter">
+                      <InfoPanel title="Personne à contacter">
                         <InfoItem label="Nom" value={employe.emergencyContact?.nom} />
-                        <InfoItem label="Telephone" value={employe.emergencyContact?.contact} type="phone" />
+                        <InfoItem label="Téléphone" value={employe.emergencyContact?.contact} type="phone" />
                         <InfoItem label="Email" value={employe.emergencyContact?.email || '-'} type="email" />
                         <InfoItem label="Adresse" value={employe.emergencyContact?.adresse} />
+                        <InfoItem label="Lien de parenté" value={employe.emergencyContact?.lienParente || '-'} />
                       </InfoPanel>
                     </InfoCard>
                   </Col>
@@ -1816,26 +1833,26 @@ function EmployeeInfo() {
                         <Col md={6}>
                           <InfoPanel title="Affectation">
                             <InfoItem label="Poste" value={infosPro?.poste?.nom} />
-                            <InfoItem label="Departement" value={infosPro?.poste?.departement?.nom || infosPro?.departement?.nom} />
+                            <InfoItem label="Département" value={infosPro?.poste?.departement?.nom || infosPro?.departement?.nom} />
                             <InfoItem label="Salaire de base" value={infosPro?.salaireBase} type="money" />
                             {infosPro?.manager?.employe && (
-                              <InfoItem label="Manager" value={`${infosPro.manager.employe.prenom} ${infosPro.manager.employe.nom}`} linkTo={`/dashboard-RH/employees/employe/manager/${infosPro.manager.id}`} />
+                              <InfoItem label="Responsable hiérarchique" value={`${infosPro.manager.employe.prenom} ${infosPro.manager.employe.nom}`} linkTo={`/dashboard-RH/employees/employe/manager/${infosPro.manager.id}`} />
                             )}
                           </InfoPanel>
                         </Col>
                         <Col md={6}>
                           <InfoPanel title="Conditions du contrat">
                             <InfoItem label="Date d'embauche" value={formatDate(infosPro?.dateEmbauche)} icon={CalendarFill} />
-                            <InfoItem label="Date debut d'assignation" value={formatDate(infosPro?.dateDebutAssignationPoste)} icon={ClockFill} />
+                            <InfoItem label="Date début d'assignation" value={formatDate(infosPro?.dateDebutAssignationPoste)} icon={ClockFill} />
                             <InfoItem label="Date fin d'assignation" value={formatDate(infosPro?.dateFinAssignationPoste)} icon={ClockFill} />
                             <div className="rounded-3 px-3 py-2 mb-2" style={{ background: '#ffffff', border: '1px solid #f1e3ef' }}>
                               <small className="text-muted fw-semibold d-block mb-1">Type de contrat</small>
                               <ContratBadge typeContrat={infosPro?.typeContrat} />
                             </div>
                             {infosPro?.classification && <InfoItem label="Classification" value={infosPro.classification} />}
-                            {infosPro?.categorieProfessionnelle && <InfoItem label="Categorie professionnelle" value={infosPro.categorieProfessionnelle.libelle} />}
+                            {infosPro?.categorieProfessionnelle && <InfoItem label="Catégorie professionnelle" value={infosPro.categorieProfessionnelle.libelle} />}
                             {infosPro?.typeTempsTravail && <InfoItem label="Temps de travail" value={infosPro.typeTempsTravail.tempsTravail} />}
-                            {infosPro?.typeEntree && <InfoItem label="Type d'entree" value={infosPro.typeEntree.nom || infosPro.typeEntree.libelle} />}
+                            {infosPro?.typeEntree && <InfoItem label="Type d'entrée" value={infosPro.typeEntree.nom || infosPro.typeEntree.libelle} />}
                           </InfoPanel>
                         </Col>
                       </Row>
@@ -1844,7 +1861,7 @@ function EmployeeInfo() {
                 </Row>
                 <Card className="border">
                   <Card.Header className="bg-white py-3">
-                    <h5 className="mb-0 fw-semibold d-flex align-items-center gap-2"><ClockHistory /> Historique des Contrats</h5>
+                    <h5 className="mb-0 fw-semibold d-flex align-items-center gap-2"><ClockHistory /> Historique des postes</h5>
                   </Card.Header>
                   <Card.Body>
                     {contratsTries.length > 0 ? (
@@ -1858,7 +1875,7 @@ function EmployeeInfo() {
                                   <span className="fw-semibold">{contrat.poste?.nom || 'Poste non spécifié'}</span>
                                   <small className="text-muted ms-3">
                                     {formatDate(contrat.dateDebutAssignationPoste || contrat.dateEmbauche)}
-                                    {contrat.dateFinAssignationPoste && ` → ${formatDate(contrat.dateFinAssignationPoste)}`}
+                                    {contrat.dateFinAssignationPoste && ` à ${formatDate(contrat.dateFinAssignationPoste)}`}
                                   </small>
                                 </div>
                                 <div className="ms-auto"><StatusBadge contrat={contrat} /></div>
@@ -1921,3 +1938,4 @@ function EmployeeInfo() {
 }
 
 export default EmployeeInfo;
+

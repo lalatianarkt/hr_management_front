@@ -173,7 +173,7 @@ const CloturePaiePage = () => {
   const getFilteredSoldes = () => {
     return soldes.filter(solde => {
       const employeInfo = getEmployesList().find(e => e.id === solde.idEmploye);
-      const employeNom = (employeInfo?.nom || solde.idEmploye).toLowerCase();
+      const employeNom = String(employeInfo?.nom || solde.idEmploye || '').toLowerCase();
       const annee = solde.annee?.toString() || '';
       const totalJours = solde.nbCongeTotal || 0;
       const congesPris = solde.nbCongePris || 0;

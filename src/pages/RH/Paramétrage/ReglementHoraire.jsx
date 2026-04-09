@@ -976,7 +976,7 @@ function ReglementHoraire() {
       
       {/* Modal de création */}
       <Modal show={showModal} onHide={() => setShowModal(false)} size="lg" centered>
-        <Modal.Header closeButton>
+        <Modal.Header closeButton closeLabel="Fermer">
           <Modal.Title>
             <Plus size={18} className="me-2" />
             Nouveau Règlement Horaire
@@ -1106,7 +1106,7 @@ function ReglementHoraire() {
       
       {/* Modal d'édition */}
       <Modal show={showEditModal} onHide={() => setShowEditModal(false)} size="lg" centered>
-        <Modal.Header closeButton>
+        <Modal.Header closeButton closeLabel="Fermer">
           <Modal.Title>
             <Edit size={18} className="me-2" />
             Modifier le Règlement Horaire
@@ -1210,7 +1210,7 @@ function ReglementHoraire() {
       
       {/* Modal de suppression */}
       <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered>
-        <Modal.Header closeButton className="border-0">
+        <Modal.Header closeButton closeLabel="Fermer" className="border-0">
           <Modal.Title className="text-danger">
             <Trash2 size={18} className="me-2" />
             Confirmer la suppression

@@ -55,7 +55,14 @@ const SuiviConges = () => {
   
   // États pour les soldes
   const [soldes, setSoldes] = useState({});
+  const [soldesDetails, setSoldesDetails] = useState({});
   const [loadingSoldes, setLoadingSoldes] = useState(false);
+  const [actionLoadingId, setActionLoadingId] = useState(null);
+  const [successMessage, setSuccessMessage] = useState('');
+  const [decisionDialogOpen, setDecisionDialogOpen] = useState(false);
+  const [decisionType, setDecisionType] = useState('');
+  const [decisionComment, setDecisionComment] = useState('');
+  const [decisionDemande, setDecisionDemande] = useState(null);
   
   // États pour les filtres
   const [filters, setFilters] = useState({
@@ -157,6 +164,7 @@ const SuiviConges = () => {
     
     try {
       const soldesMap = {};
+      const soldesDetailsMap = {};
       
       // Filtrer les IDs valides - utiliser idEmploye (exactement comme dans les données)
       const idsUniques = [...new Set(demandesList
@@ -175,6 +183,7 @@ const SuiviConges = () => {
           console.log(`Réponse solde pour ${idEmploye}:`, response.data);
           
           if (response.data) {
+            soldesDetailsMap[idEmploye] = response.data;
             // Vérifier la structure de la réponse
             const solde = response.data.nbCongeRestant !== undefined ? response.data.nbCongeRestant : 
                          response.data.solde !== undefined ? response.data.solde : 
@@ -191,6 +200,7 @@ const SuiviConges = () => {
       
       console.log("Soldes chargés:", soldesMap);
       setSoldes(soldesMap);
+      setSoldesDetails(soldesDetailsMap);
       
     } catch (err) {
       console.error('Erreur chargement soldes:', err);
@@ -311,7 +321,7 @@ const SuiviConges = () => {
       case 2: return 'info';
       case 4: return 'default';
       case 5: return 'success';
-      case 6: return 'primary';
+      case 6: return 'success';
       case 7: return 'error';
       default: return 'default';
     }
@@ -324,7 +334,7 @@ const SuiviConges = () => {
       case 2: return 'Validé par Manager';
       case 4: return 'Annulé par RH/Manager';
       case 5: return 'Acquis/Terminé';
-      case 6: return 'En attente validation RH';
+      case 6: return 'Validé par RH';
       case 7: return 'Refusé par RH';
       default: return 'Inconnu';
     }
@@ -349,7 +359,7 @@ const SuiviConges = () => {
     valideManager: demandes.filter(d => d.statut === 1 || d.statut === 2).length,
     annule: demandes.filter(d => d.statut === 4).length,
     acquis: demandes.filter(d => d.statut === 5).length,
-    enAttenteRH: demandes.filter(d => d.statut === 6).length,
+    valideRH: demandes.filter(d => d.statut === 6).length,
     refuseRH: demandes.filter(d => d.statut === 7).length
   };
 
@@ -412,6 +422,91 @@ const SuiviConges = () => {
 
   const handleNavigate = (newDate) => {
     setCalendarDate(newDate);
+  };
+
+  const canReviewDemande = (demande) => [1, 2].includes(demande?.statut);
+
+  const openDecisionDialog = (demande, decision) => {
+    setDecisionDemande(demande);
+    setDecisionType(decision);
+    setDecisionComment('');
+    setDecisionDialogOpen(true);
+    setError('');
+    setSuccessMessage('');
+  };
+
+  const closeDecisionDialog = () => {
+    if (actionLoadingId) return;
+
+    setDecisionDialogOpen(false);
+    setDecisionType('');
+    setDecisionComment('');
+    setDecisionDemande(null);
+  };
+
+  const handleRhDecision = async () => {
+    if (!decisionDemande?.id) return;
+
+    const commentaire = decisionComment.trim();
+
+    if (!commentaire) {
+      setError("Veuillez saisir un commentaire avant de valider l'action RH.");
+      return;
+    }
+
+    setActionLoadingId(decisionDemande.id);
+    setError('');
+    setSuccessMessage('');
+
+    try {
+      if (decisionType === 'accept') {
+        const mouvement = soldesDetails[decisionDemande.idEmploye];
+        const idMouvement = mouvement?.id;
+
+        if (!idMouvement) {
+          throw new Error("Impossible de valider cette demande : mouvement de solde introuvable pour l'employé.");
+        }
+
+        await axiosInstance.put(
+          `/api/demandes-conge/validate-rh/${decisionDemande.id}?idMouvement=${idMouvement}`,
+          {
+            ...decisionDemande,
+            commentaire,
+            statut: 6
+          }
+        );
+
+        setSuccessMessage('Demande validée par le RH avec succès.');
+      } else {
+        await axiosInstance.put(
+          `/api/demandes-conge/refuser-rh/${decisionDemande.id}`,
+          {
+            ...decisionDemande,
+            commentaire,
+            statut: 7
+          }
+        );
+
+        setSuccessMessage('Demande refusée par le RH avec succès.');
+      }
+
+      if (selectedDemande?.id === decisionDemande.id) {
+        setSelectedDemande(null);
+      }
+
+      closeDecisionDialog();
+      await chargerDonneesInitiales();
+    } catch (err) {
+      console.error(`Erreur lors de la décision RH (${decisionType}):`, err);
+      setError(
+        err.response?.data?.message ||
+        err.response?.data ||
+        err.message ||
+        "Une erreur est survenue lors du traitement de la demande."
+      );
+    } finally {
+      setActionLoadingId(null);
+    }
   };
 
   const totalPages = Math.ceil(filteredDemandes.length / itemsPerPage);
@@ -502,7 +597,7 @@ const SuiviConges = () => {
                   icon={<CheckCircle />}
                 />
                 <Chip
-                  label={`${stats.enAttenteRH} en attente RH`}
+                  label={`${stats.valideRH} validés RH`}
                   variant="outlined"
                   sx={{ bgcolor: 'rgba(176, 83, 173, 0.08)', color: 'var(--bg-primary)' }}
                   icon={<VerifiedUser />}
@@ -538,6 +633,12 @@ const SuiviConges = () => {
         </Alert>
       )}
 
+      {successMessage && (
+        <Alert severity="success" sx={{ mb: 3 }} onClose={() => setSuccessMessage('')}>
+          {successMessage}
+        </Alert>
+      )}
+
       {/* Filtres */}
       <Card sx={{ mb: 3 }}>
         <CardContent>
@@ -562,7 +663,7 @@ const SuiviConges = () => {
                   <MenuItem value="2">Validé par Manager</MenuItem>
                   <MenuItem value="4">Annulé par RH/Manager</MenuItem>
                   <MenuItem value="5">Acquis/Terminé</MenuItem>
-                  <MenuItem value="6">En attente validation RH</MenuItem>
+                  <MenuItem value="6">Validé par RH</MenuItem>
                   <MenuItem value="7">Refusé par RH</MenuItem>
                 </Select>
               </FormControl>
@@ -821,7 +922,7 @@ const SuiviConges = () => {
                 <Grid item xs={6} md={2.4}>
                   <Box display="flex" alignItems="center">
                     <Box width={20} height={20} bgcolor="#2196f3" mr={1} borderRadius={1} />
-                    <Typography variant="body2">En attente RH (6)</Typography>
+                    <Typography variant="body2">Validé RH (6)</Typography>
                   </Box>
                 </Grid>
               </Grid>
@@ -949,14 +1050,52 @@ const SuiviConges = () => {
                               />
                             </TableCell>
                             <TableCell>
-                              <Tooltip title="Voir les détails">
-                                <IconButton
-                                  size="small"
-                                  onClick={() => setSelectedDemande(demande)}
-                                >
-                                  <Visibility fontSize="small" />
-                                </IconButton>
-                              </Tooltip>
+                              <Stack direction="row" spacing={0.5} alignItems="center">
+                                {canReviewDemande(demande) && (
+                                  <>
+                                    <Tooltip title="Accepter la demande">
+                                      <span>
+                                        <IconButton
+                                          size="small"
+                                          color="success"
+                                          onClick={() => openDecisionDialog(demande, 'accept')}
+                                          disabled={actionLoadingId === demande.id}
+                                        >
+                                          {actionLoadingId === demande.id ? (
+                                            <CircularProgress size={18} color="inherit" />
+                                          ) : (
+                                            <CheckCircle fontSize="small" />
+                                          )}
+                                        </IconButton>
+                                      </span>
+                                    </Tooltip>
+                                    <Tooltip title="Refuser la demande">
+                                      <span>
+                                        <IconButton
+                                          size="small"
+                                          color="error"
+                                          onClick={() => openDecisionDialog(demande, 'reject')}
+                                          disabled={actionLoadingId === demande.id}
+                                        >
+                                          {actionLoadingId === demande.id ? (
+                                            <CircularProgress size={18} color="inherit" />
+                                          ) : (
+                                            <Cancel fontSize="small" />
+                                          )}
+                                        </IconButton>
+                                      </span>
+                                    </Tooltip>
+                                  </>
+                                )}
+                                <Tooltip title="Voir les détails">
+                                  <IconButton
+                                    size="small"
+                                    onClick={() => setSelectedDemande(demande)}
+                                  >
+                                    <Visibility fontSize="small" />
+                                  </IconButton>
+                                </Tooltip>
+                              </Stack>
                             </TableCell>
                           </TableRow>
                         );
@@ -1000,106 +1139,229 @@ const SuiviConges = () => {
         </Card>
       )}
 
+      <Dialog
+        open={decisionDialogOpen}
+        onClose={closeDecisionDialog}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          {decisionType === 'accept' ? 'Valider la demande RH' : 'Refuser la demande RH'}
+        </DialogTitle>
+        <DialogContent>
+          <Stack spacing={2} sx={{ mt: 1 }}>
+            <Alert severity={decisionType === 'accept' ? 'success' : 'warning'}>
+              {decisionDemande
+                ? `${decisionDemande.nomEmploye} ${decisionDemande.prenomEmploye} - ${decisionDemande.matricule}`
+                : 'Aucune demande sélectionnée'}
+            </Alert>
+            <TextField
+              label="Commentaire RH"
+              placeholder="Saisissez le commentaire de validation ou de refus"
+              fullWidth
+              multiline
+              minRows={4}
+              value={decisionComment}
+              onChange={(e) => setDecisionComment(e.target.value)}
+              disabled={!!actionLoadingId}
+            />
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            variant="outlined"
+            onClick={closeDecisionDialog}
+            disabled={!!actionLoadingId}
+            sx={unifiedButtonOutlinedSx}
+          >
+            Annuler
+          </Button>
+          <Button
+            variant="contained"
+            color={decisionType === 'accept' ? 'success' : 'error'}
+            onClick={handleRhDecision}
+            disabled={!!actionLoadingId}
+            sx={decisionType === 'accept' ? unifiedButtonContainedSx : undefined}
+          >
+            {actionLoadingId ? (
+              <CircularProgress size={18} color="inherit" />
+            ) : decisionType === 'accept' ? (
+              'Valider'
+            ) : (
+              'Refuser'
+            )}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       {/* Modal de détails */}
       <Dialog 
         open={!!selectedDemande} 
         onClose={() => setSelectedDemande(null)}
-        maxWidth="md"
+        maxWidth="lg"
         fullWidth
       >
         {selectedDemande && (
           <>
-            <DialogTitle>
-              <Box display="flex" alignItems="center" gap={1}>
-                <Visibility />
-                Détails de la demande #{selectedDemande.id}
+            <DialogTitle sx={{ pb: 1.5 }}>
+              <Box
+                display="flex"
+                alignItems={{ xs: 'flex-start', sm: 'center' }}
+                justifyContent="space-between"
+                gap={2}
+                flexDirection={{ xs: 'column', sm: 'row' }}
+              >
+                <Box display="flex" alignItems="center" gap={1}>
+                  <Visibility />
+                  <Typography variant="h6" component="span">
+                    Détails de la demande #{selectedDemande.id}
+                  </Typography>
+                </Box>
+                <Chip
+                  label={getStatutLabel(selectedDemande.statut)}
+                  color={getStatutColor(selectedDemande.statut)}
+                  icon={getStatutIcon(selectedDemande.statut)}
+                  sx={{ fontWeight: 700, alignSelf: { xs: 'flex-start', sm: 'center' } }}
+                />
               </Box>
             </DialogTitle>
-            <DialogContent>
-              <Grid container spacing={2} sx={{ mt: 1 }}>
-                <Grid item xs={12} md={6}>
-                  <Typography variant="subtitle2" color="textSecondary" gutterBottom>
-                    Employé
-                  </Typography>
-                  <Box display="flex" alignItems="center" gap={1}>
-                    <Person color="primary" />
-                    <Typography variant="body1">
-                      {selectedDemande.nomEmploye} {selectedDemande.prenomEmploye}
-                    </Typography>
-                  </Box>
-                  <Typography variant="caption" color="textSecondary">
-                    Matricule: {selectedDemande.matricule} • ID: {selectedDemande.idEmploye}
-                  </Typography>
-                </Grid>
-                
-                <Grid item xs={12} md={6}>
-                  <Typography variant="subtitle2" color="textSecondary" gutterBottom>
-                    Département
-                  </Typography>
-                  <Box display="flex" alignItems="center" gap={1}>
-                    <Business color="secondary" />
-                    <Typography variant="body1">
-                      {selectedDemande.nomDepartement}
-                    </Typography>
-                  </Box>
-                  <Typography variant="caption" color="textSecondary">
-                    Manager: {selectedDemande.nomCompletManager || selectedDemande.nomManager}
-                  </Typography>
-                </Grid>
-                
-                <Grid item xs={12} md={6}>
-                  <Typography variant="subtitle2" color="textSecondary" gutterBottom>
-                    Période
-                  </Typography>
-                  <Box display="flex" alignItems="center" gap={1}>
-                    <DateRange color="primary" />
-                    <Typography variant="body1">
-                      {formatDate(selectedDemande.dateDebut)} → {formatDate(selectedDemande.dateFin)}
-                    </Typography>
-                  </Box>
-                  <Typography variant="caption" color="textSecondary">
-                    {selectedDemande.nbJours} jours ouvrables
-                  </Typography>
-                </Grid>
-                
-                <Grid item xs={12} md={6}>
-                  <Typography variant="subtitle2" color="textSecondary" gutterBottom>
-                    Solde disponible
-                  </Typography>
-                  <Box display="flex" alignItems="center" gap={1}>
-                    <Today color={verifierSoldeSuffisant(selectedDemande) ? "success" : "error"} />
-                    <Typography 
-                      variant="body1" 
-                      color={verifierSoldeSuffisant(selectedDemande) ? "success.main" : "error.main"}
-                      fontWeight="bold"
+            <DialogContent sx={{ pt: 2 }}>
+              <Stack spacing={2.5}>
+                <Grid container spacing={2}>
+                  <Grid item xs={12} sm={6} lg={3}>
+                    <Paper
+                      variant="outlined"
+                      sx={{ p: 2.25, borderRadius: 3, height: '100%', bgcolor: '#fff' }}
                     >
-                      {(soldes[selectedDemande.idEmploye] !== undefined ? soldes[selectedDemande.idEmploye] : 0).toFixed(1)} jours
+                      <Typography variant="overline" color="text.secondary">
+                        Employé
+                      </Typography>
+                      <Box display="flex" alignItems="flex-start" gap={1.5} mt={0.75}>
+                        <Person sx={{ color: 'primary.main', mt: 0.2 }} />
+                        <Box>
+                          <Typography variant="subtitle1" fontWeight={700}>
+                            {selectedDemande.nomEmploye} {selectedDemande.prenomEmploye}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            Matricule: {selectedDemande.matricule}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            ID employé: {selectedDemande.idEmploye}
+                          </Typography>
+                        </Box>
+                      </Box>
+                    </Paper>
+                  </Grid>
+
+                  <Grid item xs={12} sm={6} lg={3}>
+                    <Paper
+                      variant="outlined"
+                      sx={{ p: 2.25, borderRadius: 3, height: '100%', bgcolor: '#fff' }}
+                    >
+                      <Typography variant="overline" color="text.secondary">
+                        Département
+                      </Typography>
+                      <Box display="flex" alignItems="flex-start" gap={1.5} mt={0.75}>
+                        <Business sx={{ color: 'secondary.main', mt: 0.2 }} />
+                        <Box>
+                          <Typography variant="subtitle1" fontWeight={700}>
+                            {selectedDemande.nomDepartement}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            Manager: {selectedDemande.nomCompletManager || selectedDemande.nomManager || 'Non défini'}
+                          </Typography>
+                        </Box>
+                      </Box>
+                    </Paper>
+                  </Grid>
+
+                  <Grid item xs={12} sm={6} lg={3}>
+                    <Paper
+                      variant="outlined"
+                      sx={{ p: 2.25, borderRadius: 3, height: '100%', bgcolor: '#fff' }}
+                    >
+                      <Typography variant="overline" color="text.secondary">
+                        Période
+                      </Typography>
+                      <Box display="flex" alignItems="flex-start" gap={1.5} mt={0.75}>
+                        <DateRange sx={{ color: 'info.main', mt: 0.2 }} />
+                        <Box>
+                          <Typography variant="subtitle1" fontWeight={700}>
+                            {formatDate(selectedDemande.dateDebut)} → {formatDate(selectedDemande.dateFin)}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            {selectedDemande.nbJours} jours ouvrables
+                          </Typography>
+                        </Box>
+                      </Box>
+                    </Paper>
+                  </Grid>
+
+                  <Grid item xs={12} sm={6} lg={3}>
+                    <Paper
+                      variant="outlined"
+                      sx={{ p: 2.25, borderRadius: 3, height: '100%', bgcolor: '#fff' }}
+                    >
+                      <Typography variant="overline" color="text.secondary">
+                        Solde disponible
+                      </Typography>
+                      <Box display="flex" alignItems="flex-start" gap={1.5} mt={0.75}>
+                        <Today
+                          sx={{
+                            color: verifierSoldeSuffisant(selectedDemande) ? 'success.main' : 'error.main',
+                            mt: 0.2
+                          }}
+                        />
+                        <Box>
+                          <Typography
+                            variant="subtitle1"
+                            fontWeight={700}
+                            color={verifierSoldeSuffisant(selectedDemande) ? 'success.main' : 'error.main'}
+                          >
+                            {(soldes[selectedDemande.idEmploye] !== undefined ? soldes[selectedDemande.idEmploye] : 0).toFixed(1)} jours
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            {verifierSoldeSuffisant(selectedDemande) ? 'Solde suffisant' : 'Solde insuffisant'}
+                          </Typography>
+                        </Box>
+                      </Box>
+                    </Paper>
+                  </Grid>
+                </Grid>
+
+                <Box
+                  sx={{
+                    display: 'grid',
+                    gridTemplateColumns: { xs: '1fr', lg: '1fr 1fr' },
+                    gap: 2,
+                    width: '100%'
+                  }}
+                >
+                  <Paper
+                    variant="outlined"
+                    sx={{ p: 2.25, borderRadius: 3, minHeight: 180, height: '100%', bgcolor: '#fff', width: '100%' }}
+                  >
+                    <Typography variant="overline" color="text.secondary">
+                      Commentaire du manager
                     </Typography>
-                  </Box>
-                </Grid>
-                
-                <Grid item xs={12}>
-                  <Typography variant="subtitle2" color="textSecondary" gutterBottom>
-                    Statut
-                  </Typography>
-                  <Chip
-                    label={getStatutLabel(selectedDemande.statut)}
-                    color={getStatutColor(selectedDemande.statut)}
-                    icon={getStatutIcon(selectedDemande.statut)}
-                  />
-                </Grid>
-                
-                <Grid item xs={12}>
-                  <Typography variant="subtitle2" color="textSecondary" gutterBottom>
-                    Commentaire du manager
-                  </Typography>
-                  <Paper variant="outlined" sx={{ p: 2, bgcolor: 'var(--brand-50)' }}>
-                    <Typography variant="body2">
-                      {selectedDemande.commentaireManager || "Aucun commentaire du manager"}
+                    <Typography variant="body2" sx={{ mt: 1.25, whiteSpace: 'pre-wrap' }}>
+                      {selectedDemande.commentaireManager || 'Aucun commentaire du manager'}
                     </Typography>
                   </Paper>
-                </Grid>
-              </Grid>
+
+                  <Paper
+                    variant="outlined"
+                    sx={{ p: 2.25, borderRadius: 3, minHeight: 180, height: '100%', bgcolor: '#fff', width: '100%' }}
+                  >
+                    <Typography variant="overline" color="text.secondary">
+                      Commentaire RH
+                    </Typography>
+                    <Typography variant="body2" sx={{ mt: 1.25, whiteSpace: 'pre-wrap' }}>
+                      {selectedDemande.commentaire || 'Aucun commentaire RH'}
+                    </Typography>
+                  </Paper>
+                </Box>
+              </Stack>
             </DialogContent>
             <DialogActions>
               <Button

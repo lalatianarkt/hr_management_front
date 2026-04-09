@@ -231,7 +231,7 @@ function AddInfoProfessionnelleModal({
         dateDebutAssignationPoste: today,
         dateFinAssignationPoste: null,
         salaireBase: parseFloat(infoPro.salaireBase),
-        statut: 1, // Actif par défaut
+        statut: 0, // Actif par défaut
         classification: infoPro.classification || null,
         categorieProfessionnelle: infoPro.idCategorie ? { id: infoPro.idCategorie } : null,
         typeTempsTravail: infoPro.idTempsTravail ? { id: infoPro.idTempsTravail } : null,
@@ -271,7 +271,7 @@ function AddInfoProfessionnelleModal({
 
   return (
     <Modal show={show} onHide={onHide} size="lg" centered backdrop="static">
-      <Modal.Header closeButton className="border-bottom bg-light">
+      <Modal.Header closeButton closeLabel="Fermer" className="border-bottom bg-light">
         <Modal.Title className="d-flex align-items-center gap-2">
           {isRestore ? (
             <MdRestoreFromTrash className="text-success" size={24} />

@@ -1,7 +1,7 @@
 // src/components/EditPosteModal.jsx (ou EditPosteModal/index.jsx)
 import React, { useState, useEffect } from 'react';
 import { Modal, Button, Form, Row, Col, Alert, Spinner } from 'react-bootstrap';
-import axios from 'axios';
+import axiosInstance from '../../../utils/AxiosInstance';
 
 function EditPosteModal({ show, onHide, posteId, onSuccess, refreshPostes }) {
   const [loading, setLoading] = useState(false);
@@ -28,15 +28,15 @@ function EditPosteModal({ show, onHide, posteId, onSuccess, refreshPostes }) {
         setLoadingData(true);
 
         // Charger le poste
-        const posteResponse = await axios.get(`http://localhost:8080/api/postes/${posteId}`);
+        const posteResponse = await axiosInstance.get(`/api/postes/${posteId}`);
         const poste = posteResponse.data;
 
         // Charger les départements
-        const deptResponse = await axios.get('http://localhost:8080/api/departements');
+        const deptResponse = await axiosInstance.get('/api/departements');
         setDepartements(deptResponse.data);
 
         // Charger les niveaux hiérarchiques (si nécessaire)
-        const niveauxResponse = await axios.get('http://localhost:8080/api/niveaux');
+        const niveauxResponse = await axiosInstance.get('/api/niveaux');
         setNiveauxHierarchique(niveauxResponse.data);
 
         // Mettre à jour le formulaire
@@ -82,7 +82,7 @@ function EditPosteModal({ show, onHide, posteId, onSuccess, refreshPostes }) {
       };
 
       // Envoyer la requête PUT
-      const response = await axios.put(`http://localhost:8080/api/postes/${posteId}`, dataToSend);
+      const response = await axiosInstance.put(`/api/postes/${posteId}`, dataToSend);
 
       // Succès
       setSuccess('Poste modifié avec succès!');
@@ -113,7 +113,7 @@ function EditPosteModal({ show, onHide, posteId, onSuccess, refreshPostes }) {
 
   return (
     <Modal show={show} onHide={onHide} size="lg" centered>
-      <Modal.Header closeButton style={{ background: 'var(--bg-gradient)', color: 'white', borderBottom: 'none' }}>
+      <Modal.Header closeButton closeLabel="Fermer" style={{ background: 'var(--bg-gradient)', color: 'white', borderBottom: 'none' }}>
         <Modal.Title>Modifier le Poste</Modal.Title>
       </Modal.Header>
 
@@ -230,3 +230,4 @@ function EditPosteModal({ show, onHide, posteId, onSuccess, refreshPostes }) {
 }
 
 export default EditPosteModal;
+

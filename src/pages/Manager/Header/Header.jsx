@@ -136,6 +136,11 @@ export default function Header() {
 
   // Changer de rôle
   const switchRole = async (roleType) => {
+    if (!roleType) {
+      console.warn('switchRole appelé avec roleType vide:', roleType);
+      alert('Rôle invalide. Veuillez réessayer.');
+      return;
+    }
     if (roleType === currentRole) {
       setShowRoleDropdown(false);
       return;
@@ -149,7 +154,7 @@ export default function Header() {
       
       const response = await axiosInstance.post(
         '/api/users/switch-role',
-        // { userId, roleType },
+        { roleType },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       

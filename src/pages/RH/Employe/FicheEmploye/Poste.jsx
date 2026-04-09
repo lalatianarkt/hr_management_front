@@ -30,7 +30,7 @@ import {
   ChevronsLeft,
   ChevronsRight
 } from 'react-feather';
-import axios from 'axios';
+import axiosInstance from '../../../utils/AxiosInstance';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import AddPosteModal from './AddPoste';
@@ -64,7 +64,7 @@ const PostesList = () => {
   const fetchPostes = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('http://localhost:8080/api/postes');
+      const response = await axiosInstance.get('/api/postes');
       setPostes(response.data);
       setError(null);
     } catch (err) {
@@ -77,7 +77,7 @@ const PostesList = () => {
 
   const fetchDepartements = async () => {
     try {
-      const response = await axios.get('http://localhost:8080/api/departements');
+      const response = await axiosInstance.get('/api/departements');
       setDepartements(response.data);
     } catch (err) {
       console.error('Erreur lors du chargement des départements:', err);
@@ -172,7 +172,7 @@ const PostesList = () => {
 
   const handleConfirmDelete = async () => {
     try {
-      await axios.delete(`http://localhost:8080/api/postes/${selectedPoste.id}`);
+      await axiosInstance.delete(`/api/postes/${selectedPoste.id}`);
       setPostes(postes.filter(p => p.id !== selectedPoste.id));
       setShowDeleteModal(false);
       setSelectedPoste(null);
@@ -520,7 +520,7 @@ const PostesList = () => {
 
       {/* Modal de confirmation de suppression */}
       <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} size="sm">
-        <Modal.Header closeButton className="border-0 pb-0">
+        <Modal.Header closeButton closeLabel="Fermer" className="border-0 pb-0">
           <Modal.Title className="h6">Confirmer la suppression</Modal.Title>
         </Modal.Header>
         <Modal.Body>
@@ -546,7 +546,7 @@ const PostesList = () => {
 
       {/* Modal de détails */}
       <Modal show={showDetailsModal} onHide={() => setShowDetailsModal(false)} size="lg">
-        <Modal.Header closeButton className="border-0 pb-0">
+        <Modal.Header closeButton closeLabel="Fermer" className="border-0 pb-0">
           <Modal.Title className="h5">Détails du Poste</Modal.Title>
         </Modal.Header>
         <Modal.Body>
@@ -637,3 +637,4 @@ const PostesList = () => {
 };
 
 export default PostesList;
+

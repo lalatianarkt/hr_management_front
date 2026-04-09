@@ -32,7 +32,6 @@ const OrgChartCompact = () => {
   const [stats, setStats] = useState({ totalDepartements: 0, totalManagers: 0, totalEmployes: 0 });
   const [selectedNode, setSelectedNode] = useState(null);
   const [zoom, setZoom] = useState(100);
-  const [sortOrder, setSortOrder] = useState('desc');
 
   // Charger les données
   useEffect(() => {
@@ -106,11 +105,6 @@ const OrgChartCompact = () => {
   const handleZoomIn = () => setZoom(Math.min(zoom + 20, 200));
   const handleZoomOut = () => setZoom(Math.max(zoom - 20, 60));
 
-  // Changer l'ordre de tri
-  const toggleSortOrder = () => {
-    setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc');
-  };
-
   // Grouper les employés par rang avec l'ordre spécifié
   const groupEmployeesByRank = (employees) => {
     if (!employees) return {};
@@ -127,13 +121,7 @@ const OrgChartCompact = () => {
     // Trier les rangs selon l'ordre choisi
     const sortedGroups = {};
     const sortedKeys = Object.keys(groups)
-      .sort((a, b) => {
-        if (sortOrder === 'asc') {
-          return parseInt(a) - parseInt(b);
-        } else {
-          return parseInt(b) - parseInt(a);
-        }
-      });
+      .sort((a, b) => parseInt(b) - parseInt(a));
     
     sortedKeys.forEach(key => {
       sortedGroups[key] = groups[key];
@@ -151,13 +139,7 @@ const OrgChartCompact = () => {
       ranks.add(emp.rang || 0);
     });
     
-    return Array.from(ranks).sort((a, b) => {
-      if (sortOrder === 'asc') {
-        return a - b;
-      } else {
-        return b - a;
-      }
-    });
+    return Array.from(ranks).sort((a, b) => b - a);
   };
 
   // Composant pour l'avatar d'un employé
@@ -210,7 +192,6 @@ const OrgChartCompact = () => {
             <div style={{ fontSize: '12px' }}>
               <div><strong>Poste:</strong> {employee.nomPoste || 'Non spécifié'}</div>
               <div><strong>Niveau:</strong> {employee.nomNiveau || 'Non spécifié'}</div>
-              <div><strong>Rang:</strong> {employee.rang || '0'}</div>
               {employee.matricule && (
                 <div><strong>Matricule:</strong> {employee.matricule}</div>
               )}
@@ -302,7 +283,7 @@ const OrgChartCompact = () => {
   };
 
   // Composant pour une ligne de rang (employés du même rang)
-  const RankRow = ({ rank, employees, managerName, onEmployeeClick, isLast }) => {
+  const RankRow = ({ rank, level, employees, managerName, onEmployeeClick, isLast }) => {
     return (
       <div style={{
         display: 'flex',
@@ -324,9 +305,9 @@ const OrgChartCompact = () => {
             flex: 1,
             background: 'linear-gradient(90deg, transparent, #b053ad, transparent)'
           }} />
-          <Tag color="#b053ad" style={{ fontWeight: 'bold' }}>
-            Rang {rank}
-          </Tag>
+            <Tag color="#b053ad" style={{ fontWeight: 'bold' }}>
+              Niveau {level}
+            </Tag>
           <div style={{
             height: '2px',
             flex: 1,
@@ -368,7 +349,8 @@ const OrgChartCompact = () => {
     const isExpanded = expandedNodes[manager.nomComplet] !== false;
     const uniqueRanks = getUniqueRanks(manager);
     const employeesByRank = groupEmployeesByRank(manager.subordonnesCompacts || []);
-    const rankKeys = Object.keys(employeesByRank);
+    const orderedRanks = Array.from(uniqueRanks).sort((a, b) => b - a);
+    const levelMap = new Map(orderedRanks.map((r, idx) => [r, idx + 1]));
     
     return (
       <div style={{
@@ -430,18 +412,14 @@ const OrgChartCompact = () => {
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  {sortOrder === 'asc' ? (
-                    <RiseOutlined style={{ color: '#b053ad', fontSize: '12px' }} />
-                  ) : (
-                    <FallOutlined style={{ color: '#b053ad', fontSize: '12px' }} />
-                  )}
+                  <FallOutlined style={{ color: '#b053ad', fontSize: '12px' }} />
                   <span style={{ fontSize: '11px', color: '#5c2458' }}>
-                    {sortOrder === 'asc' ? 'Rangs croissants' : 'Rangs décroissants'}
+                    Niveaux décroissants
                   </span>
                   <div style={{ display: 'flex', gap: '4px', marginLeft: '8px' }}>
-                    {uniqueRanks.map(rank => (
+                    {orderedRanks.map(rank => (
                       <Tag key={rank} color="#b053ad" style={{ fontSize: '10px' }}>
-                        {rank}
+                        {levelMap.get(rank)}
                       </Tag>
                     ))}
                   </div>
@@ -449,14 +427,15 @@ const OrgChartCompact = () => {
 
               </div>
 
-              {[...rankKeys].reverse().map((rank, index, array) => (
+              {orderedRanks.map((rank, index) => (
                 <RankRow
                   key={rank}
                   rank={rank}
+                  level={levelMap.get(rank)}
                   employees={employeesByRank[rank]}
                   managerName={manager.nomComplet}
                   onEmployeeClick={onEmployeeClick}
-                  isLast={index === rankKeys.length - 1}
+                  isLast={index === orderedRanks.length - 1}
                 />
               ))}
             </div>
@@ -481,13 +460,8 @@ const OrgChartCompact = () => {
       });
     });
     
-    const uniqueRanks = Array.from(allRanks).sort((a, b) => {
-      if (sortOrder === 'asc') {
-        return a - b;
-      } else {
-        return b - a;
-      }
-    });
+    const orderedRanks = Array.from(allRanks).sort((a, b) => b - a);
+    const levelMap = new Map(orderedRanks.map((r, idx) => [r, idx + 1]));
     
     return (
       <div style={{
@@ -570,18 +544,14 @@ const OrgChartCompact = () => {
                     </span>
                   </div>
 
-                  {uniqueRanks.length > 0 && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      {sortOrder === 'asc' ? (
-                        <RiseOutlined style={{ color: 'white', fontSize: '14px' }} />
-                      ) : (
+                    {orderedRanks.length > 0 && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                         <FallOutlined style={{ color: 'white', fontSize: '14px' }} />
-                      )}
-                      <span style={{ color: 'white', fontSize: '14px', fontWeight: 500 }}>
-                        Rangs: {uniqueRanks.join(' → ')}
-                      </span>
-                    </div>
-                  )}
+                        <span style={{ color: 'white', fontSize: '14px', fontWeight: 500 }}>
+                          Niveaux: {orderedRanks.map(rank => levelMap.get(rank)).join(' → ')}
+                        </span>
+                      </div>
+                    )}
                 </div>
               </div>
             </div>
@@ -714,7 +684,7 @@ const OrgChartCompact = () => {
               Organigramme Hiérarchique
             </h1>
             <p style={{ margin: '8px 0 0 0', color: '#5c2458' }}>
-              Structure par département avec alignement par rang
+              Structure par département avec alignement par niveau
             </p>
           </div>
           
@@ -752,14 +722,13 @@ const OrgChartCompact = () => {
               Réduire tout
             </Button>
 
-            <Button
-              size="small"
-              type={sortOrder === 'desc' ? 'primary' : 'default'}
-              icon={sortOrder === 'asc' ? <RiseOutlined /> : <FallOutlined />}
-              onClick={toggleSortOrder}
-            >
-              {sortOrder === 'asc' ? 'Croissant ↑' : 'Décroissant ↓'}
-            </Button>
+              <Button
+                size="small"
+                type="primary"
+                icon={<FallOutlined />}
+              >
+                Décroissant ↓
+              </Button>
           </div>
         </div>
         
@@ -856,19 +825,19 @@ const OrgChartCompact = () => {
               alignItems: 'center',
               gap: '12px'
             }}>
-              <Avatar 
-                size={48} 
-                icon={sortOrder === 'asc' ? <RiseOutlined /> : <FallOutlined />} 
-                style={{ background: '#fa8c16' }} 
-              />
-              <div>
-                <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#3a1438' }}>
-                  {sortOrder === 'asc' ? 'Croissant' : 'Décroissant'}
+                <Avatar 
+                  size={48} 
+                  icon={<FallOutlined />} 
+                  style={{ background: '#fa8c16' }} 
+                />
+                <div>
+                  <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#3a1438' }}>
+                    Décroissant
+                  </div>
+                  <div style={{ color: '#5c2458' }}>
+                    Niveaux ↓
+                  </div>
                 </div>
-                <div style={{ color: '#5c2458' }}>
-                  {sortOrder === 'asc' ? 'Rangs ↑' : 'Rangs ↓'}
-                </div>
-              </div>
             </div>
           </Col>
         </Row>
@@ -967,7 +936,7 @@ const OrgChartCompact = () => {
           color: '#3a1438'
         }}>
           <InfoCircleOutlined style={{ marginRight: '8px' }} />
-          Légende - Organisation par Rang {sortOrder === 'asc' ? 'Croissant' : 'Décroissant'}
+          Légende - Organisation par Niveau Décroissant
         </div>
         
         <Row gutter={24}>
@@ -989,20 +958,18 @@ const OrgChartCompact = () => {
           
           <Col span={5}>
             <div style={{ marginBottom: '12px', fontSize: '13px', fontWeight: 500, color: '#5c2458' }}>
-              Organisation des rangs :
+              Organisation des niveaux :
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                {sortOrder === 'asc' ? <RiseOutlined /> : <FallOutlined />}
+                <FallOutlined /> 
                 <span style={{ fontSize: '12px' }}>
-                  {sortOrder === 'asc' 
-                    ? 'Du rang le plus petit au plus grand ↑' 
-                    : 'Du rang le plus grand au plus petit ↓'}
+                  Du niveau le plus haut au plus bas ↓
                 </span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <div style={{ width: '20px', height: '2px', background: '#b053ad' }} />
-                <span style={{ fontSize: '12px' }}>Séparateurs de rangs</span>
+                <span style={{ fontSize: '12px' }}>Séparateurs de niveaux</span>
               </div>
             </div>
           </Col>
@@ -1014,7 +981,7 @@ const OrgChartCompact = () => {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <AlignLeftOutlined />
-                <span style={{ fontSize: '12px' }}>Même rang = même ligne</span>
+                <span style={{ fontSize: '12px' }}>Même niveau = même ligne</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span style={{ fontSize: '16px' }}>⬅️➡️</span>
@@ -1063,7 +1030,7 @@ const OrgChartCompact = () => {
         {stats.totalDepartements} département(s) • 
         {stats.totalManagers} manager(s) • 
         {stats.totalEmployes} employé(s) •
-        Tri {sortOrder === 'asc' ? 'croissant ↑' : 'décroissant ↓'}
+        Tri décroissant ↓
       </div>
     </div>
   );

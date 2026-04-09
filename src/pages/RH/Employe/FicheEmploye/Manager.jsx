@@ -300,7 +300,7 @@ const ManagerList = () => {
 
     return (
       <Modal show={showArchiveModal} onHide={() => setShowArchiveModal(false)}>
-        <Modal.Header closeButton className="bg-warning text-dark">
+        <Modal.Header closeButton closeLabel="Fermer" className="bg-warning text-dark">
           <Modal.Title>
             <FaArchive className="me-2" />
             Archiver le Manager
@@ -370,7 +370,7 @@ const ManagerList = () => {
 
     return (
       <Modal show={showDetailsModal} onHide={() => setShowDetailsModal(false)} size="lg">
-        <Modal.Header closeButton className="modal-header">
+        <Modal.Header closeButton closeLabel="Fermer" className="modal-header">
           <Modal.Title>
             <FaUserTie className="me-2" />
             Détails du Manager

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect } from "react";
 import axiosInstance from "../../utils/AxiosInstance";
 import {
   Card, Row, Col, Statistic, Progress, Table, Tag, Button,
@@ -18,6 +18,11 @@ import {
 import dayjs from "dayjs";
 import "dayjs/locale/fr";
 import { useNavigate } from "react-router-dom";
+import {
+  LineChart, Line, XAxis, YAxis, CartesianGrid,
+  Tooltip as RechartsTooltip, ResponsiveContainer, Legend,
+  PieChart, Pie, Cell
+} from "recharts";
 
 dayjs.locale("fr");
 
@@ -33,7 +38,7 @@ const TableauBordGlobale = () => {
   const [error, setError] = useState(null);
   
   // UNIQUEMENT deux dates : dateDebut et dateFin
-  // Par défaut : 3ème dernier mois au dernier mois
+  // Par dÃ©faut : 3Ã¨me dernier mois au dernier mois
   const [dateDebut, setDateDebut] = useState(() => 
     dayjs().subtract(3, 'month').startOf('month')
   );
@@ -53,7 +58,7 @@ const TableauBordGlobale = () => {
     accent: "var(--status-accent)"
   };
 
-  // Charger les données à chaque changement de dates
+  // Charger les donnÃ©es Ã  chaque changement de dates
   useEffect(() => {
     if (dateDebut && dateFin) {
       fetchDashboardData();
@@ -67,7 +72,7 @@ const TableauBordGlobale = () => {
 
       const token = sessionStorage.getItem('token');
       if (!token) {
-        throw new Error('Utilisateur non authentifié. Veuillez vous reconnecter.');
+        throw new Error('Utilisateur non authentifiÃ©. Veuillez vous reconnecter.');
       }
 
       // UNIQUEMENT l'endpoint /periode avec les deux dates
@@ -75,18 +80,18 @@ const TableauBordGlobale = () => {
 
       const response = await axiosInstance.get(url);
       
-      console.log("Données dashboard:", response.data);
+      console.log("DonnÃ©es dashboard:", response.data);
       
-      setDashboardData("response.data");
+      setDashboardData(response.data);
       
-      message.success("Données actualisées");
+      message.success("DonnÃ©es actualisÃ©es");
       
     } catch (err) {
       console.error("Erreur chargement dashboard:", err);
       
       if (err.response?.status === 401 || err.response?.status === 403) {
         sessionStorage.removeItem('token');
-        const errorMsg = 'Session expirée. Veuillez vous reconnecter.';
+        const errorMsg = 'Session expirÃ©e. Veuillez vous reconnecter.';
         setError(errorMsg);
         setTimeout(() => {
           navigate(`/?message=${encodeURIComponent(errorMsg)}`);
@@ -107,7 +112,7 @@ const TableauBordGlobale = () => {
     try {
       const token = sessionStorage.getItem('token');
       if (!token) {
-        message.error('Session expirée. Veuillez vous reconnecter.');
+        message.error('Session expirÃ©e. Veuillez vous reconnecter.');
         return;
       }
 
@@ -130,16 +135,16 @@ const TableauBordGlobale = () => {
       link.remove();
       window.URL.revokeObjectURL(downloadUrl);
       
-      message.success("Export réussi");
+      message.success("Export rÃ©ussi");
       
     } catch (err) {
       console.error("Erreur export:", err);
       
       // if (err.response?.status === 401 || err.response?.status === 403) {
       //   sessionStorage.removeItem('token');
-      //   message.error('Session expirée. Veuillez vous reconnecter.');
+      //   message.error('Session expirÃ©e. Veuillez vous reconnecter.');
       //   setTimeout(() => {
-      //     navigate('/?message=' + encodeURIComponent('Session expirée. Veuillez vous reconnecter.'));
+      //     navigate('/?message=' + encodeURIComponent('Session expirÃ©e. Veuillez vous reconnecter.'));
       //   }, 2000);
       // } else {
       //   message.error("Erreur lors de l'export");
@@ -181,7 +186,7 @@ const TableauBordGlobale = () => {
     setDateFin(newDateFin);
   };
 
-  // Format d'affichage de la période
+  // Format d'affichage de la pÃ©riode
   const getPeriodeDisplay = () => {
     if (dateDebut && dateFin) {
       return `${dateDebut.format("DD/MM/YYYY")} - ${dateFin.format("DD/MM/YYYY")}`;
@@ -293,10 +298,10 @@ const TableauBordGlobale = () => {
           >
             <p>{alerte.message}</p>
             <p style={{ marginTop: 8, fontStyle: "italic" }}>
-              <strong>Action recommandée:</strong> {alerte.actionRecommandee}
+              <strong>Action recommandÃ©e:</strong> {alerte.actionRecommandee}
             </p>
             <p style={{ marginTop: 4, fontSize: "12px", color: "#5c2458" }}>
-              Détectée le {dayjs(alerte.dateDetection).format("DD/MM/YYYY")}
+              DÃ©tectÃ©e le {dayjs(alerte.dateDetection).format("DD/MM/YYYY")}
             </p>
           </Panel>
         ))}
@@ -304,7 +309,7 @@ const TableauBordGlobale = () => {
     );
   };
 
-  // Rendu des tops employés
+  // Rendu des tops employÃ©s
   const renderTopEmployes = () => {
     const tops = [
       ...(dashboardData?.topAbsenteeisme || []),
@@ -312,7 +317,7 @@ const TableauBordGlobale = () => {
     ];
 
     if (tops.length === 0) {
-      return <Empty description="Aucune donnée disponible" />;
+      return <Empty description="Aucune donnÃ©e disponible" />;
     }
 
     const columns = [
@@ -334,7 +339,7 @@ const TableauBordGlobale = () => {
         )
       },
       {
-        title: "Employé",
+        title: "EmployÃ©",
         dataIndex: "nomComplet",
         key: "employe",
         render: (text, record) => (
@@ -350,7 +355,7 @@ const TableauBordGlobale = () => {
             <div>
               <div style={{ fontWeight: "500" }}>{text}</div>
               <div style={{ fontSize: "12px", color: "#5c2458" }}>
-                {record.matricule} • {record.departement}
+                {record.matricule} à {record.departement}
               </div>
             </div>
           </div>
@@ -363,7 +368,7 @@ const TableauBordGlobale = () => {
         width: 120,
         render: (indicateur) => (
           <Tag color={indicateur === "heures_travaillees" ? "var(--bg-primary)" : "var(--status-error)"}>
-            {indicateur === "heures_travaillees" ? "Performant" : "Absentéisme"}
+            {indicateur === "heures_travaillees" ? "Performant" : "AbsentÃ©isme"}
           </Tag>
         )
       },
@@ -394,7 +399,7 @@ const TableauBordGlobale = () => {
     );
   };
 
-  // Rendu des demandes de congés en attente
+  // Rendu des demandes de congÃ©s en attente
   const renderDemandesConges = () => {
     const demandes = dashboardData?.demandesCongesEnAttente || [];
 
@@ -402,7 +407,7 @@ const TableauBordGlobale = () => {
       return (
         <Alert
           message="Aucune demande en attente"
-          description="Toutes les demandes de congés sont traitées"
+          description="Toutes les demandes de congÃ©s sont traitÃ©es"
           type="success"
           showIcon
         />
@@ -434,7 +439,7 @@ const TableauBordGlobale = () => {
               }
               description={
                 <div>
-                  <div>{demande.departement} • {demande.dureeJours} jours</div>
+                  <div>{demande.departement} à {demande.dureeJours} jours</div>
                   <div style={{ fontSize: "11px", color: "#5c2458" }}>
                     {dayjs(demande.dateDebut).format("DD/MM")} - {dayjs(demande.dateFin).format("DD/MM/YYYY")}
                   </div>
@@ -450,9 +455,10 @@ const TableauBordGlobale = () => {
   // Rendu des tendances
   const renderTendances = () => {
     const tendances = dashboardData?.tendances || [];
+    const seriesParDepartement = getDepartementSeriesData(dashboardData);
 
-    if (tendances.length === 0) {
-      return <Empty description="Aucune donnée de tendance disponible" />;
+    if (tendances.length === 0 && seriesParDepartement.length === 0) {
+      return <Empty description="Aucune donnÃ©e de tendance disponible" />;
     }
 
     const data = tendances.map(t => ({
@@ -464,34 +470,96 @@ const TableauBordGlobale = () => {
     }));
 
     return (
-      <div style={{ height: 200 }}>
-        <div style={{ display: "flex", height: "100%", alignItems: "flex-end", gap: "8px" }}>
-          {data.slice(-6).map((item, index) => (
-            <div key={index} style={{ flex: 1, textAlign: "center" }}>
-              <Tooltip title={`${item.presence.toFixed(1)}% présence`}>
-                <div
-                  style={{
-                    height: `${(item.presence / 100) * 100}px`,
-                    backgroundColor: item.presence >= 95 ? "#52c41a" :
-                      item.presence >= 90 ? "#fa8c16" : "#f5222d",
-                    borderRadius: "4px 4px 0 0",
-                    marginBottom: "4px"
-                  }}
-                />
-              </Tooltip>
-              <div style={{ fontSize: "10px", color: "#5c2458", marginTop: "4px" }}>
-                {item.mois}
-              </div>
+      <div>
+        {tendances.length > 0 && (
+          <div style={{ height: 200 }}>
+            <div style={{ display: "flex", height: "100%", alignItems: "flex-end", gap: "8px" }}>
+              {data.slice(-6).map((item, index) => (
+                <div key={index} style={{ flex: 1, textAlign: "center" }}>
+                  <Tooltip title={`${item.presence.toFixed(1)}% prÃ©sence`}>
+                    <div
+                      style={{
+                        height: `${(item.presence / 100) * 100}px`,
+                        backgroundColor: item.presence >= 95 ? "#52c41a" :
+                          item.presence >= 90 ? "#fa8c16" : "#f5222d",
+                        borderRadius: "4px 4px 0 0",
+                        marginBottom: "4px"
+                      }}
+                    />
+                  </Tooltip>
+                  <div style={{ fontSize: "10px", color: "#5c2458", marginTop: "4px" }}>
+                    {item.mois}
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-        <div style={{ marginTop: "16px", fontSize: "12px", color: "#5c2458", textAlign: "center" }}>
-          Évolution du taux de présence sur les 6 derniers mois
+            <div style={{ marginTop: "16px", fontSize: "12px", color: "#5c2458", textAlign: "center" }}>
+              Ã‰volution du taux de prÃ©sence sur les 6 derniers mois
+            </div>
+          </div>
+        )}
+
+        <div style={{ height: 260, marginTop: 16 }}>
+          {seriesParDepartement.length === 0 ? (
+            <Empty description="Aucune statistique par dÃ©partement pour heures, congÃ©s et retards" />
+          ) : (
+            <>
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={seriesParDepartement} margin={{ top: 10, right: 20, left: 0, bottom: 40 }}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis
+                    dataKey="departement"
+                    interval={0}
+                    angle={-18}
+                    textAnchor="end"
+                    height={60}
+                    tick={{ fontSize: 10 }}
+                  />
+                  <YAxis tick={{ fontSize: 11 }} />
+                  <RechartsTooltip
+                    formatter={(value, name) => {
+                      if (name === "Heures travaillÃ©es") return [`${value} h`, name];
+                      if (name === "CongÃ©s pris") return [`${value} jours`, name];
+                      if (name === "Retards") return [`${value} h`, name];
+                      return [value, name];
+                    }}
+                  />
+                  <Legend />
+                  <Line
+                    type="monotone"
+                    dataKey="heuresTravaillees"
+                    name="Heures travaillÃ©es"
+                    stroke="#1890ff"
+                    strokeWidth={2}
+                    dot={{ r: 3 }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="congesPris"
+                    name="CongÃ©s pris"
+                    stroke="#722ed1"
+                    strokeWidth={2}
+                    dot={{ r: 3 }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="retards"
+                    name="Retards"
+                    stroke="#f5222d"
+                    strokeWidth={2}
+                    dot={{ r: 3 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+              <div style={{ marginTop: 8, fontSize: "12px", color: "#5c2458", textAlign: "center" }}>
+                Heures travaillÃ©es, congÃ©s pris et retards par dÃ©partement
+              </div>
+            </>
+          )}
         </div>
       </div>
     );
   };
-
   // Rendu des statistiques par département
   const renderStatsDepartement = () => {
     const stats = dashboardData?.statsEffectif?.parDepartement || {};
@@ -501,26 +569,61 @@ const TableauBordGlobale = () => {
     }
 
     const total = Object.values(stats).reduce((sum, val) => sum + val, 0);
+    const data = Object.entries(stats).map(([dept, count]) => ({
+      name: dept,
+      value: count
+    }));
+
+    const palette = [
+      "#8b5cf6", "#f97316", "#22c55e", "#3b82f6",
+      "#ec4899", "#f59e0b", "#10b981", "#ef4444"
+    ];
 
     return (
       <div>
-        {Object.entries(stats).map(([dept, count], index) => {
-          const percentage = total > 0 ? (count / total) * 100 : 0;
-          return (
-            <div key={index} style={{ marginBottom: 12 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-                <Text>{dept}</Text>
-                <Text strong>{count} ({percentage.toFixed(1)}%)</Text>
-              </div>
-              <Progress
-                percent={percentage}
-                size="small"
-                strokeColor={getDepartmentColor(dept)}
-                showInfo={false}
+        <div style={{ height: 260 }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={data}
+                dataKey="value"
+                nameKey="name"
+                cx="50%"
+                cy="50%"
+                outerRadius={90}
+                innerRadius={40}
+                paddingAngle={2}
+                stroke="white"
+              >
+                {data.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={palette[index % palette.length]} />
+                ))}
+              </Pie>
+              <RechartsTooltip
+                formatter={(value, name) => {
+                  const percentage = total > 0 ? (Number(value) / total) * 100 : 0;
+                  return [`${value} employés • ${percentage.toFixed(1)}%`, name];
+                }}
               />
-            </div>
-          );
-        })}
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+        <Row gutter={[8, 8]} style={{ marginTop: 8 }}>
+          {data.map((item, index) => (
+            <Col xs={24} sm={12} key={index}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{
+                  width: 10,
+                  height: 10,
+                  borderRadius: "50%",
+                  background: palette[index % palette.length],
+                  display: "inline-block"
+                }} />
+                <Text>{item.name}</Text>
+              </div>
+            </Col>
+          ))}
+        </Row>
       </div>
     );
   };
@@ -547,7 +650,7 @@ const TableauBordGlobale = () => {
         showIcon
         action={
           <Button size="small" onClick={fetchDashboardData}>
-            Réessayer
+            RÃ©essayer
           </Button>
         }
         style={{ margin: "24px" }}
@@ -557,7 +660,7 @@ const TableauBordGlobale = () => {
 
   return (
     <div style={{ padding: "24px" }}>
-      {/* En-tête */}
+      {/* En-tÃªte */}
       <div style={{ marginBottom: 24 }}>
         <Row justify="space-between" align="middle">
           <Col>
@@ -568,7 +671,7 @@ const TableauBordGlobale = () => {
             {/* Affichage des deux dates */}
             <Text type="secondary" style={{ fontSize: "16px", fontWeight: "500" }}>
               <CalendarOutlined style={{ marginRight: 8 }} />
-              Période du {getPeriodeDisplay()}
+              PÃ©riode du {getPeriodeDisplay()}
             </Text>
           </Col>
           <Col>
@@ -581,10 +684,10 @@ const TableauBordGlobale = () => {
                 Mois en cours
               </Button>
               <Button onClick={() => applyPreset("mois_precedent")}>
-                Mois précédent
+                Mois prÃ©cÃ©dent
               </Button>
               
-              {/* Sélecteur de dates personnalisées */}
+              {/* SÃ©lecteur de dates personnalisÃ©es */}
               <RangePicker
                 value={[dateDebut, dateFin]}
                 onChange={(dates) => {
@@ -594,7 +697,7 @@ const TableauBordGlobale = () => {
                   }
                 }}
                 format="DD/MM/YYYY"
-                placeholder={["Date début", "Date fin"]}
+                placeholder={["Date dÃ©but", "Date fin"]}
                 allowClear={false}
               />
 
@@ -623,7 +726,7 @@ const TableauBordGlobale = () => {
         title={
           <div style={{ display: "flex", alignItems: "center" }}>
             <TrophyOutlined style={{ marginRight: 8, color: "#b053ad" }} />
-            Indicateurs Clés de Performance
+            Indicateurs ClÃ©s de Performance
             <Text type="secondary" style={{ marginLeft: 12, fontSize: "14px" }}>
               {dayjs().format("HH:mm")}
             </Text>
@@ -634,7 +737,7 @@ const TableauBordGlobale = () => {
         {renderKPICards()}
       </Card>
 
-      {/* Deuxième ligne : Alertes et Demandes Congés */}
+      {/* DeuxiÃ¨me ligne : Alertes et Demandes CongÃ©s */}
       <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
         <Col xs={24} md={12}>
           <Card
@@ -658,7 +761,7 @@ const TableauBordGlobale = () => {
             title={
               <div style={{ display: "flex", alignItems: "center" }}>
                 <CoffeeOutlined style={{ marginRight: 8, color: "#722ed1" }} />
-                Demandes de Congés en Attente
+                Demandes de CongÃ©s en Attente
                 <Badge
                   count={dashboardData?.demandesCongesEnAttente?.length || 0}
                   style={{ marginLeft: 8 }}
@@ -672,14 +775,14 @@ const TableauBordGlobale = () => {
         </Col>
       </Row>
 
-      {/* Troisième ligne : Tops Employés et Tendances */}
+      {/* TroisiÃ¨me ligne : Tops EmployÃ©s et Tendances */}
       <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
         <Col xs={24} lg={12}>
           <Card
             title={
               <div style={{ display: "flex", alignItems: "center" }}>
                 <TeamOutlined style={{ marginRight: 8, color: "#52c41a" }} />
-                Top Employés
+                Top EmployÃ©s
               </div>
             }
             style={{ height: "100%" }}
@@ -702,14 +805,14 @@ const TableauBordGlobale = () => {
         </Col>
       </Row>
 
-      {/* Quatrième ligne : Répartition et Stats */}
+      {/* QuatriÃ¨me ligne : RÃ©partition et Stats */}
       <Row gutter={[16, 16]}>
         <Col xs={24} md={12}>
           <Card
             title={
               <div style={{ display: "flex", alignItems: "center" }}>
                 <PieChartOutlined style={{ marginRight: 8, color: "#eb2f96" }} />
-                Répartition par Département
+                RÃ©partition par DÃ©partement
               </div>
             }
             style={{ height: "100%" }}
@@ -731,22 +834,22 @@ const TableauBordGlobale = () => {
               {dashboardData?.statsEffectif && (
                 <>
                   <Descriptions.Item label="Effectif total">
-                    {dashboardData.statsEffectif.totalEmployes} employés
+                    {dashboardData.statsEffectif.totalEmployes} employÃ©s
                   </Descriptions.Item>
-                  <Descriptions.Item label="Employés actifs">
-                    {dashboardData.statsEffectif.employesActifs} employés
+                  <Descriptions.Item label="EmployÃ©s actifs">
+                    {dashboardData.statsEffectif.employesActifs} employÃ©s
                   </Descriptions.Item>
-                  <Descriptions.Item label="Nouveaux employés (mois)">
-                    {dashboardData.statsEffectif.nouveauxEmployesMois} employés
+                  <Descriptions.Item label="Nouveaux employÃ©s (mois)">
+                    {dashboardData.statsEffectif.nouveauxEmployesMois} employÃ©s
                   </Descriptions.Item>
                 </>
               )}
               {dashboardData?.statsPresence && (
                 <>
-                  <Descriptions.Item label="Taux de présence">
+                  <Descriptions.Item label="Taux de prÃ©sence">
                     {dashboardData.statsPresence.tauxPresenceGlobal?.toFixed(1)}%
                   </Descriptions.Item>
-                  <Descriptions.Item label="Heures travaillées moyennes">
+                  <Descriptions.Item label="Heures travaillÃ©es moyennes">
                     {dashboardData.statsPresence.heuresTravailleesMoyennes?.toFixed(1)}h/mois
                   </Descriptions.Item>
                 </>
@@ -756,7 +859,7 @@ const TableauBordGlobale = () => {
         </Col>
       </Row>
 
-      {/* Modal de détail KPI */}
+      {/* Modal de dÃ©tail KPI */}
       <Modal
         title={selectedKPI?.titre}
         open={kpiModalVisible}
@@ -798,10 +901,10 @@ const TableauBordGlobale = () => {
       }}>
         <Row justify="space-between">
           <Col>
-            <Text>Dernière mise à jour: {dayjs().format("DD/MM/YYYY HH:mm:ss")}</Text>
+            <Text>DerniÃ¨re mise Ã  jour: {dayjs().format("DD/MM/YYYY HH:mm:ss")}</Text>
           </Col>
           <Col>
-            <Text>Données pour la période du {getPeriodeDisplay()}</Text>
+            <Text>DonnÃ©es pour la pÃ©riode du {getPeriodeDisplay()}</Text>
           </Col>
         </Row>
       </div>
@@ -826,7 +929,7 @@ const getKpiIcon = (iconName, color) => {
 };
 
 const formatKPIValue = (value, unit) => {
-  if (unit === "k€/mois") {
+  if (unit === "kâ‚¬/mois") {
     return `${value.toLocaleString("fr-FR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}`;
   }
   if (typeof value === "number") {
@@ -855,9 +958,9 @@ const getDepartmentColor = (department) => {
 
   const colors = {
     'Ressources Humaines': 'var(--bg-primary)',
-    'Développement Informatique': 'var(--bg-accent)',
+    'DÃ©veloppement Informatique': 'var(--bg-accent)',
     'Ventes et Marketing': 'var(--color-orange)',
-    'Comptabilité Générale': 'var(--status-success)',
+    'ComptabilitÃ© GÃ©nÃ©rale': 'var(--status-success)',
     'Maintenance et Logistique': 'var(--status-warning)',
     'Direction': 'var(--bg-primary)',
     'Administration': 'var(--bg-primary)',
@@ -866,7 +969,7 @@ const getDepartmentColor = (department) => {
     'Marketing': 'var(--color-orange)',
     'Finance': 'var(--status-success)',
     'Logistique': 'var(--status-warning)',
-    'Direction Générale': 'var(--bg-primary)'
+    'Direction GÃ©nÃ©rale': 'var(--bg-primary)'
   };
 
   for (const [key, color] of Object.entries(colors)) {
@@ -888,7 +991,39 @@ const getDepartmentColor = (department) => {
   return colorsList[Math.abs(hash) % colorsList.length];
 };
 
-// Ajouter l'icône PieChartOutlined
+const getDepartementSeriesData = (dashboardData) => {
+  const heuresParDepartement =
+    dashboardData?.statsPointage?.heuresParDepartement ||
+    dashboardData?.heuresTravailleesParDepartement ||
+    {};
+
+  const retardsParDepartement =
+    dashboardData?.statsPointage?.retardsParDepartement ||
+    dashboardData?.retardsParDepartement ||
+    dashboardData?.statsPointage?.heuresRetardsParDepartement ||
+    {};
+
+  const congesParDepartement =
+    dashboardData?.statsAbsencesConges?.congesParDepartement ||
+    dashboardData?.statsAbsencesConges?.congesPrisParDepartement ||
+    dashboardData?.congesParDepartement ||
+    {};
+
+  const departments = new Set([
+    ...Object.keys(heuresParDepartement || {}),
+    ...Object.keys(retardsParDepartement || {}),
+    ...Object.keys(congesParDepartement || {})
+  ]);
+
+  return Array.from(departments).map((departement) => ({
+    departement,
+    heuresTravaillees: Number(heuresParDepartement?.[departement] || 0),
+    congesPris: Number(congesParDepartement?.[departement] || 0),
+    retards: Number(retardsParDepartement?.[departement] || 0)
+  }));
+};
+
+// Ajouter l'icÃ´ne PieChartOutlined
 const PieChartOutlined = (props) => (
   <svg
     {...props}
@@ -902,3 +1037,5 @@ const PieChartOutlined = (props) => (
 );
 
 export default TableauBordGlobale;
+
+

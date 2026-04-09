@@ -583,7 +583,7 @@ const EmployeesManager = () => {
         size="lg"
         centered
       >
-        <Modal.Header closeButton className="bg-primary text-white">
+        <Modal.Header closeButton closeLabel="Fermer" className="bg-primary text-white">
           <Modal.Title className="d-flex align-items-center">
             <User className="me-2" size={24} />
             Détails de l'Employé
@@ -743,3 +743,4 @@ const RefreshCw = (props) => (
 );
 
 export default EmployeesManager;
+

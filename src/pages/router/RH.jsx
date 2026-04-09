@@ -50,7 +50,6 @@ import ParametrageGlobal from "../RH/Paramétrage/ParametrageGobal";
 import ExportConfiguration from "../RH/Employe/FicheEmploye/export/ExportConfiguration";
 import DemandesCongeEmploye from "../RH/Employe/Conges/DemandesConges";
 
-
 const RouterRH = () => {
     return (
         <Routes>

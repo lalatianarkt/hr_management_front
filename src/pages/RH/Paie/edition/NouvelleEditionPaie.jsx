@@ -132,6 +132,7 @@ function NouvelleEditionPaie() {
     setLoadingPeriode(true);
     try {
       const response = await axiosInstance.get('/api/periodes-paie/actif');
+      console.log("periode actif : ", response.data);
       setPeriodeActive(response.data);
     } catch (err) {
       console.error('Erreur lors du chargement de la période active:', err);
@@ -300,7 +301,7 @@ function NouvelleEditionPaie() {
       };
 
       console.log("Données envoyées:", requestData);
-
+      
       const response = await axiosInstance.post('/api/paies/generer-multiples', requestData);
 
       if (response.data) {
@@ -803,7 +804,7 @@ function NouvelleEditionPaie() {
 
       {/* Modal de génération de paie */}
       <Modal show={showGenerateModal} onHide={() => handleCloseGenerateModal(false)} size="lg" centered>
-        <Modal.Header closeButton>
+        <Modal.Header closeButton closeLabel="Fermer">
           <Modal.Title>
             <BarChart2 size={20} className="me-2" />
             Générer la paie

@@ -1,6 +1,5 @@
 // Pointage.jsx
 import React, { useState, useRef } from "react";
-import axios from "axios";
 import {
   Container,
   Row,
@@ -23,6 +22,7 @@ import {
   FaUsers,
   FaChartBar
 } from "react-icons/fa";
+import axios from "axios";
 
 const PointagePage = () => {
   // États
@@ -63,19 +63,21 @@ const PointagePage = () => {
     formData.append('file', file);
 
     try {
+      const token = sessionStorage.getItem("token");
       const response = await axios.post(
         "http://localhost:8080/api/pointages",
         formData,
         {
           headers: {
-            'Content-Type': 'multipart/form-data'
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            "Content-Type": "multipart/form-data",
           },
           onUploadProgress: (progressEvent) => {
             const percentCompleted = Math.round(
               (progressEvent.loaded * 100) / progressEvent.total
             );
             setUploadProgress(percentCompleted);
-          }
+          },
         }
       );
 
@@ -285,109 +287,106 @@ const PointagePage = () => {
       </Card>
 
       {/* Résultats de l'upload */}
-      {/* // Remplacer la gestion des résultats (~186-260) */}
-{uploadResult && (
-  <Card className="mb-4 border-success">
-    <Card.Header className="bg-success text-white">
-      <h5 className="mb-0">
-        <FaCheckCircle className="me-2" />
-        Résultats de l'Import
-      </h5>
-    </Card.Header>
-    <Card.Body>
-      <Row>
-        <Col md={3}>
-          <Card className="text-center">
-            <Card.Body>
-              <FaUsers size={32} className="text-primary mb-2" />
-              <Card.Title>{uploadResult.totalCount || 0}</Card.Title>
-              <Card.Text className="text-muted">Lignes traitées</Card.Text>
-            </Card.Body>
-          </Card>
-        </Col>
-        <Col md={3}>
-          <Card className="text-center">
-            <Card.Body>
-              <FaCheckCircle size={32} className="text-success mb-2" />
-              {/* CHANGEMENT ICI : validCount au lieu de savedCount */}
-              <Card.Title>{uploadResult.validCount || 0}</Card.Title>
-              <Card.Text className="text-muted">Lignes sauvegardées</Card.Text>
-            </Card.Body>
-          </Card>
-        </Col>
-        <Col md={3}>
-          <Card className="text-center">
-            <Card.Body>
-              <FaTimesCircle size={32} className="text-danger mb-2" />
-              {/* CHANGEMENT ICI : errorCount au lieu de rejectedCount */}
-              <Card.Title>{uploadResult.errorCount || 0}</Card.Title>
-              <Card.Text className="text-muted">Lignes rejetées</Card.Text>
-            </Card.Body>
-          </Card>
-        </Col>
-        <Col md={3}>
-          <Card className="text-center">
-            <Card.Body>
-              <FaChartBar size={32} className="text-warning mb-2" />
-              <Card.Title>
-                {uploadResult.validCount > 0 && uploadResult.totalCount > 0
-                  ? `${Math.round((uploadResult.validCount / uploadResult.totalCount) * 100)}%`
-                  : "0%"
-                }
-              </Card.Title>
-              <Card.Text className="text-muted">Taux de succès</Card.Text>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
-      
-      {/* CHANGEMENT ICI : Afficher les erreurs depuis errorDetails */}
-      {uploadResult.errorDetails && uploadResult.errorDetails.length > 0 && (
-        <div className="mt-4">
-          <h6>Détails des erreurs :</h6>
-          <div className="alert alert-warning">
-            <ul className="mb-0">
-              {uploadResult.errorDetails.slice(0, 5).map((errorDetail, index) => (
-                <li key={index}>
-                  <strong>Ligne {errorDetail.rowNumber}:</strong> 
-                  {errorDetail.errors && errorDetail.errors.length > 0 
-                    ? ` ${errorDetail.errors.join(", ")}` 
-                    : " Erreur inconnue"}
-                </li>
-              ))}
-              {uploadResult.errorDetails.length > 5 && (
-                <li>... et {uploadResult.errorDetails.length - 5} autres erreurs</li>
-              )}
-            </ul>
-          </div>
-        </div>
+      {uploadResult && (
+        <Card className="mb-4 border-success">
+          <Card.Header className="bg-success text-white">
+            <h5 className="mb-0">
+              <FaCheckCircle className="me-2" />
+              Résultats de l'Import
+            </h5>
+          </Card.Header>
+          <Card.Body>
+            <Row>
+              <Col md={3}>
+                <Card className="text-center">
+                  <Card.Body>
+                    <FaUsers size={32} className="text-primary mb-2" />
+                    <Card.Title>{uploadResult.totalCount || 0}</Card.Title>
+                    <Card.Text className="text-muted">Lignes traitées</Card.Text>
+                  </Card.Body>
+                </Card>
+              </Col>
+              <Col md={3}>
+                <Card className="text-center">
+                  <Card.Body>
+                    <FaCheckCircle size={32} className="text-success mb-2" />
+                    <Card.Title>{uploadResult.validCount || 0}</Card.Title>
+                    <Card.Text className="text-muted">Lignes sauvegardées</Card.Text>
+                  </Card.Body>
+                </Card>
+              </Col>
+              <Col md={3}>
+                <Card className="text-center">
+                  <Card.Body>
+                    <FaTimesCircle size={32} className="text-danger mb-2" />
+                    <Card.Title>{uploadResult.errorCount || 0}</Card.Title>
+                    <Card.Text className="text-muted">Lignes rejetées</Card.Text>
+                  </Card.Body>
+                </Card>
+              </Col>
+              <Col md={3}>
+                <Card className="text-center">
+                  <Card.Body>
+                    <FaChartBar size={32} className="text-warning mb-2" />
+                    <Card.Title>
+                      {uploadResult.validCount > 0 && uploadResult.totalCount > 0
+                        ? `${Math.round((uploadResult.validCount / uploadResult.totalCount) * 100)}%`
+                        : "0%"
+                      }
+                    </Card.Title>
+                    <Card.Text className="text-muted">Taux de succès</Card.Text>
+                  </Card.Body>
+                </Card>
+              </Col>
+            </Row>
+            
+            {/* Afficher les erreurs depuis errorDetails */}
+            {uploadResult.errorDetails && uploadResult.errorDetails.length > 0 && (
+              <div className="mt-4">
+                <h6>Détails des erreurs :</h6>
+                <div className="alert alert-warning">
+                  <ul className="mb-0">
+                    {uploadResult.errorDetails.slice(0, 5).map((errorDetail, index) => (
+                      <li key={index}>
+                        <strong>Ligne {errorDetail.rowNumber}:</strong> 
+                        {errorDetail.errors && errorDetail.errors.length > 0 
+                          ? ` ${errorDetail.errors.join(", ")}` 
+                          : " Erreur inconnue"}
+                      </li>
+                    ))}
+                    {uploadResult.errorDetails.length > 5 && (
+                      <li>... et {uploadResult.errorDetails.length - 5} autres erreurs</li>
+                    )}
+                  </ul>
+                </div>
+              </div>
+            )}
+            
+            {/* Ajouter l'affichage des erreurs globales */}
+            {uploadResult.globalErrors && uploadResult.globalErrors.length > 0 && (
+              <div className="mt-3">
+                <h6>Erreurs globales :</h6>
+                <Alert variant="danger">
+                  <ul className="mb-0">
+                    {uploadResult.globalErrors.map((error, index) => (
+                      <li key={index}>{error}</li>
+                    ))}
+                  </ul>
+                </Alert>
+              </div>
+            )}
+            
+            {/* Message de succès */}
+            {uploadResult.message && (
+              <div className="mt-3">
+                <Alert variant="info">
+                  {uploadResult.message}
+                </Alert>
+              </div>
+            )}
+          </Card.Body>
+        </Card>
       )}
-      
-      {/* Ajouter l'affichage des erreurs globales */}
-      {uploadResult.globalErrors && uploadResult.globalErrors.length > 0 && (
-        <div className="mt-3">
-          <h6>Erreurs globales :</h6>
-          <Alert variant="danger">
-            <ul className="mb-0">
-              {uploadResult.globalErrors.map((error, index) => (
-                <li key={index}>{error}</li>
-              ))}
-            </ul>
-          </Alert>
-        </div>
-      )}
-      
-      {/* Message de succès */}
-      {uploadResult.message && (
-        <div className="mt-3">
-          <Alert variant="info">
-            {uploadResult.message}
-          </Alert>
-        </div>
-      )}
-    </Card.Body>
-  </Card>
-)}
 
       {/* Boutons d'action */}
       <Row className="mb-4">
@@ -430,7 +429,7 @@ const PointagePage = () => {
                   <th>Heure Arrivée</th>
                   <th>Heure Départ</th>
                   <th>Département</th>
-                </tr>
+                 </tr>
               </thead>
               <tbody>
                 <tr>

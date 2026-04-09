@@ -913,7 +913,7 @@ const AddMouvementModal = ({
       centered
       backdrop="static"
     >
-      <Modal.Header closeButton className="bg-primary text-white">
+      <Modal.Header closeButton closeLabel="Fermer" className="bg-primary text-white">
         <Modal.Title className="d-flex align-items-center">
           <FaPlus className="me-2" />
           Nouvelle Demande de Mouvement
@@ -1119,3 +1119,4 @@ const AddMouvementModal = ({
 };
 
 export default AddMouvementModal;
+
