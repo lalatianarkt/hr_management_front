@@ -936,7 +936,17 @@ function AddEmployeeModal({ show, onHide, onSuccess, refreshEmployees }) {
     <Modal show={show} onHide={onHide} size="xl" centered backdrop="static">
       <Modal.Header closeButton closeLabel="Fermer" className="border-bottom">
         <Modal.Title className="d-flex align-items-center gap-2">
-          <PersonFill className="text-primary" />
+          <Button
+            type="button"
+            variant="link"
+            size="sm"
+            onClick={step > 1 ? prevStep : onHide}
+            className="p-0 me-1 d-inline-flex align-items-center text-decoration-none"
+          >
+            <ChevronLeft className="me-1" />
+            Retour
+          </Button>
+          <PersonFill className="text-primary ms-2" />
           <span>Ajouter un nouvel employé</span>
         </Modal.Title>
       </Modal.Header>
@@ -2083,12 +2093,7 @@ function AddEmployeeModal({ show, onHide, onSuccess, refreshEmployees }) {
       <Modal.Footer className="border-top">
         <div className="d-flex justify-content-between w-100">
           <div>
-            {step > 1 && (
-              <Button variant="outline-secondary" onClick={prevStep} disabled={loading}>
-                <ChevronLeft className="me-1" />
-                Précédent
-              </Button>
-            )}
+            {/* Retour géré en haut */}
           </div>
           
           <div className="d-flex gap-2">

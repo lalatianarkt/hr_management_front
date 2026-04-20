@@ -927,7 +927,7 @@ const AddMouvementModal = ({
       </Modal.Header>
       
       <Form onSubmit={handleSubmit}>
-        <Modal.Body>
+        <Modal.Body style={{ maxHeight: '70vh', overflowY: 'auto' }}>
           {error && (
             <Alert variant="danger" dismissible onClose={() => setError('')} className="mb-4">
               <strong>Erreur:</strong> {error}
@@ -1108,7 +1108,7 @@ const AddMouvementModal = ({
             ) : (
               <>
                 <FaSave className="me-2" />
-                {formData.statut === '4' ? 'Valider et enregistrer' : 'Envoyer la demande'}
+                {formData.statut === '4' ? 'Valider et enregistrer' : 'Enregistrer'}
               </>
             )}
           </Button>

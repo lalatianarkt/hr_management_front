@@ -6,6 +6,7 @@ import LoginPage from "./pages/Authentification/Login";
 import RouterRH from "./pages/router/RH";
 import RouterInscription from "./pages/router/inscription";
 import RouterManager from "./pages/router/Manager";
+import RouterIT from "./pages/router/IT";
 import RouterEmploye from "./pages/router/employe";
 import SelectRolePage from "./pages/Authentification/SelectRolePage";
 
@@ -21,6 +22,10 @@ import "./assets/css/ValidationRH.css";
 import "./assets/css/DemandeAbsence.css";
 import "./assets/css/DashboardRH.css";
 import "./assets/css/no-hover.css";
+import './assets/css/RubriquePaie.css';
+import './assets/css/Notifications.css';
+import "./assets/css/ManagerDashboard.css";
+import "./assets/css/RubriquePaie.css";
 
 function App() {
   return (
@@ -32,6 +37,7 @@ function App() {
           <Route path="/dashboard-RH/*" element={<RouterRH />} />
           <Route path="/inscription/*" element={<RouterInscription />} />
           <Route path="/dashboard-Manager/*" element={<RouterManager />} />
+          <Route path="/dashboard-IT/*" element={<RouterIT />} />
           <Route path="/emp/*" element={<RouterEmploye />} />
         </Routes>
       </BrowserRouter>

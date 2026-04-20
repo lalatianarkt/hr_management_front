@@ -301,10 +301,6 @@ const BulletinEmployeDetail = () => {
     }
   };
 
-  const handlePrint = () => {
-    window.print();
-  };
-
   const handleExportPDF = async () => {
     try {
       setExportingPDF(true);
@@ -428,118 +424,234 @@ const BulletinEmployeDetail = () => {
 
   return (
     <Box p={3}>
-      <Card sx={{
-        mb: 4,
-        background: 'linear-gradient(135deg, #6a1b9a 0%, #9c27b0 100%)',
-        color: 'white',
-        borderRadius: '24px',
-        boxShadow: '0 10px 30px rgba(97, 18, 202, 0.2)',
-        overflow: 'hidden',
-        position: 'relative'
-      }}>
-        <CardContent sx={{ p: { xs: 3, md: 5 } }}>
-          <Grid container alignItems="center" spacing={3}>
-            <Grid item>
-              <Button
-                startIcon={<ArrowBack />}
-                onClick={handleBack}
-                variant="contained"
-                sx={{
-                  bgcolor: 'rgba(255,255,255,0.2)',
-                  backdropFilter: 'blur(10px)',
-                  color: 'white',
-                  borderRadius: '12px',
-                  px: 3,
-                  py: 1,
-                  fontWeight: 'bold',
-                  boxShadow: 'none',
-                  '&:hover': { bgcolor: 'rgba(255,255,255,0.3)', boxShadow: 'none' }
-                }}
-              >
-                Retour
-              </Button>
-            </Grid>
-            <Grid item xs>
-              <Typography variant="h3" component="h1" fontWeight="800" sx={{ letterSpacing: '-1px', mb: 3 }}>
-                <AccountBalance sx={{ mr: 2, fontSize: '2.5rem', verticalAlign: 'middle' }} />
-                Bulletin de Paie
-              </Typography>
+      <Card
+        sx={{
+          mb: 4,
+          borderRadius: '24px',
+          border: '1px solid rgba(176, 83, 173, 0.14)',
+          background: 'linear-gradient(135deg, #fff 0%, #fdf7fc 100%)',
+          boxShadow: '0 10px 24px rgba(176, 83, 173, 0.08)',
+          overflow: 'hidden'
+        }}
+      >
+        <CardContent sx={{ p: { xs: 3, md: 4 } }}>
+          <Grid container spacing={3} alignItems="center">
+            {/* Partie gauche */}
+            <Grid item xs={12} lg={8}>
+              <Stack spacing={2.2}>
+                <Box>
+                  <Typography
+                    variant="overline"
+                    sx={{
+                      color: '#8e3a8b',
+                      fontWeight: 700,
+                      letterSpacing: '1px'
+                    }}
+                  >
+                    Portail RH • Paie
+                  </Typography>
 
-              <Grid container spacing={3}>
-                <Grid item xs={12} md={8}>
-                  <Box display="flex" alignItems="center">
-                    <Avatar sx={{ width: 64, height: 64, mr: 3, bgcolor: 'rgba(255,255,255,0.2)', border: '2px solid rgba(255,255,255,0.3)' }}>
-                      <Person fontSize="large" />
+                  <Typography
+                    component="h1"
+                    sx={{
+                      mt: 0.5,
+                      fontSize: { xs: '1.7rem', md: '2.3rem' },
+                      fontWeight: 800,
+                      color: '#4b1f47',
+                      lineHeight: 1.2
+                    }}
+                  >
+                    Bulletin de paie
+                  </Typography>
+                </Box>
+
+                <Stack
+                  direction={{ xs: 'column', sm: 'row' }}
+                  spacing={1.5}
+                  useFlexGap
+                  flexWrap="wrap"
+                >
+                  <Button
+                    startIcon={<ArrowBack />}
+                    onClick={handleBack}
+                    variant="outlined"
+                    sx={{
+                      alignSelf: 'flex-start',
+                      textTransform: 'none',
+                      fontWeight: 700,
+                      color: '#8e3a8b',
+                      borderColor: '#d79ed0',
+                      borderRadius: '999px',
+                      px: 2.2,
+                      py: 1,
+                      '&:hover': {
+                        borderColor: '#b053ad',
+                        backgroundColor: '#f9eef8'
+                      }
+                    }}
+                  >
+                    Retour
+                  </Button>
+
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1,
+                      px: 2,
+                      py: 1,
+                      borderRadius: '999px',
+                      bgcolor: '#f9eef8',
+                      border: '1px solid #efd2ea'
+                    }}
+                  >
+                    <CalendarMonth sx={{ color: '#b053ad', fontSize: 20 }} />
+                    <Typography sx={{ fontWeight: 700, color: '#5c2458' }}>
+                      {getPeriodeString()}
+                    </Typography>
+                  </Box>
+
+                  <Chip
+                    label={bulletinInfo?.statutPaieLibelle || 'Validé'}
+                    size="small"
+                    sx={{
+                      alignSelf: 'center',
+                      fontWeight: 700,
+                      color: bulletinInfo?.statutCloture === 1 ? '#1f6f43' : '#b45f06',
+                      bgcolor: bulletinInfo?.statutCloture === 1 ? '#e6f4ea' : '#fff1df',
+                      border: bulletinInfo?.statutCloture === 1
+                        ? '1px solid #b7dfc3'
+                        : '1px solid #ffd59a'
+                    }}
+                  />
+                </Stack>
+
+                <Box
+                  sx={{
+                    p: 2.2,
+                    borderRadius: '18px',
+                    bgcolor: '#fcf7fb',
+                    border: '1px solid rgba(176, 83, 173, 0.10)'
+                  }}
+                >
+                  <Box display="flex" alignItems="center" gap={2}>
+                    <Avatar
+                      sx={{
+                        width: 58,
+                        height: 58,
+                        bgcolor: '#f3e2f1',
+                        color: '#8e3a8b',
+                        fontWeight: 800
+                      }}
+                    >
+                      {employeInfo?.nomComplet?.charAt(0) || <Person />}
                     </Avatar>
+
                     <Box>
-                      <Typography variant="h4" fontWeight="800">
+                      <Typography
+                        sx={{
+                          fontWeight: 800,
+                          color: '#2f172d',
+                          fontSize: { xs: '1rem', md: '1.15rem' }
+                        }}
+                      >
                         {employeInfo?.nomComplet || 'Employé'}
                       </Typography>
-                      <Stack direction="row" spacing={1} mt={1} flexWrap="wrap" gap={1}>
+
+                      <Stack
+                        direction="row"
+                        spacing={1}
+                        mt={1}
+                        useFlexGap
+                        flexWrap="wrap"
+                      >
                         <Chip
-                          icon={<Badge style={{ color: 'white' }} />}
-                          label={`Matricule: ${employeInfo?.matricule || 'N/A'}`}
-                          sx={{ bgcolor: 'rgba(255,255,255,0.15)', color: 'white', fontWeight: 'bold' }}
+                          icon={<Badge sx={{ color: '#8e3a8b !important' }} />}
+                          label={`Matricule : ${employeInfo?.matricule || 'N/A'}`}
+                          sx={{
+                            bgcolor: '#f9eef8',
+                            color: '#8e3a8b',
+                            fontWeight: 700,
+                            border: '1px solid #e7c5e2'
+                          }}
                         />
                         <Chip
-                          icon={<Work style={{ color: 'white' }} />}
+                          icon={<Work sx={{ color: '#8e3a8b !important' }} />}
                           label={employeInfo?.fonction || 'Fonction'}
-                          sx={{ bgcolor: 'rgba(255,255,255,0.15)', color: 'white', fontWeight: 'bold' }}
+                          sx={{
+                            bgcolor: '#f9eef8',
+                            color: '#8e3a8b',
+                            fontWeight: 700,
+                            border: '1px solid #e7c5e2'
+                          }}
+                        />
+                        <Chip
+                          icon={<Apartment sx={{ color: '#8e3a8b !important' }} />}
+                          label={employeInfo?.departement || 'Département'}
+                          sx={{
+                            bgcolor: '#f9eef8',
+                            color: '#8e3a8b',
+                            fontWeight: 700,
+                            border: '1px solid #e7c5e2'
+                          }}
                         />
                       </Stack>
                     </Box>
                   </Box>
-                </Grid>
-                <Grid item xs={12} md={4}>
-                  <Box sx={{ p: 2, bgcolor: 'rgba(0,0,0,0.1)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.1)' }}>
-                    <Typography variant="subtitle2" sx={{ opacity: 0.8, display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <CalendarMonth fontSize="small" /> Période
-                    </Typography>
-                    <Typography variant="h6" fontWeight="700">
-                      {getPeriodeString()}
-                    </Typography>
-                    <Stack direction="row" spacing={1} mt={1.5}>
-                      <Chip
-                        label={bulletinInfo?.statutPaieLibelle || 'Validé'}
-                        size="small"
-                        sx={{
-                          bgcolor: bulletinInfo?.statutCloture === 1 ? 'success.main' : 'warning.main',
-                          color: 'white',
-                          fontWeight: 'bold'
-                        }}
-                      />
-                    </Stack>
-                  </Box>
-                </Grid>
-              </Grid>
+                </Box>
+              </Stack>
             </Grid>
-            <Grid item>
-              <Stack direction="column" spacing={1.5}>
+
+            {/* Partie droite */}
+            <Grid item xs={12} lg={4}>
+              <Stack
+                direction={{ xs: 'row', lg: 'column' }}
+                spacing={1.5}
+                justifyContent={{ xs: 'flex-start', lg: 'center' }}
+                alignItems={{ xs: 'stretch', lg: 'flex-end' }}
+                useFlexGap
+                flexWrap="wrap"
+              >
                 <Button
-                  startIcon={<Print />}
-                  onClick={handlePrint}
-                  variant="contained"
-                  fullWidth
-                  sx={{ bgcolor: 'white', color: 'primary.main', fontWeight: 'bold', borderRadius: '10px' }}
-                >
-                  Imprimer
-                </Button>
-                <Button
-                  startIcon={exportingPDF ? <CircularProgress size={18} /> : <PictureAsPdf />}
+                  startIcon={exportingPDF ? <CircularProgress size={18} sx={{ color: '#fff' }} /> : <PictureAsPdf />}
                   onClick={handleExportPDF}
                   variant="contained"
-                  fullWidth
                   disabled={exportingPDF}
-                  sx={{ bgcolor: 'white', color: 'error.main', fontWeight: 'bold', borderRadius: '10px' }}
+                  sx={{
+                    minWidth: 140,
+                    textTransform: 'none',
+                    fontWeight: 700,
+                    borderRadius: '14px',
+                    px: 2.2,
+                    py: 1.2,
+                    background: 'linear-gradient(135deg, #6a1b63 0%, #4b1f47 100%)',
+                    boxShadow: '0 8px 18px rgba(75, 31, 71, 0.18)',
+                    '&:hover': {
+                      background: 'linear-gradient(135deg, #581552 0%, #3e183a 100%)'
+                    }
+                  }}
                 >
                   PDF
                 </Button>
+
                 <Button
-                  startIcon={<Download />}
+                  startIcon={exportingExcel ? <CircularProgress size={18} sx={{ color: '#fff' }} /> : <Download />}
                   onClick={handleExportExcel}
                   variant="contained"
-                  fullWidth
-                  sx={{ bgcolor: 'white', color: 'success.main', fontWeight: 'bold', borderRadius: '10px' }}
+                  disabled={exportingExcel}
+                  sx={{
+                    minWidth: 140,
+                    textTransform: 'none',
+                    fontWeight: 700,
+                    borderRadius: '14px',
+                    px: 2.2,
+                    py: 1.2,
+                    background: 'linear-gradient(135deg, #b053ad 0%, #8e3a8b 100%)',
+                    boxShadow: '0 8px 18px rgba(176, 83, 173, 0.22)',
+                    '&:hover': {
+                      background: 'linear-gradient(135deg, #9d469a 0%, #7b3178 100%)'
+                    }
+                  }}
                 >
                   Excel
                 </Button>
@@ -549,61 +661,96 @@ const BulletinEmployeDetail = () => {
         </CardContent>
       </Card>
 
-      <Grid container spacing={3} mb={4}>
-        <Grid item xs={12} md={4}>
-          <Card sx={{ border: 'none', borderRadius: '20px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }}>
-            <CardContent sx={{ p: 3 }}>
-              <Box display="flex" alignItems="center" mb={2}>
-                <Avatar sx={{ bgcolor: 'rgba(16, 185, 129, 0.1)', color: 'success.main', mr: 2 }}>
-                  <AttachMoney />
-                </Avatar>
-                <Typography variant="subtitle1" fontWeight="800" color="textSecondary">
-                  Salarié
-                </Typography>
-              </Box>
-              <Stack spacing={1.5}>
-                <Box display="flex" justifyContent="space-between">
-                  <Typography variant="body2" color="textSecondary" fontWeight="600">Matricule</Typography>
-                  <Typography variant="body2" fontWeight="800">{employeInfo?.matricule || 'N/A'}</Typography>
-                </Box>
-                <Box display="flex" justifyContent="space-between">
-                  <Typography variant="body2" color="textSecondary" fontWeight="600">Catégorie</Typography>
-                  <Typography variant="body2" fontWeight="800">{bulletinInfo?.categorieSalaire || 'Standard'}</Typography>
-                </Box>
-                <Box display="flex" justifyContent="space-between">
-                  <Typography variant="body2" color="textSecondary" fontWeight="600">Département</Typography>
-                  <Typography variant="body2" fontWeight="800">{employeInfo?.departement || 'RH'}</Typography>
-                </Box>
-              </Stack>
-            </CardContent>
-          </Card>
-        </Grid>
-
+      <Grid container spacing={2.5} mb={4}>
+        {/* Cartes montants */}
         <Grid item xs={12} md={8}>
-          <Grid container spacing={3}>
-            {/* Totaux synthèse */}
+          <Grid container spacing={2.5}>
             <Grid item xs={12} sm={6} md={3}>
-              <Card sx={{ border: 'none', borderRadius: '20px', height: '100%', boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }}>
-                <CardContent sx={{ textAlign: 'center', p: 3 }}>
-                  <AttachMoney color="primary" sx={{ fontSize: 32, mb: 1, opacity: 0.8 }} />
-                  <Typography variant="h5" color="primary" fontWeight="800">
+              <Card
+                sx={{
+                  height: '100%',
+                  borderRadius: '22px',
+                  border: '1px solid rgba(176, 83, 173, 0.10)',
+                  boxShadow: '0 8px 22px rgba(176, 83, 173, 0.06)'
+                }}
+              >
+                <CardContent
+                  sx={{
+                    p: 2.5,
+                    textAlign: 'center',
+                    minHeight: 170,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center'
+                  }}
+                >
+                  <AttachMoney sx={{ fontSize: 28, color: '#1976d2', mb: 1 }} />
+                  <Typography
+                    sx={{
+                      fontSize: '1rem',
+                      fontWeight: 800,
+                      color: '#1976d2',
+                      lineHeight: 1.35
+                    }}
+                  >
                     {formatCurrency(bulletinInfo?.salaireBrut || totaux.salaireBrut)}
                   </Typography>
-                  <Typography variant="caption" fontWeight="700" color="textSecondary" sx={{ textTransform: 'uppercase' }}>
-                    Salaire Brut
+                  <Typography
+                    sx={{
+                      mt: 1,
+                      fontSize: '0.78rem',
+                      fontWeight: 700,
+                      color: '#6f6170',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.8px'
+                    }}
+                  >
+                    Salaire brut
                   </Typography>
                 </CardContent>
               </Card>
             </Grid>
 
             <Grid item xs={12} sm={6} md={3}>
-              <Card sx={{ border: 'none', borderRadius: '20px', height: '100%', boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }}>
-                <CardContent sx={{ textAlign: 'center', p: 3 }}>
-                  <TrendingDown color="error" sx={{ fontSize: 32, mb: 1, opacity: 0.8 }} />
-                  <Typography variant="h5" color="error.main" fontWeight="800">
+              <Card
+                sx={{
+                  height: '100%',
+                  borderRadius: '22px',
+                  border: '1px solid rgba(176, 83, 173, 0.10)',
+                  boxShadow: '0 8px 22px rgba(176, 83, 173, 0.06)'
+                }}
+              >
+                <CardContent
+                  sx={{
+                    p: 2.5,
+                    textAlign: 'center',
+                    minHeight: 170,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center'
+                  }}
+                >
+                  <TrendingDown sx={{ fontSize: 28, color: '#d32f2f', mb: 1 }} />
+                  <Typography
+                    sx={{
+                      fontSize: '1rem',
+                      fontWeight: 800,
+                      color: '#d32f2f',
+                      lineHeight: 1.35
+                    }}
+                  >
                     {formatCurrency(bulletinInfo?.totalRetenue || totaux.totalRetenues)}
                   </Typography>
-                  <Typography variant="caption" fontWeight="700" color="textSecondary" sx={{ textTransform: 'uppercase' }}>
+                  <Typography
+                    sx={{
+                      mt: 1,
+                      fontSize: '0.78rem',
+                      fontWeight: 700,
+                      color: '#6f6170',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.8px'
+                    }}
+                  >
                     Retenues
                   </Typography>
                 </CardContent>
@@ -611,28 +758,99 @@ const BulletinEmployeDetail = () => {
             </Grid>
 
             <Grid item xs={12} sm={6} md={3}>
-              <Card sx={{ border: 'none', borderRadius: '20px', height: '100%', boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }}>
-                <CardContent sx={{ textAlign: 'center', p: 3 }}>
-                  <Business color="warning" sx={{ fontSize: 32, mb: 1, opacity: 0.8 }} />
-                  <Typography variant="h5" color="warning.main" fontWeight="800">
+              <Card
+                sx={{
+                  height: '100%',
+                  borderRadius: '22px',
+                  border: '1px solid rgba(176, 83, 173, 0.10)',
+                  boxShadow: '0 8px 22px rgba(176, 83, 173, 0.06)'
+                }}
+              >
+                <CardContent
+                  sx={{
+                    p: 2.5,
+                    textAlign: 'center',
+                    minHeight: 170,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center'
+                  }}
+                >
+                  <Business sx={{ fontSize: 28, color: '#ef6c00', mb: 1 }} />
+                  <Typography
+                    sx={{
+                      fontSize: '1rem',
+                      fontWeight: 800,
+                      color: '#ef6c00',
+                      lineHeight: 1.35
+                    }}
+                  >
                     {formatCurrency(bulletinInfo?.totalCotisations || totaux.totalCharges)}
                   </Typography>
-                  <Typography variant="caption" fontWeight="700" color="textSecondary" sx={{ textTransform: 'uppercase' }}>
-                    Charges Pat.
+                  <Typography
+                    sx={{
+                      mt: 1,
+                      fontSize: '0.78rem',
+                      fontWeight: 700,
+                      color: '#6f6170',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.8px'
+                    }}
+                  >
+                    Charges pat.
                   </Typography>
                 </CardContent>
               </Card>
             </Grid>
 
             <Grid item xs={12} sm={6} md={3}>
-              <Card sx={{ border: 'none', borderRadius: '24px', height: '100%', background: 'linear-gradient(135deg, #6a1b9a 0%, #9c27b0 100%)', color: 'white' }}>
-                <CardContent sx={{ textAlign: 'center', p: 3 }}>
-                  <AttachMoney sx={{ fontSize: 32, mb: 1, color: 'white' }} />
-                  <Typography variant="h5" fontWeight="900">
+              <Card
+                sx={{
+                  height: '100%',
+                  minHeight: 170,
+                  borderRadius: '22px',
+                  backgroundColor: '#8e3a8b',
+                  backgroundImage: 'linear-gradient(135deg, #b053ad 0%, #8e3a8b 100%)',
+                  color: '#ffffff',
+                  boxShadow: '0 10px 22px rgba(176, 83, 173, 0.20)',
+                  overflow: 'hidden'
+                }}
+              >
+                <CardContent
+                  sx={{
+                    p: 2.5,
+                    textAlign: 'center',
+                    minHeight: 170,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center'
+                  }}
+                >
+                  <AttachMoney sx={{ fontSize: 28, color: '#8a1b1b', mb: 1 }} />
+
+                  <Typography
+                    sx={{
+                      fontSize: '1rem',
+                      fontWeight: 900,
+                      color: '#8a1b1b',
+                      lineHeight: 1.35
+                    }}
+                  >
                     {formatCurrency(bulletinInfo?.salaireNet || totaux.salaireNet)}
                   </Typography>
-                  <Typography variant="caption" fontWeight="700" sx={{ textTransform: 'uppercase', opacity: 0.9 }}>
-                    Salaire Net
+
+                  <Typography
+                    sx={{
+                      mt: 1,
+                      fontSize: '0.78rem',
+                      fontWeight: 700,
+                      color: '#6f6170',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.8px'
+                    }}
+    
+                  >
+                    Salaire net
                   </Typography>
                 </CardContent>
               </Card>
@@ -650,25 +868,69 @@ const BulletinEmployeDetail = () => {
             <Chip
               label={`${rubriques.length} rubrique(s)`}
               size="small"
-              color="primary"
-              sx={{ ml: 2 }}
+              sx={{
+                ml: 2,
+                bgcolor: '#f3e2f1',
+                color: '#8e3a8b',
+                fontWeight: 700,
+                border: '1px solid #e1b2db'
+              }}
             />
           </Typography>
           <Divider sx={{ mb: 3 }} />
 
-          <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: '16px', overflow: 'hidden' }}>
-            <Table>
+          <TableContainer
+                component={Paper}
+                variant="outlined"
+                sx={{
+                  borderRadius: '16px',
+                  overflowX: 'auto',
+                  overflowY: 'hidden'
+                }}
+              >
+            <Table
+                sx={{
+                  minWidth: 1280,
+                  tableLayout: 'fixed'
+                }}
+              >
               <TableHead>
                 <TableRow sx={{ bgcolor: 'rgba(176, 83, 173, 0.08)' }}>
-                  <TableCell sx={{ color: '#5c2458', fontWeight: '800', width: '8%' }}>Code</TableCell>
-                  <TableCell sx={{ color: '#5c2458', fontWeight: '800', width: '22%' }}>Rubrique</TableCell>
-                  <TableCell sx={{ color: '#5c2458', fontWeight: '800', width: '12%' }} align="right">Base</TableCell>
-                  <TableCell sx={{ color: '#5c2458', fontWeight: '800', width: '12%' }} align="center">Taux Salarial</TableCell>
-                  <TableCell sx={{ color: '#5c2458', fontWeight: '800', width: '12%' }} align="right">Gains</TableCell>
-                  <TableCell sx={{ color: '#5c2458', fontWeight: '800', width: '12%' }} align="right">Retenues</TableCell>
-                  <TableCell sx={{ color: '#5c2458', fontWeight: '800', width: '12%' }} align="center">Taux Patronal</TableCell>
-                  <TableCell sx={{ color: '#5c2458', fontWeight: '800', width: '12%' }} align="right">Charges</TableCell>
-                  <TableCell sx={{ color: '#5c2458', fontWeight: '800', width: '8%' }} align="center">Type</TableCell>
+                  <TableCell sx={{ color: '#5c2458', fontWeight: '800', width: '8%' }}>
+                    Code
+                  </TableCell>
+
+                  <TableCell sx={{ color: '#5c2458', fontWeight: '800', width: '16%' }}>
+                    Rubrique
+                  </TableCell>
+
+                  <TableCell sx={{ color: '#5c2458', fontWeight: '800', width: '10%' }} align="right">
+                    Base
+                  </TableCell>
+
+                  <TableCell sx={{ color: '#5c2458', fontWeight: '800', width: '10%' }} align="center">
+                    Taux Salarial
+                  </TableCell>
+
+                  <TableCell sx={{ color: '#5c2458', fontWeight: '800', width: '10%' }} align="right">
+                    Gains
+                  </TableCell>
+
+                  <TableCell sx={{ color: '#5c2458', fontWeight: '800', width: '10%' }} align="right">
+                    Retenues
+                  </TableCell>
+
+                  <TableCell sx={{ color: '#5c2458', fontWeight: '800', width: '10%' }} align="center">
+                    Taux Patronal
+                  </TableCell>
+
+                  <TableCell sx={{ color: '#5c2458', fontWeight: '800', width: '10%' }} align="right">
+                    Charges
+                  </TableCell>
+
+                  <TableCell sx={{ color: '#5c2458', fontWeight: '800', width: '16%' }} align="left">
+                    Type
+                  </TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -696,17 +958,28 @@ const BulletinEmployeDetail = () => {
                         key={index}
                         hover
                         sx={{
-                          '&:hover': { bgcolor: 'action.hover' },
+                          '&:hover': { bgcolor: '#fcf8fb' },
                           borderLeft: 4,
-                          borderLeftColor: getTypeColor(type) + '.main'
+                          borderLeftColor: isGain
+                            ? '#5ea86b'
+                            : isRetenue
+                            ? '#d37b7b'
+                            : isCharge
+                            ? '#d99a49'
+                            : '#c88ac0'
                         }}
                       >
                         <TableCell>
                           <Chip
                             label={rubrique.code}
                             size="small"
-                            color="primary"
                             variant="outlined"
+                            sx={{
+                              color: '#8e3a8b',
+                              borderColor: '#c88ac0',
+                              backgroundColor: '#fcf4fb',
+                              fontWeight: 600
+                            }}
                           />
                         </TableCell>
                         <TableCell>
@@ -727,8 +1000,13 @@ const BulletinEmployeDetail = () => {
                             <Chip
                               label={tauxColumns.salarial}
                               size="small"
-                              color={isGain ? 'success' : 'error'}
                               variant="outlined"
+                              sx={{
+                                color: '#6e9f68',
+                                borderColor: '#98c492',
+                                backgroundColor: '#f7fbf6',
+                                fontWeight: 500
+                              }}
                             />
                           ) : (
                             <Typography variant="body2" color="textSecondary">
@@ -763,8 +1041,13 @@ const BulletinEmployeDetail = () => {
                             <Chip
                               label={tauxColumns.patronal}
                               size="small"
-                              color="warning"
                               variant="outlined"
+                              sx={{
+                                color: '#b26a1f',
+                                borderColor: '#e2b27d',
+                                backgroundColor: '#fff8f1',
+                                fontWeight: 500
+                              }}
                             />
                           ) : (
                             <Typography variant="body2" color="textSecondary">
@@ -783,12 +1066,41 @@ const BulletinEmployeDetail = () => {
                             </Typography>
                           )}
                         </TableCell>
-                        <TableCell align="center">
-                          <Tooltip title={`${type} - ${categorie}`}>
-                            <IconButton size="small">
-                              {getTypeIcon(type)}
-                            </IconButton>
-                          </Tooltip>
+                        <TableCell
+                          align="left"
+                          sx={{
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis'
+                          }}
+                        >
+                          <Box display="flex" alignItems="center" gap={0.8} sx={{ minWidth: 0 }}>
+                            <Tooltip title={`${type} - ${categorie}`}>
+                              <IconButton
+                                size="small"
+                                sx={{
+                                  color: '#8e3a8b',
+                                  p: 0.4,
+                                  flexShrink: 0
+                                }}
+                              >
+                                {getTypeIcon(type)}
+                              </IconButton>
+                            </Tooltip>
+
+                            <Typography
+                              variant="body2"
+                              sx={{
+                                color: '#5c2458',
+                                fontWeight: 600,
+                                whiteSpace: 'nowrap',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis'
+                              }}
+                            >
+                              {categorie || type || 'Non spécifié'}
+                            </Typography>
+                          </Box>
                         </TableCell>
                       </TableRow>
                     );
@@ -834,7 +1146,7 @@ const BulletinEmployeDetail = () => {
                   <Divider />
                   <Box display="flex" justifyContent="space-between">
                     <Typography variant="body1" fontWeight="bold">Salaire brut:</Typography>
-                    <Typography variant="h6" color="primary">
+                    <Typography variant="h6" sx={{ color: '#8e3a8b', fontWeight: 800 }}>
                       {formatCurrency(bulletinInfo?.salaireBrut || totaux.salaireBrut)}
                     </Typography>
                   </Box>

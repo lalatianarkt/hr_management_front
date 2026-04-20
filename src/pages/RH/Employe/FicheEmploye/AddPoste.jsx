@@ -167,13 +167,24 @@ function AddPosteModal({ show, onHide, onSuccess, refreshPostes }) {
               <Briefcase size={20} className="me-2" />
               Ajouter un nouveau poste
             </h5>
-            <button
-              type="button"
-              className="btn-close btn-close-white"
+            <button type="button" aria-label="Fermer"
               onClick={onHide}
-              aria-label="Fermer"
-              style={{ fontSize: '0.8rem', opacity: 0.8 }}
-            ></button>
+              style={{
+                background: 'rgba(255, 255, 255, 0.18)',
+                border: 'none',
+                color: 'white',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                width: '44px',
+                height: '44px',
+                padding: 0,
+                borderRadius: '12px'
+              }}
+            >
+              <span style={{ fontSize: '1.8rem', lineHeight: '1' }}>×</span>
+            </button>
           </div>
           
           {/* Body du modal */}

@@ -106,6 +106,56 @@ const STATUS_CONFIGS = {
 const DemandesCongeEmploye = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+
+    const palette = useMemo(() => ({
+        primary: 'var(--bg-primary)',
+        primaryHover: 'var(--bg-primary-hover)',
+        surfaceAlt: 'var(--brand-25)',
+        border: 'var(--brand-100)',
+        textMain: 'var(--color-text-main)',
+        textMuted: 'var(--color-text-muted)'
+    }), []);
+
+    const unifiedButtonSx = useMemo(() => ({
+        borderRadius: '10px',
+        minHeight: '34px',
+        height: '34px',
+        px: 1.5,
+        textTransform: 'none',
+        fontWeight: 700,
+        fontSize: '0.85rem'
+    }), []);
+
+    const unifiedButtonContainedSx = useMemo(() => ({
+        ...unifiedButtonSx,
+        bgcolor: palette.primary,
+        color: '#ffffff',
+        borderColor: palette.primary,
+        boxShadow: '0 10px 20px rgba(176, 83, 173, 0.18)',
+        '&:hover': { bgcolor: palette.primaryHover, borderColor: palette.primaryHover, boxShadow: '0 12px 24px rgba(176, 83, 173, 0.22)' }
+    }), [palette, unifiedButtonSx]);
+
+    const unifiedButtonOutlinedSx = useMemo(() => ({
+        ...unifiedButtonSx,
+        borderColor: 'rgba(176, 83, 173, 0.35)',
+        color: palette.primary,
+        bgcolor: '#ffffff',
+        '&:hover': { borderColor: palette.primaryHover, bgcolor: 'rgba(176, 83, 173, 0.06)' }
+    }), [palette, unifiedButtonSx]);
+
+    const unifiedButtonTextSx = useMemo(() => ({
+        ...unifiedButtonSx,
+        px: 1,
+        color: palette.primary,
+        '&:hover': { bgcolor: 'rgba(176, 83, 173, 0.08)' }
+    }), [palette, unifiedButtonSx]);
+
+    const surfaceCardSx = useMemo(() => ({
+        borderRadius: 3,
+        border: `1px solid ${palette.border}`,
+        bgcolor: '#ffffff',
+        boxShadow: '0 10px 26px rgba(43, 15, 42, 0.06)'
+    }), [palette]);
     
     // États principaux
     const [demandes, setDemandes] = useState([]);
@@ -316,10 +366,6 @@ const DemandesCongeEmploye = () => {
         URL.revokeObjectURL(url);
     }, [filteredDemandes, formatDate, getStatusConfig, employeInfo, id]);
 
-    const handlePrint = useCallback(() => {
-        window.print();
-    }, []);
-
     const handleRefresh = useCallback(async () => {
         setLoading(true);
         try {
@@ -364,22 +410,32 @@ const DemandesCongeEmploye = () => {
     const employe = employeInfo?.employe || employeInfo;
 
     return (
-        <Box p={3}>
+        <Box sx={{ p: { xs: 2, md: 3 }, bgcolor: 'var(--brand-50)', minHeight: '100%' }}>
             {/* En-tête avec retour */}
-            <Box mb={2}>
+            <Paper
+                elevation={0}
+                sx={{
+                    mb: 2.5,
+                    p: { xs: 1.5, md: 2 },
+                    borderRadius: 3,
+                    bgcolor: palette.surfaceAlt,
+                    border: `1px solid ${palette.border}`
+                }}
+            >
                 <Button
                     startIcon={<ArrowBack />}
                     onClick={() => navigate(-1)}
                     size="small"
-                    sx={{ mb: 1, color: '#b053ad', textTransform: 'none' }}
+                    variant="text"
+                    sx={{ ...unifiedButtonTextSx, mb: 1 }}
                 >
                     Retour
                 </Button>
                 
                 <Box display="flex" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={1.5}>
                     <Box>
-                            <Typography variant="h6" component="h1" gutterBottom sx={{ mb: 0.75 }}>
-                                <CalendarMonth sx={{ mr: 1, verticalAlign: 'middle', color: '#b053ad', fontSize: 26 }} />
+                            <Typography variant="h6" component="h1" gutterBottom sx={{ mb: 0.75, color: palette.textMain, fontWeight: 800 }}>
+                                <CalendarMonth sx={{ mr: 1, verticalAlign: 'middle', color: palette.primary, fontSize: 26 }} />
                             Demandes de congé
                         </Typography>
                         {employe && (
@@ -388,14 +444,19 @@ const DemandesCongeEmploye = () => {
                                     icon={<Person />}
                                     label={`${employe.prenom || ''} ${employe.nom || ''}`}
                                     size="small"
-                                    sx={{ bgcolor: '#f8eff7', color: '#b053ad' }}
+                                    sx={{
+                                        bgcolor: 'var(--brand-50)',
+                                        color: palette.primary,
+                                        border: `1px solid ${palette.border}`,
+                                        fontWeight: 700
+                                    }}
                                 />
                                 {employe.departement && (
                                     <Chip
                                         label={`Département: ${employe.departement}`}
                                         variant="outlined"
                                         size="small"
-                                        sx={{ borderColor: '#b053ad', color: '#b053ad' }}
+                                        sx={{ borderColor: 'rgba(176, 83, 173, 0.35)', color: palette.primary, fontWeight: 700 }}
                                     />
                                 )}
                             </Box>
@@ -408,34 +469,16 @@ const DemandesCongeEmploye = () => {
                             startIcon={<FilterList />}
                             onClick={() => setShowFilters(!showFilters)}
                             size="small"
-                            sx={{
-                                borderColor: '#b053ad',
-                                color: showFilters ? '#fff' : '#b053ad',
-                                bgcolor: showFilters ? '#b053ad' : 'transparent',
-                                textTransform: 'none',
-                                '&:hover': {
-                                    borderColor: '#8e3d8b',
-                                    bgcolor: showFilters ? '#8e3d8b' : 'rgba(176, 83, 173, 0.08)'
-                                }
-                            }}
+                            sx={showFilters ? unifiedButtonContainedSx : unifiedButtonOutlinedSx}
                         >
                             {showFilters ? 'Masquer filtres' : 'Filtres'}
-                        </Button>
-                        <Button
-                            variant="outlined"
-                            startIcon={<Print />}
-                            onClick={handlePrint}
-                            size="small"
-                            sx={{ borderColor: '#b053ad', color: '#b053ad', textTransform: 'none' }}
-                        >
-                            Imprimer
                         </Button>
                         <Button
                             variant="outlined"
                             startIcon={<Download />}
                             onClick={handleExport}
                             size="small"
-                            sx={{ borderColor: '#b053ad', color: '#b053ad', textTransform: 'none' }}
+                            sx={unifiedButtonOutlinedSx}
                         >
                             Exporter CSV
                         </Button>
@@ -445,13 +488,13 @@ const DemandesCongeEmploye = () => {
                             onClick={handleRefresh}
                             disabled={loading}
                             size="small"
-                            sx={{ bgcolor: '#b053ad', textTransform: 'none' }}
+                            sx={unifiedButtonContainedSx}
                         >
                             Actualiser
                         </Button>
                     </Stack>
                 </Box>
-            </Box>
+            </Paper>
 
             {/* Message d'erreur */}
             {error && (
@@ -463,58 +506,58 @@ const DemandesCongeEmploye = () => {
             {/* Cartes de statistiques */}
             <Grid container spacing={1.5} sx={{ mb: 2.5 }}>
                 <Grid item xs={12} sm={6} md={3}>
-                    <Card sx={{ bgcolor: '#f8eff7', py: 1, px: 1, borderLeft: '4px solid #ff9800' }}>
+                    <Card sx={{ ...surfaceCardSx, py: 0.5, px: 0.5, borderLeft: '4px solid var(--status-warning)' }}>
                         <CardContent sx={{ py: 1.25, px: 2, minHeight: 84 }}>
                             <Typography variant="body2" color="textSecondary">En attente</Typography>
-                            <Typography variant="h5" color="#ed6c02" sx={{ lineHeight: 1.1 }}>{stats.attente}</Typography>
+                            <Typography variant="h5" sx={{ lineHeight: 1.1, color: 'var(--status-warning)', fontWeight: 900 }}>{stats.attente}</Typography>
                         </CardContent>
                     </Card>
                 </Grid>
                 <Grid item xs={12} sm={6} md={3}>
-                    <Card sx={{ bgcolor: '#f8eff7',  py: 1, px: 1, borderLeft: '4px solid #03a9f4' }}>
+                    <Card sx={{ ...surfaceCardSx, py: 0.5, px: 0.5, borderLeft: '4px solid var(--status-info)' }}>
                         <CardContent sx={{ py: 1.25, px: 2, minHeight: 84 }}>
                             <Typography variant="body2" color="textSecondary">Validé manager</Typography>
-                            <Typography variant="h5" color="#0288d1" sx={{ lineHeight: 1.1 }}>{stats.valideManager}</Typography>
+                            <Typography variant="h5" sx={{ lineHeight: 1.1, color: 'var(--status-info)', fontWeight: 900 }}>{stats.valideManager}</Typography>
                         </CardContent>
                     </Card>
                 </Grid>
                 <Grid item xs={12} sm={6} md={3}>
-                    <Card sx={{ bgcolor: '#f8eff7',  py: 1, px: 1, borderLeft: '4px solid #4caf50' }}>
+                    <Card sx={{ ...surfaceCardSx, py: 0.5, px: 0.5, borderLeft: '4px solid var(--status-success)' }}>
                         <CardContent sx={{ py: 1.25, px: 2, minHeight: 84 }}>
                             <Typography variant="body2" color="textSecondary">Validé RH</Typography>
-                            <Typography variant="h5" color="#2e7d32" sx={{ lineHeight: 1.1 }}>{stats.valideRH}</Typography>
+                            <Typography variant="h5" sx={{ lineHeight: 1.1, color: 'var(--status-success)', fontWeight: 900 }}>{stats.valideRH}</Typography>
                         </CardContent>
                     </Card>
                 </Grid>
                 <Grid item xs={12} sm={6} md={3}>
-                    <Card sx={{ bgcolor: '#f8eff7',  py: 1, px: 1, borderLeft: '4px solid #66bb6a' }}>
+                    <Card sx={{ ...surfaceCardSx, py: 0.5, px: 0.5, borderLeft: '4px solid rgba(16, 185, 129, 0.6)' }}>
                         <CardContent sx={{ py: 1.25, px: 2, minHeight: 84 }}>
                             <Typography variant="body2" color="textSecondary">Acquis</Typography>
-                            <Typography variant="h5" color="#388e3c" sx={{ lineHeight: 1.1 }}>{stats.acquis}</Typography>
+                            <Typography variant="h5" sx={{ lineHeight: 1.1, color: 'var(--status-success)', fontWeight: 900 }}>{stats.acquis}</Typography>
                         </CardContent>
                     </Card>
                 </Grid>
             </Grid>
 
             {/* Onglets */}
-            <Paper sx={{ mb: 3 }}>
+            <Paper sx={{ ...surfaceCardSx, mb: 3, bgcolor: palette.surfaceAlt }}>
                 <Tabs
                     value={activeTab}
                     onChange={(e, newValue) => setActiveTab(newValue)}
                     sx={{ borderBottom: 1, borderColor: 'divider' }}
-                    TabIndicatorProps={{ sx: { bgcolor: '#b053ad' } }}
+                    TabIndicatorProps={{ sx: { bgcolor: palette.primary } }}
                 >
-                    <Tab label={`Toutes (${stats.total})`} sx={{ '&.Mui-selected': { color: '#b053ad' } }} />
-                    <Tab label={`En cours (${stats.attente + stats.valideManager})`} sx={{ '&.Mui-selected': { color: '#b053ad' } }} />
-                    <Tab label={`RH (${stats.valideRH + stats.refuseRH})`} sx={{ '&.Mui-selected': { color: '#b053ad' } }} />
-                    <Tab label={`Acquis (${stats.acquis})`} sx={{ '&.Mui-selected': { color: '#b053ad' } }} />
-                    <Tab label={`Annulé (${stats.annuleDemandeur + stats.annuleResponsable})`} sx={{ '&.Mui-selected': { color: '#b053ad' } }} />
+                    <Tab label={`Toutes (${stats.total})`} sx={{ fontWeight: 700, '&.Mui-selected': { color: palette.primary } }} />
+                    <Tab label={`En cours (${stats.attente + stats.valideManager})`} sx={{ fontWeight: 700, '&.Mui-selected': { color: palette.primary } }} />
+                    <Tab label={`RH (${stats.valideRH + stats.refuseRH})`} sx={{ fontWeight: 700, '&.Mui-selected': { color: palette.primary } }} />
+                    <Tab label={`Acquis (${stats.acquis})`} sx={{ fontWeight: 700, '&.Mui-selected': { color: palette.primary } }} />
+                    <Tab label={`Annulé (${stats.annuleDemandeur + stats.annuleResponsable})`} sx={{ fontWeight: 700, '&.Mui-selected': { color: palette.primary } }} />
                 </Tabs>
             </Paper>
 
             {/* Filtres */}
             {showFilters && (
-                <Card sx={{ mb: 3 }}>
+                <Card sx={{ ...surfaceCardSx, mb: 3, bgcolor: palette.surfaceAlt }}>
                     <CardContent>
                         <Stack spacing={3}>
                             <Box
@@ -595,12 +638,7 @@ const DemandesCongeEmploye = () => {
                                         fullWidth
                                         variant="outlined"
                                         onClick={handleResetFilters}
-                                        sx={{
-                                            borderColor: '#b053ad',
-                                            color: '#b053ad',
-                                            height: '40px',
-                                            textTransform: 'none'
-                                        }}
+                                        sx={{ ...unifiedButtonOutlinedSx, height: '40px' }}
                                     >
                                         Réinitialiser
                                     </Button>
@@ -622,9 +660,25 @@ const DemandesCongeEmploye = () => {
             )}
 
             {/* Tableau des demandes */}
-            <Card>
+            <Card sx={surfaceCardSx}>
                 <CardContent>
-                    <TableContainer component={Paper} sx={{ maxHeight: 500 }}>
+                    <TableContainer
+                        component={Paper}
+                        sx={{
+                            maxHeight: 500,
+                            borderRadius: 3,
+                            border: `1px solid ${palette.border}`,
+                            boxShadow: 'none',
+                            '& .MuiTableCell-head': {
+                                bgcolor: palette.surfaceAlt,
+                                fontWeight: 800,
+                                color: palette.textMain
+                            },
+                            '& .MuiTableRow-root:hover td': {
+                                bgcolor: 'rgba(176, 83, 173, 0.04)'
+                            }
+                        }}
+                    >
                         <Table stickyHeader>
                             <TableHead>
                                 <TableRow>
@@ -695,7 +749,7 @@ const DemandesCongeEmploye = () => {
                                                         <IconButton
                                                             size="small"
                                                             onClick={() => handleViewDetails(demande)}
-                                                            sx={{ color: '#b053ad' }}
+                                                            sx={{ color: palette.primary }}
                                                         >
                                                             <Visibility />
                                                         </IconButton>
@@ -718,9 +772,9 @@ const DemandesCongeEmploye = () => {
                                 color="primary"
                                 sx={{
                                     '& .MuiPaginationItem-root.Mui-selected': {
-                                        bgcolor: '#b053ad',
+                                        bgcolor: palette.primary,
                                         color: 'white',
-                                        '&:hover': { bgcolor: '#8e3d8b' }
+                                        '&:hover': { bgcolor: palette.primaryHover }
                                     }
                                 }}
                             />
@@ -742,7 +796,7 @@ const DemandesCongeEmploye = () => {
                                 flexDirection={{ xs: 'column', sm: 'row' }}
                             >
                                 <Box display="flex" alignItems="center" gap={1}>
-                                    <Event sx={{ color: '#b053ad' }} />
+                                    <Event sx={{ color: palette.primary }} />
                                     <Typography variant="h6" component="span">
                                         Détails de la demande
                                     </Typography>
@@ -770,7 +824,7 @@ const DemandesCongeEmploye = () => {
                                                 Type de congé
                                             </Typography>
                                             <Box display="flex" alignItems="flex-start" gap={1.5} mt={0.75}>
-                                                <CalendarMonth sx={{ color: '#b053ad', mt: 0.2 }} />
+                                                <CalendarMonth sx={{ color: palette.primary, mt: 0.2 }} />
                                                 <Box>
                                                     <Typography variant="subtitle1" fontWeight={700}>
                                                         {selectedDemande.typeConge?.intitule || 'Non spécifié'}
@@ -842,7 +896,7 @@ const DemandesCongeEmploye = () => {
                                 </Grid>
 
                                 {selectedDemande.autreMotif && (
-                                    <Paper variant="outlined" sx={{ p: 2.25, borderRadius: 3, bgcolor: '#f8eff7' }}>
+                                    <Paper variant="outlined" sx={{ p: 2.25, borderRadius: 3, bgcolor: 'var(--brand-50)', borderColor: palette.border }}>
                                         <Typography variant="overline" color="text.secondary">
                                             Motif détaillé
                                         </Typography>
@@ -902,7 +956,7 @@ const DemandesCongeEmploye = () => {
                             </Stack>
                         </DialogContent>
                         <DialogActions>
-                            <Button onClick={() => setShowDetailsModal(false)} sx={{ color: '#b053ad' }}>
+                            <Button onClick={() => setShowDetailsModal(false)} variant="text" sx={unifiedButtonTextSx}>
                                 Fermer
                             </Button>
                         </DialogActions>

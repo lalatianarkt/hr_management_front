@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-  Box, Card, CardContent, Typography, Grid, Paper,
-  Table, TableBody, TableCell, TableContainer, TableHead,
-  TableRow, Chip, CircularProgress, Alert, Divider,
+  Box, Card, CardContent, Typography, Grid,
+  Chip, CircularProgress, Alert, Divider,
   Stack, IconButton, Tooltip, Avatar, Button,
   Select, MenuItem, FormControl, InputLabel,
   TextField, InputAdornment
@@ -231,6 +230,12 @@ const DerniersMouvementsPage = () => {
     return labels[type] || type;
   };
 
+  const getTypeBadgeClass = (type) => {
+    const variant = getTypeMouvementColor(type);
+    const bootstrapVariant = variant === 'default' ? 'secondary' : variant;
+    return `badge bg-${bootstrapVariant} bg-opacity-10 text-${bootstrapVariant} border border-${bootstrapVariant} fw-normal`;
+  };
+
   // Filtrage et tri des mouvements
   const filteredMouvements = mouvements
     .filter(mouvement => {
@@ -335,46 +340,50 @@ const DerniersMouvementsPage = () => {
 
   return (
     <Box p={3}>
-      {/* En-tête avec informations employé */}
-      <Card sx={{ mb: 3, bgcolor: 'primary.main', color: 'white' }}>
+      {/* En-tête avec informations employé primary.main*/}
+      <Card sx={{ mb: 3 }}>
         <CardContent>
           <Grid container alignItems="center" spacing={2}>
             <Grid item>
               <IconButton
                 onClick={() => navigate(-1)}
-                sx={{ color: 'white' }}
+                sx={{ color: '#b053ad' }}
               >
                 <ArrowBack />
               </IconButton>
             </Grid>
             <Grid item xs>
-              <Typography variant="h4" component="h1" gutterBottom>
-                <AccountCircle sx={{ mr: 1, verticalAlign: 'middle' }} />
+              <Typography variant="h4" component="h1" gutterBottom sx={{ color: '#3a1438', fontWeight: 800 }}>
+                <AccountCircle sx={{ mr: 1, verticalAlign: 'middle', color: '#b053ad' }} />
                 Historique des soldes de congés
               </Typography>
               
               {employeInfo && (
                 <Box display="flex" alignItems="center" flexWrap="wrap" gap={2}>
-                  <Typography variant="h6">
-                    {employeInfo.nom} {employeInfo.prenom}
+                  <Typography variant="h6" sx={{ color: '#5c2458', fontWeight: 700 }}>
+                    {employeInfo.prenom} {employeInfo.nom}
                   </Typography>
-                  <Chip
+                  {/* <Chip
                     label={`Matricule: ${employeInfo.matricule}`}
                     variant="outlined"
-                    sx={{ bgcolor: 'rgba(255,255,255,0.1)', color: 'white' }}
-                  />
-                  <Chip
+                    className='primary'
+                    sx={{ bgcolor: '#f9f1f8', color: '#5c2458', borderColor: '#e1b2db' }}
+                  /> */}
+
+                  {/* <Chip
                     label={employeInfo.fonction}
                     variant="outlined"
-                    sx={{ bgcolor: 'rgba(255,255,255,0.1)', color: 'white' }}
+                    sx={{ bgcolor: '#f9f1f8', color: '#5c2458', borderColor: '#e1b2db' }}
                   />
+
                   {employeInfo.departement && (
                     <Chip
                       label={employeInfo.departement}
                       variant="outlined"
-                      sx={{ bgcolor: 'rgba(255,255,255,0.1)', color: 'white' }}
+                      sx={{ bgcolor: '#f9f1f8', color: '#5c2458', borderColor: '#e1b2db' }}
                     />
-                  )}
+                  )} */}
+
                 </Box>
               )}
             </Grid>
@@ -384,7 +393,7 @@ const DerniersMouvementsPage = () => {
                   <IconButton
                     aria-label="Actualiser"
                     onClick={fetchMouvementsEmploye}
-                    sx={{ color: 'white' }}
+                    sx={{ color: '#b053ad' }}
                   >
                     <Refresh />
                   </IconButton>
@@ -477,15 +486,28 @@ const DerniersMouvementsPage = () => {
       )}
 
       {/* Filtres */}
-      <Card sx={{ mb: 3 }}>
-        <CardContent>
-          <Typography variant="h6" gutterBottom>
-            <FilterList sx={{ mr: 1, verticalAlign: 'middle' }} />
+      <Card sx={{ mb: 3, overflow: 'hidden', p: 0 }}>
+        <Box
+          sx={{
+            px: 3,
+            py: 2,
+            background: '#f9f1f8',
+            borderBottom: '1px solid #e1b2db',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1.5
+          }}
+        >
+          <FilterList sx={{ color: '#b053ad' }} />
+          <Typography variant="h6" sx={{ m: 0, fontWeight: 800, color: '#3a1438' }}>
             Filtres et recherche
           </Typography>
+        </Box>
+
+        <CardContent sx={{ p: 3, pt: 2.5 }}>
           
-          <Grid container spacing={2} alignItems="center">
-            <Grid item xs={12} md={4}>
+          <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
+            <Box sx={{ flex: '1 1 520px', minWidth: { xs: '100%', md: 520 } }}>
               <TextField
                 fullWidth
                 size="small"
@@ -495,14 +517,14 @@ const DerniersMouvementsPage = () => {
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
-                      <Search />
+                      <Search sx={{ color: '#b053ad' }} />
                     </InputAdornment>
                   ),
                 }}
               />
-            </Grid>
-            
-            <Grid item xs={12} md={3}>
+            </Box>
+
+            <Box sx={{ flex: '0 0 260px', minWidth: { xs: '100%', sm: 260 } }}>
               <FormControl fullWidth size="small">
                 <InputLabel>Type de mouvement</InputLabel>
                 <Select
@@ -517,9 +539,9 @@ const DerniersMouvementsPage = () => {
                   ))}
                 </Select>
               </FormControl>
-            </Grid>
-            
-            <Grid item xs={12} md={3}>
+            </Box>
+
+            <Box sx={{ flex: '0 0 190px', minWidth: { xs: '100%', sm: 190 } }}>
               <FormControl fullWidth size="small">
                 <InputLabel>Année</InputLabel>
                 <Select
@@ -535,11 +557,11 @@ const DerniersMouvementsPage = () => {
                   ))}
                 </Select>
               </FormControl>
-            </Grid>
-            
-            <Grid item xs={12} md={2}>
+            </Box>
+
+            <Box sx={{ ml: { md: 'auto' }, minWidth: { xs: '100%', sm: 'auto' } }}>
               <Button
-                fullWidth
+                size="small"
                 variant="outlined"
                 startIcon={<Refresh />}
                 onClick={() => {
@@ -547,18 +569,35 @@ const DerniersMouvementsPage = () => {
                   setFiltreType('tous');
                   setAnneeFiltre('');
                 }}
+                sx={{
+                  width: { xs: '100%', sm: 'auto' },
+                  borderColor: '#b053ad',
+                  color: '#b053ad',
+                  fontWeight: 800,
+                  '&:hover': {
+                    borderColor: '#a05aa8',
+                    backgroundColor: 'rgba(176, 83, 173, 0.08)'
+                  }
+                }}
               >
                 Réinitialiser
               </Button>
-            </Grid>
-          </Grid>
+            </Box>
+          </Box>
           
           {currentStats && (
-            <Box mt={2}>
-              <Typography variant="caption" color="textSecondary">
-                Période couverte: {currentStats.periode} • 
-                Moyenne mensuelle: {currentStats.moyenneMensuelle?.toFixed(1)} jours • 
-                Affichage de {filteredMouvements.length} mouvements sur {mouvements.length}
+            <Box
+              mt={2}
+              sx={{
+                p: 1.25,
+                borderRadius: 2,
+                border: '1px solid #edd8ea',
+                background: 'linear-gradient(180deg, #fcf7fb 0%, #ffffff 100%)'
+              }}
+            >
+              <Typography variant="body2" sx={{ color: '#5c2458' }}>
+                Période couverte: {currentStats.periode} • Moyenne mensuelle: {currentStats.moyenneMensuelle?.toFixed(1)} jours • Affichage de{' '}
+                {filteredMouvements.length} mouvements sur {mouvements.length}
               </Typography>
             </Box>
           )}
@@ -566,22 +605,28 @@ const DerniersMouvementsPage = () => {
       </Card>
 
       {/* Tableau des mouvements */}
-      <Card>
-        <CardContent>
+      <Card sx={{ border: '1px solid rgba(0,0,0,0.06)', borderRadius: 2, p: 0 }}>
+        <CardContent sx={{ p: 0 }}>
           <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-            <Box display="flex" alignItems="center">
-              <History sx={{ mr: 1, color: 'primary.main' }} />
-              <Typography variant="h5">
+            <Box display="flex" alignItems="center" sx={{ px: 3, pt: 3 }}>
+              <History sx={{ mr: 1, color: '#b053ad' }} />
+              <Typography variant="h5" sx={{ fontWeight: 800, color: '#3a1438' }}>
                 Mouvements de solde
               </Typography>
             </Box>
             
-            <Stack direction="row" spacing={1}>
+            <Stack direction="row" spacing={1} sx={{ px: 3, pt: 3 }}>
               <Button
                 startIcon={<Print />}
                 onClick={handlePrint}
                 variant="outlined"
                 size="small"
+                sx={{
+                  borderColor: '#b053ad',
+                  color: '#b053ad',
+                  fontWeight: 800,
+                  '&:hover': { borderColor: '#a05aa8', backgroundColor: 'rgba(176, 83, 173, 0.08)' }
+                }}
               >
                 Imprimer
               </Button>
@@ -590,6 +635,12 @@ const DerniersMouvementsPage = () => {
                 onClick={handleExportExcel}
                 variant="outlined"
                 size="small"
+                sx={{
+                  borderColor: '#b053ad',
+                  color: '#b053ad',
+                  fontWeight: 800,
+                  '&:hover': { borderColor: '#a05aa8', backgroundColor: 'rgba(176, 83, 173, 0.08)' }
+                }}
               >
                 Excel
               </Button>
@@ -598,6 +649,11 @@ const DerniersMouvementsPage = () => {
                 onClick={handleExportPDF}
                 variant="contained"
                 size="small"
+                sx={{
+                  background: 'linear-gradient(135deg, #b053ad 0%, #a05aa8 100%)',
+                  fontWeight: 900,
+                  '&:hover': { background: 'linear-gradient(135deg, #a05aa8 0%, #b053ad 100%)' }
+                }}
               >
                 PDF
               </Button>
@@ -605,169 +661,134 @@ const DerniersMouvementsPage = () => {
           </Box>
 
           {filteredMouvements.length === 0 ? (
-            <Alert severity="info" sx={{ mb: 3 }}>
+            <Alert severity="info" sx={{ mx: 3, mb: 3 }}>
               Aucun mouvement trouvé correspondant aux critères de recherche.
             </Alert>
           ) : (
-            <TableContainer component={Paper} sx={{ maxHeight: 600 }}>
-              <Table stickyHeader size="small">
-                <TableHead>
-                  <TableRow sx={{ backgroundColor: 'var(--brand-100)' }}>
-                    <TableCell width="5%"></TableCell>
-                    <TableCell width="15%" sx={{ fontWeight: 'bold' }}>
-                      <Box display="flex" alignItems="center" onClick={() => handleSort('annee')} sx={{ cursor: 'pointer' }}>
-                        Période
-                        {sortConfig.key === 'annee' && (
-                          sortConfig.direction === 'asc' ? ' ↑' : ' ↓'
-                        )}
-                      </Box>
-                    </TableCell>
-                    <TableCell width="15%" sx={{ fontWeight: 'bold' }}>Type</TableCell>
-                    <TableCell align="right" width="12%" sx={{ fontWeight: 'bold' }}>
-                      <Box display="flex" alignItems="center" justifyContent="flex-end" onClick={() => handleSort('nbCongeTotal')} sx={{ cursor: 'pointer' }}>
-                        Total
-                        {sortConfig.key === 'nbCongeTotal' && (
-                          sortConfig.direction === 'asc' ? ' ↑' : ' ↓'
-                        )}
-                      </Box>
-                    </TableCell>
-                    <TableCell align="right" width="12%" sx={{ fontWeight: 'bold' }}>Pris</TableCell>
-                    <TableCell align="right" width="12%" sx={{ fontWeight: 'bold' }}>
-                      <Box display="flex" alignItems="center" justifyContent="flex-end" onClick={() => handleSort('nbCongeRestant')} sx={{ cursor: 'pointer' }}>
-                        Restant
-                        {sortConfig.key === 'nbCongeRestant' && (
-                          sortConfig.direction === 'asc' ? ' ↑' : ' ↓'
-                        )}
-                      </Box>
-                    </TableCell>
-                    <TableCell width="19%" sx={{ fontWeight: 'bold' }}>
-                      <Box display="flex" alignItems="center" onClick={() => handleSort('createdAt')} sx={{ cursor: 'pointer' }}>
-                        Date création
-                        {sortConfig.key === 'createdAt' && (
-                          sortConfig.direction === 'asc' ? ' ↑' : ' ↓'
-                        )}
-                      </Box>
-                    </TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {filteredMouvements.map((mouvement) => (
-                    <React.Fragment key={mouvement.id}>
-                      <TableRow hover sx={{ 
-                        backgroundColor: mouvement.typeMouvement === 'REPORT' ? 'action.hover' : 'inherit'
-                      }}>
-                        <TableCell>
-                          <IconButton
-                            size="small"
-                            onClick={() => toggleRowExpansion(mouvement.id)}
-                          >
-                            {expandedRows[mouvement.id] ? (
-                              <KeyboardArrowUp />
-                            ) : (
-                              <KeyboardArrowDown />
-                            )}
-                          </IconButton>
-                        </TableCell>
-                        <TableCell>
-                          <Box>
-                            <Typography variant="body2" fontWeight="medium">
-                              {getMoisNom(mouvement.mois)} {mouvement.annee}
-                            </Typography>
-                            <Typography variant="caption" color="textSecondary">
-                              {mouvement.mois}/{mouvement.annee}
-                            </Typography>
-                          </Box>
-                        </TableCell>
-                        <TableCell>
-                          <Chip
-                            label={getTypeMouvementLabel(mouvement.typeMouvement)}
-                            color={getTypeMouvementColor(mouvement.typeMouvement)}
-                            size="small"
-                            variant="outlined"
-                          />
-                        </TableCell>
-                        <TableCell align="right">
-                          <Typography variant="body1" fontWeight="bold">
-                            {mouvement.nbCongeTotal?.toFixed(1)} j
-                          </Typography>
-                        </TableCell>
-                        <TableCell align="right">
-                          <Typography variant="body1" color="warning.main">
-                            {mouvement.nbCongePris?.toFixed(1)} j
-                          </Typography>
-                        </TableCell>
-                        <TableCell align="right">
-                          <Typography variant="body1" color="success.main" fontWeight="bold">
-                            {mouvement.nbCongeRestant?.toFixed(1)} j
-                          </Typography>
-                        </TableCell>
-                        <TableCell>
-                          <Tooltip title={formatDate(mouvement.createdAt)}>
-                            <Typography variant="body2">
-                              {formatDateShort(mouvement.createdAt)}
-                            </Typography>
-                          </Tooltip>
-                        </TableCell>
-                      </TableRow>
-                      
-                      {/* Détails dépliables */}
-                      {expandedRows[mouvement.id] && (
-                        <TableRow>
-                          <TableCell colSpan={8} style={{ padding: 0, backgroundColor: 'var(--brand-50)' }}>
-                            <Box p={2}>
-                              <Grid container spacing={2}>
-                                <Grid item xs={12} md={8}>
-                                  <Typography variant="subtitle2" gutterBottom>
-                                    Détails du mouvement
-                                  </Typography>
-                                  {mouvement.commentaire && (
-                                    <Typography variant="body2" paragraph>
-                                      <strong>Commentaire:</strong> {mouvement.commentaire}
+            <div className="mx-3 mb-3 border rounded" style={{ borderColor: '#ead7e7', overflow: 'hidden' }}>
+              <div className="table-responsive" style={{ maxHeight: 600, overflowY: 'auto' }}>
+                <table className="table table-hover table-sm mb-0">
+                  <thead className="bg-light">
+                    <tr>
+                      <th className="py-2 ps-3" style={{ width: '5%' }}></th>
+                      <th className="py-2" style={{ width: '15%', cursor: 'pointer' }} onClick={() => handleSort('annee')}>
+                        Période{sortConfig.key === 'annee' ? (sortConfig.direction === 'asc' ? ' ↑' : ' ↓') : ''}
+                      </th>
+                      <th className="py-2" style={{ width: '15%' }}>Type</th>
+                      <th className="py-2 text-end" style={{ width: '12%', cursor: 'pointer' }} onClick={() => handleSort('nbCongeTotal')}>
+                        Total{sortConfig.key === 'nbCongeTotal' ? (sortConfig.direction === 'asc' ? ' ↑' : ' ↓') : ''}
+                      </th>
+                      <th className="py-2 text-end" style={{ width: '12%' }}>Pris</th>
+                      <th className="py-2 text-end" style={{ width: '12%', cursor: 'pointer' }} onClick={() => handleSort('nbCongeRestant')}>
+                        Restant{sortConfig.key === 'nbCongeRestant' ? (sortConfig.direction === 'asc' ? ' ↑' : ' ↓') : ''}
+                      </th>
+                      <th className="py-2" style={{ width: '19%', cursor: 'pointer' }} onClick={() => handleSort('createdAt')}>
+                        Date création{sortConfig.key === 'createdAt' ? (sortConfig.direction === 'asc' ? ' ↑' : ' ↓') : ''}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredMouvements.map((mouvement) => (
+                      <React.Fragment key={mouvement.id}>
+                        <tr style={{ background: mouvement.typeMouvement === 'REPORT' ? 'rgba(176, 83, 173, 0.06)' : 'transparent' }}>
+                          <td className="py-2 ps-2">
+                            <IconButton size="small" onClick={() => toggleRowExpansion(mouvement.id)} sx={{ color: '#5c2458' }}>
+                              {expandedRows[mouvement.id] ? <KeyboardArrowUp /> : <KeyboardArrowDown />}
+                            </IconButton>
+                          </td>
+                          <td className="py-2">
+                            <div className="fw-medium">{getMoisNom(mouvement.mois)} {mouvement.annee}</div>
+                            <small className="text-muted">{mouvement.mois}/{mouvement.annee}</small>
+                          </td>
+                          <td className="py-2">
+                            <span className={getTypeBadgeClass(mouvement.typeMouvement)}>
+                              {getTypeMouvementLabel(mouvement.typeMouvement)}
+                            </span>
+                          </td>
+                          <td className="py-2 text-end">
+                            <span className="fw-bold">{mouvement.nbCongeTotal?.toFixed(1)} j</span>
+                          </td>
+                          <td className="py-2 text-end">
+                            <span className="text-warning">{mouvement.nbCongePris?.toFixed(1)} j</span>
+                          </td>
+                          <td className="py-2 text-end">
+                            <span className="text-success fw-bold">{mouvement.nbCongeRestant?.toFixed(1)} j</span>
+                          </td>
+                          <td className="py-2">
+                            <Tooltip title={formatDate(mouvement.createdAt)}>
+                              <span>{formatDateShort(mouvement.createdAt)}</span>
+                            </Tooltip>
+                          </td>
+                        </tr>
+
+                        {expandedRows[mouvement.id] && (
+                          <tr>
+                            <td colSpan={7} className="p-0" style={{ backgroundColor: '#fcf7fb' }}>
+                              <Box p={2}>
+                                <Grid container spacing={2}>
+                                  <Grid item xs={12} md={8}>
+                                    <Typography variant="subtitle2" gutterBottom>
+                                      Détails du mouvement
                                     </Typography>
-                                  )}
-                                  {mouvement.modifiedAt && (
-                                    <Typography variant="caption" color="textSecondary">
-                                      Dernière modification: {formatDate(mouvement.modifiedAt)}
+                                    {mouvement.commentaire && (
+                                      <Typography variant="body2" paragraph>
+                                        <strong>Commentaire:</strong> {mouvement.commentaire}
+                                      </Typography>
+                                    )}
+                                    {mouvement.modifiedAt && (
+                                      <Typography variant="caption" color="textSecondary">
+                                        Dernière modification: {formatDate(mouvement.modifiedAt)}
+                                      </Typography>
+                                    )}
+                                  </Grid>
+                                  <Grid item xs={12} md={4}>
+                                    <Typography variant="subtitle2" gutterBottom>
+                                      Analyse
                                     </Typography>
-                                  )}
-                                </Grid>
-                                <Grid item xs={12} md={4}>
-                                  <Typography variant="subtitle2" gutterBottom>
-                                    Analyse
-                                  </Typography>
-                                  <Box display="flex" flexDirection="column" gap={1}>
-                                    <Box display="flex" justifyContent="space-between">
-                                      <Typography variant="caption">Taux d'utilisation:</Typography>
-                                      <Typography variant="caption" fontWeight="bold">
-                                        {((mouvement.nbCongePris / mouvement.nbCongeTotal) * 100 || 0).toFixed(1)}%
-                                      </Typography>
+                                    <Box display="flex" flexDirection="column" gap={1}>
+                                      <Box display="flex" justifyContent="space-between">
+                                        <Typography variant="caption">Taux d'utilisation:</Typography>
+                                        <Typography variant="caption" fontWeight="bold">
+                                          {((mouvement.nbCongePris / mouvement.nbCongeTotal) * 100 || 0).toFixed(1)}%
+                                        </Typography>
+                                      </Box>
+                                      <Box display="flex" justifyContent="space-between">
+                                        <Typography variant="caption">Solde restant:</Typography>
+                                        <Typography variant="caption" fontWeight="bold" color="success.main">
+                                          {mouvement.nbCongeRestant?.toFixed(1)} j
+                                        </Typography>
+                                      </Box>
                                     </Box>
-                                    <Box display="flex" justifyContent="space-between">
-                                      <Typography variant="caption">Solde restant:</Typography>
-                                      <Typography variant="caption" fontWeight="bold" color="success.main">
-                                        {mouvement.nbCongeRestant?.toFixed(1)} j
-                                      </Typography>
-                                    </Box>
-                                  </Box>
+                                  </Grid>
                                 </Grid>
-                              </Grid>
-                            </Box>
-                          </TableCell>
-                        </TableRow>
-                      )}
-                    </React.Fragment>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
+                              </Box>
+                            </td>
+                          </tr>
+                        )}
+                      </React.Fragment>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           )}
 
           {/* Résumé */}
           {filteredMouvements.length > 0 && (
-            <Box mt={3} p={2} bgcolor="var(--brand-50)" borderRadius={1}>
+            <Box
+              mt={3}
+              p={3}
+              sx={{
+                background: '#f8f9fa',
+                border: '1px solid #ead7e7',
+                borderRadius: 2,
+                mx: 3,
+                mb: 3
+              }}
+            >
               <Grid container spacing={2}>
                 <Grid item xs={12} md={4}>
-                  <Typography variant="subtitle2" gutterBottom>
+                  <Typography variant="subtitle2" gutterBottom sx={{ color: '#3a1438', fontWeight: 800 }}>
                     Types de mouvements
                   </Typography>
                   <Stack direction="row" spacing={1} flexWrap="wrap">
@@ -788,7 +809,7 @@ const DerniersMouvementsPage = () => {
                   </Stack>
                 </Grid>
                 <Grid item xs={12} md={4}>
-                  <Typography variant="subtitle2" gutterBottom>
+                  <Typography variant="subtitle2" gutterBottom sx={{ color: '#3a1438', fontWeight: 800 }}>
                     Distribution par année
                   </Typography>
                   <Stack direction="row" spacing={1} flexWrap="wrap">
@@ -809,13 +830,13 @@ const DerniersMouvementsPage = () => {
                   </Stack>
                 </Grid>
                 <Grid item xs={12} md={4}>
-                  <Typography variant="subtitle2" gutterBottom>
+                  <Typography variant="subtitle2" gutterBottom sx={{ color: '#3a1438', fontWeight: 800 }}>
                     Taux d'utilisation global
                   </Typography>
-                  <Typography variant="h6" color="primary">
+                  <Typography variant="h5" sx={{ color: '#b053ad', fontWeight: 900 }}>
                     {((currentStats?.totalPris / currentStats?.totalAcquis) * 100 || 0).toFixed(1)}%
                   </Typography>
-                  <Typography variant="caption" color="textSecondary">
+                  <Typography variant="body2" sx={{ color: '#5c2458' }}>
                     {currentStats?.totalPris.toFixed(1)}j pris sur {currentStats?.totalAcquis.toFixed(1)}j acquis
                   </Typography>
                 </Grid>

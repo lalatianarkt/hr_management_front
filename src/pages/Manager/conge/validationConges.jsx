@@ -8,7 +8,7 @@ import {
   DialogTitle, DialogContent, DialogActions,
   Table, TableBody, TableCell, TableContainer,
   TableHead, TableRow, LinearProgress, Badge,
-  Tooltip, Divider, Avatar
+  Tooltip, Divider, Avatar, ToggleButton, ToggleButtonGroup
 } from '@mui/material';
 import {
   ArrowBack, CalendarMonth, Home, NavigateNext,
@@ -19,9 +19,17 @@ import {
   TaskAlt, Block, VerifiedUser, Close,
   ExpandMore, ExpandLess, DateRange, Today,
   Download, Print, MoreVert,
-  StackedBarChartOutlined
+  StackedBarChartOutlined, ChevronLeft, ChevronRight, ViewList
 } from '@mui/icons-material';
+import { Calendar, dayjsLocalizer, Views } from 'react-big-calendar';
+import dayjs from 'dayjs';
+import 'dayjs/locale/fr';
+import 'react-big-calendar/lib/css/react-big-calendar.css';
 import axiosInstance from './../../utils/AxiosInstance';
+
+dayjs.locale('fr');
+
+const localizer = dayjsLocalizer(dayjs);
 
 const ValidationConges = () => {
   // États pour les demandes
@@ -54,6 +62,9 @@ const ValidationConges = () => {
   // États pour le calendrier
   const [calendrierEmploye, setCalendrierEmploye] = useState(null);
   const [showCalendrier, setShowCalendrier] = useState(false);
+  const [viewMode, setViewMode] = useState('list');
+  const [calendarView, setCalendarView] = useState(Views.MONTH);
+  const [calendarDate, setCalendarDate] = useState(new Date());
   const [showFilters, setShowFilters] = useState(false);
 
   // Initialisation
@@ -336,11 +347,85 @@ const ValidationConges = () => {
     };
   };
 
+  const prepareCalendarEvents = () => {
+    return filteredDemandes.map((demande) => {
+      const statusConfig = getStatusConfig(demande.statut);
+      const employeNom = (demande.employe?.prenom || demande.employe?.nom)
+        ? `${demande.employe?.prenom || ''} ${demande.employe?.nom || ''}`.trim()
+        : `Employe ${demande.idEmploye || ''}`.trim();
+
+      return {
+        id: demande.id,
+        title: `${employeNom} - ${demande.nbJours || 0}j - ${statusConfig.label}`,
+        start: new Date(demande.dateDebut),
+        end: new Date(demande.dateFin),
+        allDay: true,
+        resource: demande,
+        style: {
+          backgroundColor: statusConfig.bgColor || '#b053ad',
+          borderRadius: '4px',
+          opacity: 0.85,
+          color: 'white',
+          border: '0px',
+          display: 'block'
+        }
+      };
+    });
+  };
+
+  const calendarEvents = prepareCalendarEvents();
+
+  const handleSelectEvent = (event) => {
+    setSelectedDemande(event.resource);
+    setValidationDecision(null);
+    setShowValidationModal(true);
+  };
+
+  const handleViewChange = (view) => {
+    setCalendarView(view);
+  };
+
+  const handleNavigate = (newDate) => {
+    setCalendarDate(newDate);
+  };
+
+  const goToToday = () => {
+    setCalendarDate(new Date());
+  };
+
+  const goToPrevious = () => {
+    let newDate;
+    if (calendarView === Views.MONTH) {
+      newDate = dayjs(calendarDate).subtract(1, 'month').toDate();
+    } else if (calendarView === Views.WEEK) {
+      newDate = dayjs(calendarDate).subtract(1, 'week').toDate();
+    } else {
+      newDate = dayjs(calendarDate).subtract(1, 'day').toDate();
+    }
+    setCalendarDate(newDate);
+  };
+
+  const goToNext = () => {
+    let newDate;
+    if (calendarView === Views.MONTH) {
+      newDate = dayjs(calendarDate).add(1, 'month').toDate();
+    } else if (calendarView === Views.WEEK) {
+      newDate = dayjs(calendarDate).add(1, 'week').toDate();
+    } else {
+      newDate = dayjs(calendarDate).add(1, 'day').toDate();
+    }
+    setCalendarDate(newDate);
+  };
+
   // Calcul des statistiques
   const stats = {
     enAttente: demandes.filter(d => d.statut === 0).length,
     approuves: demandes.filter(d => d.statut === 1).length,
-    rejetes: demandes.filter(d => d.statut === 2).length
+    rejetes: demandes.filter(d => d.statut === 2).length,
+    annules: demandes.filter(d => d.statut === 3).length,
+    termines: demandes.filter(d => d.statut === 5).length,
+    validesRH: demandes.filter(d => d.statut === 6).length,
+    refusesRH: demandes.filter(d => d.statut === 7).length
   };
 
   if (loading && demandes.length === 0) {
@@ -676,7 +761,188 @@ const ValidationConges = () => {
       )}
 
       {/* Liste des demandes */}
-      <Card>
+      <Box display="flex" alignItems="center" justifyContent="space-between" flexWrap="wrap" gap={2} mb={2}>
+        <Typography variant="h6" fontWeight="medium">
+          {viewMode === 'calendar' ? `Vue Calendrier (${filteredDemandes.length} demandes)` : `Vue Liste (${filteredDemandes.length} demandes)`}
+        </Typography>
+        <ToggleButtonGroup
+          value={viewMode}
+          exclusive
+          onChange={(e, newValue) => newValue && setViewMode(newValue)}
+          size="small"
+          sx={{
+            '& .MuiToggleButton-root': {
+              borderColor: purple,
+              color: purple,
+              textTransform: 'none',
+              fontWeight: 600
+            },
+            '& .MuiToggleButton-root.Mui-selected': {
+              bgcolor: purple,
+              color: '#fff'
+            }
+          }}
+        >
+          <ToggleButton value="calendar">
+            <CalendarMonth sx={{ mr: 0.5, fontSize: 18 }} />
+            Calendrier
+          </ToggleButton>
+          <ToggleButton value="list">
+            <ViewList sx={{ mr: 0.5, fontSize: 18 }} />
+            Liste
+          </ToggleButton>
+        </ToggleButtonGroup>
+      </Box>
+
+      {viewMode === 'calendar' ? (
+        <Card sx={{ mb: 3 }}>
+          <CardContent>
+            <Box display="flex" alignItems="center" justifyContent="space-between" flexWrap="wrap" gap={2} mb={2}>
+              <Stack direction="row" spacing={1} alignItems="center">
+                <Button
+                  variant="outlined"
+                  size="small"
+                  startIcon={<Today />}
+                  onClick={goToToday}
+                  sx={{
+                    borderColor: purple,
+                    color: purple,
+                    textTransform: 'none',
+                    fontWeight: 600,
+                    '&:hover': { borderColor: purple, color: purple, bgcolor: 'transparent' }
+                  }}
+                >
+                  Aujourd'hui
+                </Button>
+                <IconButton onClick={goToPrevious} size="small">
+                  <ChevronLeft />
+                </IconButton>
+                <IconButton onClick={goToNext} size="small">
+                  <ChevronRight />
+                </IconButton>
+              </Stack>
+
+              <Typography variant="h6" fontWeight="medium">
+                {calendarView === Views.MONTH && dayjs(calendarDate).format('MMMM YYYY')}
+                {calendarView === Views.WEEK && `Semaine du ${dayjs(calendarDate).startOf('week').format('DD/MM/YYYY')}`}
+                {calendarView === Views.DAY && dayjs(calendarDate).format('dddd DD MMMM YYYY')}
+              </Typography>
+
+              <ToggleButtonGroup
+                value={calendarView}
+                exclusive
+                onChange={(e, newView) => newView && handleViewChange(newView)}
+                size="small"
+              >
+                <ToggleButton value={Views.MONTH} sx={{ borderColor: purple, color: purple, textTransform: 'none', fontWeight: 600, '&.Mui-selected': { bgcolor: purple, color: '#fff' } }}>
+                  Mois
+                </ToggleButton>
+                <ToggleButton value={Views.WEEK} sx={{ borderColor: purple, color: purple, textTransform: 'none', fontWeight: 600, '&.Mui-selected': { bgcolor: purple, color: '#fff' } }}>
+                  Semaine
+                </ToggleButton>
+                <ToggleButton value={Views.DAY} sx={{ borderColor: purple, color: purple, textTransform: 'none', fontWeight: 600, '&.Mui-selected': { bgcolor: purple, color: '#fff' } }}>
+                  Jour
+                </ToggleButton>
+              </ToggleButtonGroup>
+            </Box>
+
+            <Box sx={{ height: 600 }}>
+              <Calendar
+                localizer={localizer}
+                events={calendarEvents}
+                startAccessor="start"
+                endAccessor="end"
+                style={{ height: '100%' }}
+                onSelectEvent={handleSelectEvent}
+                view={calendarView}
+                onView={handleViewChange}
+                date={calendarDate}
+                onNavigate={handleNavigate}
+                views={[Views.MONTH, Views.WEEK, Views.DAY]}
+                messages={{
+                  today: "Aujourd'hui",
+                  previous: 'Precedent',
+                  next: 'Suivant',
+                  month: 'Mois',
+                  week: 'Semaine',
+                  day: 'Jour'
+                }}
+                eventPropGetter={(event) => ({
+                  style: event.style
+                })}
+                components={{
+                  toolbar: () => null,
+                }}
+              />
+            </Box>
+
+            <Box mt={3} p={2} bgcolor="#f8eff7" borderRadius={1}>
+              <Typography variant="subtitle2" gutterBottom>
+                Legende
+              </Typography>
+              <Grid container spacing={2}>
+                <Grid item xs={6} md={4}>
+                  <Box display="flex" alignItems="center">
+                    <Box width={20} height={20} bgcolor="#ff9800" mr={1} borderRadius={1} />
+                    <Typography variant="body2">
+                      En attente ({stats.enAttente})
+                    </Typography>
+                  </Box>
+                </Grid>
+                <Grid item xs={6} md={4}>
+                  <Box display="flex" alignItems="center">
+                    <Box width={20} height={20} bgcolor="#4caf50" mr={1} borderRadius={1} />
+                    <Typography variant="body2">
+                      Approuve ({stats.approuves})
+                    </Typography>
+                  </Box>
+                </Grid>
+                <Grid item xs={6} md={4}>
+                  <Box display="flex" alignItems="center">
+                    <Box width={20} height={20} bgcolor="#f44336" mr={1} borderRadius={1} />
+                    <Typography variant="body2">
+                      Rejete ({stats.rejetes})
+                    </Typography>
+                  </Box>
+                </Grid>
+                <Grid item xs={6} md={4}>
+                  <Box display="flex" alignItems="center">
+                    <Box width={20} height={20} bgcolor="#5c2458" mr={1} borderRadius={1} />
+                    <Typography variant="body2">
+                      Annule ({stats.annules})
+                    </Typography>
+                  </Box>
+                </Grid>
+                <Grid item xs={6} md={4}>
+                  <Box display="flex" alignItems="center">
+                    <Box width={20} height={20} bgcolor="#b053ad" mr={1} borderRadius={1} />
+                    <Typography variant="body2">
+                      Termine ({stats.termines})
+                    </Typography>
+                  </Box>
+                </Grid>
+                <Grid item xs={6} md={4}>
+                  <Box display="flex" alignItems="center">
+                    <Box width={20} height={20} bgcolor="#2e7d32" mr={1} borderRadius={1} />
+                    <Typography variant="body2">
+                      Valide RH ({stats.validesRH})
+                    </Typography>
+                  </Box>
+                </Grid>
+                <Grid item xs={6} md={4}>
+                  <Box display="flex" alignItems="center">
+                    <Box width={20} height={20} bgcolor="#d32f2f" mr={1} borderRadius={1} />
+                    <Typography variant="body2">
+                      Refuse RH ({stats.refusesRH})
+                    </Typography>
+                  </Box>
+                </Grid>
+              </Grid>
+            </Box>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card>
         <CardContent>
           <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
             <Typography variant="h6">
@@ -841,6 +1107,8 @@ const ValidationConges = () => {
         </CardContent>
       </Card>
 
+      )}
+
       {/* Modal de validation */}
       <Dialog 
         open={showValidationModal} 
@@ -998,3 +1266,10 @@ const ValidationConges = () => {
 };
 
 export default ValidationConges;
+
+
+
+
+
+
+

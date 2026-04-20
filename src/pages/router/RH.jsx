@@ -49,6 +49,7 @@ import NouvelleEditionPaie from "../RH/Paie/edition/NouvelleEditionPaie";
 import ParametrageGlobal from "../RH/Paramétrage/ParametrageGobal";
 import ExportConfiguration from "../RH/Employe/FicheEmploye/export/ExportConfiguration";
 import DemandesCongeEmploye from "../RH/Employe/Conges/DemandesConges";
+import CalendrierFerieList from "../RH/Paramétrage/CalendrieFerie";
 
 const RouterRH = () => {
     return (
@@ -110,6 +111,7 @@ const RouterRH = () => {
                 <Route path="paramétrage/conger-irsa" element={<ParametrageGlobal />} />
                 <Route path="paramétrage/pointage" element={<PointagePage />} />
                 <Route path="paramétrage/export" element={<ExportConfiguration /> } />
+                <Route path="paramétrage/ferie" element={<CalendrierFerieList />} />
             </Route>
         </Routes>
     );

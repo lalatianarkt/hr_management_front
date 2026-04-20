@@ -1,7 +1,7 @@
-// src/pages/RH/Paie/NouvelleEditionPaie.jsx
+﻿// src/pages/RH/Paie/NouvelleEditionPaie.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LockFill, Calendar2Month } from 'react-bootstrap-icons';
+import { LockFill, Calendar2Month, PiggyBank, CreditCard2Front, Receipt, ArrowLeft } from 'react-bootstrap-icons';
 import { 
   Container,
   Row,
@@ -15,7 +15,8 @@ import {
   Form,
   InputGroup,
   Pagination,
-  Modal
+  Modal,
+  Breadcrumb
 } from 'react-bootstrap';
 import {
   Search,
@@ -30,7 +31,11 @@ import {
   Hash,
   Calendar,
   Filter,
-  X
+  X,
+  Home,
+  Users,
+  DollarSign,
+  Clock
 } from 'react-feather';
 import axiosInstance from '../../../utils/AxiosInstance';
 
@@ -48,7 +53,7 @@ function NouvelleEditionPaie() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   
-  // État pour la période active
+  // État pour la Période active
   const [periodeActive, setPeriodeActive] = useState(null);
   const [loadingPeriode, setLoadingPeriode] = useState(false);
   
@@ -66,7 +71,7 @@ function NouvelleEditionPaie() {
   const [selectAll, setSelectAll] = useState(false);
   
   // État pour le filtre par état
-  const [etatFiltre, setEtatFiltre] = useState(null); // null = tous, 0,1,2
+  const [etatFiltre, setEtatFiltre] = useState(null);
   
   // États pour la recherche
   const [searchTerm, setSearchTerm] = useState('');
@@ -74,11 +79,16 @@ function NouvelleEditionPaie() {
   
   // États pour la pagination côté client
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(10);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const itemsPerPageOptions = [3, 5, 10, 25, 50];
   
   // Navigation
   const goToPeriodesPaie = () => {
     navigate('/dashboard-RH/paie/periodes');
+  };
+
+  const goBack = () => {
+    navigate(-1);
   };
 
   // Charger les données au montage
@@ -87,12 +97,12 @@ function NouvelleEditionPaie() {
     fetchPeriodeActive();
   }, []);
 
-  // Mettre à jour les employés filtrés quand les données ou la recherche changent
+  // Mettre à jour les employés filtrés
   useEffect(() => {
     filterEmployes();
   }, [employesPaie, searchTerm, etatFiltre]);
 
-  // Mettre à jour selectAll - Pour TOUS les employés (y compris actifs)
+  // Mettre à jour selectAll
   useEffect(() => {
     if (filteredEmployes.length > 0) {
       const allIds = filteredEmployes
@@ -111,11 +121,9 @@ function NouvelleEditionPaie() {
     setError('');
     
     try {
-      // Récupérer tous les employés avec leur état
       const employesResponse = await axiosInstance.get('/api/employes-paie');
       setEmployesPaie(employesResponse.data || []);
       
-      // Récupérer les statistiques
       const statsResponse = await axiosInstance.get('/api/employes-paie/employes-paie/stats');
       setStats(statsResponse.data || { inactif: 0, enAttente: 0, actif: 0 });
       
@@ -127,7 +135,6 @@ function NouvelleEditionPaie() {
     }
   };
 
-  // Récupérer la période active
   const fetchPeriodeActive = async () => {
     setLoadingPeriode(true);
     try {
@@ -135,7 +142,7 @@ function NouvelleEditionPaie() {
       console.log("periode actif : ", response.data);
       setPeriodeActive(response.data);
     } catch (err) {
-      console.error('Erreur lors du chargement de la période active:', err);
+      console.error('Erreur lors du chargement de la Période active:', err);
       setPeriodeActive(null);
     } finally {
       setLoadingPeriode(false);
@@ -145,12 +152,10 @@ function NouvelleEditionPaie() {
   const filterEmployes = () => {
     let filtered = [...employesPaie];
     
-    // Filtrer par état si sélectionné
     if (etatFiltre !== null) {
       filtered = filtered.filter(emp => emp.etat === etatFiltre);
     }
     
-    // Filtrer par recherche textuelle
     if (searchTerm.trim() !== '') {
       const term = searchTerm.toLowerCase();
       filtered = filtered.filter(emp => {
@@ -176,7 +181,11 @@ function NouvelleEditionPaie() {
     setEtatFiltre(null);
   };
 
-  // Sélectionner/désélectionner un employé (TOUS peuvent être sélectionnés)
+  const handleItemsPerPageChange = (value) => {
+    setItemsPerPage(value);
+    setCurrentPage(1);
+  };
+
   const handleSelectOne = (id) => {
     if (selectedIds.includes(id)) {
       setSelectedIds(selectedIds.filter(selectedId => selectedId !== id));
@@ -185,19 +194,16 @@ function NouvelleEditionPaie() {
     }
   };
 
-  // Sélectionner/désélectionner tous les employés filtrés (y compris actifs)
   const handleSelectAll = (e) => {
     const isChecked = e.target.checked;
     
     if (isChecked) {
-      // Sélectionner TOUS les employés filtrés
       const allIds = filteredEmployes
         .map(emp => emp.employeAvecInfosDTO?.employe?.id)
         .filter(id => id);
       
       setSelectedIds(allIds);
     } else {
-      // Désélectionner tout
       setSelectedIds([]);
     }
   };
@@ -212,28 +218,25 @@ function NouvelleEditionPaie() {
     setShowRubriquesModal(true);
   };
 
-  // Ouvrir le modal de génération - FILTRE les actifs pour la génération
   const openGenerateModal = () => {
     if (!periodeActive) {
-      alert('Aucune période active trouvée. Veuillez d\'abord créer une période.');
+      alert('Aucune Période active trouvée. Veuillez d\'abord créer une Période.');
       return;
     }
     
-    // Filtrer pour ne garder que les employés non-actifs pour la génération
     const eligibleIds = selectedIds.filter(id => {
       const emp = employesPaie.find(e => e.employeAvecInfosDTO?.employe?.id === id);
       return emp && emp.etat !== 2;
     });
     
     if (eligibleIds.length === 0) {
-      alert('Aucun employé éligible sélectionné (les employés avec paie déjà générée ne peuvent pas avoir de nouvelle génération).');
+      alert('Aucun employé éligible sélectionné (les employés avec paie déjà généré ne peuvent pas avoir de nouvelle génération).');
       return;
     }
     
-    // Si certains employés actifs ont été sélectionnés, on les retire pour la génération
     if (eligibleIds.length < selectedIds.length) {
       const actifsCount = selectedIds.length - eligibleIds.length;
-      alert(`${actifsCount} employé(s) avec paie déjà générée ont été retirés de la sélection pour la génération.`);
+      alert(`${actifsCount} employé(s) avec paie déjà généré ont été retirés de la sélection pour la génération.`);
       setSelectedIds(eligibleIds);
     }
     
@@ -241,7 +244,6 @@ function NouvelleEditionPaie() {
     setShowGenerateModal(true);
   };
 
-  // Fonction pour fermer le modal de génération
   const handleCloseGenerateModal = (shouldDeselect = false) => {
     setShowGenerateModal(false);
     setGenerateResult(null);
@@ -251,10 +253,9 @@ function NouvelleEditionPaie() {
     }
   };
 
-  // Fonction pour générer la paie
   const handleGeneratePaie = async () => {
     if (!periodeActive) {
-      alert('Aucune période active disponible');
+      alert('Aucune Période active disponible');
       return;
     }
 
@@ -262,20 +263,19 @@ function NouvelleEditionPaie() {
     setGenerateResult(null);
     
     try {
-      // Créer les objets Paie pour chaque employé sélectionné (déjà filtrés non-actifs)
       const les_paies = selectedIds.map(employeId => {
         const emp = employesPaie.find(e => e.employeAvecInfosDTO?.employe?.id === employeId);
         const infos = emp?.employeAvecInfosDTO?.infosProfessionnelles?.[0] || {};
         const employe = emp?.employeAvecInfosDTO?.employe || {};
         
-        return {
-          modePaiement: "Virement bancaire",
-          datePaiement: new Date().toISOString().split('T')[0],
-          classification: "Normale",
-          matricule: infos.matricule ? parseInt(infos.matricule) : null,
-          nom: employe.nom || '',
-          prenom: employe.prenom || '',
-          fonction: infos.poste?.nom || '',
+          return {
+            modePaiement: "Virement bancaire",
+            datePaiement: new Date().toISOString().split('T')[0],
+            classification: infos.classification || "Normale",
+            matricule: infos.matricule ? parseInt(infos.matricule) : null,
+            nom: employe.nom || '',
+            prenom: employe.prenom || '',
+            fonction: infos.poste?.nom || '',
           salaireBase: null,
           numCnaps: null,
           ancienneteAnMoisJour: '',
@@ -308,7 +308,6 @@ function NouvelleEditionPaie() {
         setGenerateResult(response.data);
         
         if (response.data.success) {
-          // Succès - recharger les données et désélectionner après 3 secondes
           setTimeout(() => {
             handleCloseGenerateModal(true);
             fetchDonnees();
@@ -341,71 +340,55 @@ function NouvelleEditionPaie() {
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = filteredEmployes.slice(indexOfFirstItem, indexOfLastItem);
   const totalPages = Math.ceil(filteredEmployes.length / itemsPerPage);
+  const totalEmployesStat = stats.inactif + stats.enAttente + stats.actif;
+  const generatedCount = stats.actif;
+  const remainingCount = Math.max(totalEmployesStat - generatedCount, 0);
+  const progressPercent = totalEmployesStat > 0
+    ? Math.round((generatedCount / totalEmployesStat) * 100)
+    : 0;
 
   const handlePageChange = (pageNumber) => {
     setCurrentPage(pageNumber);
   };
 
-  // Fonction pour obtenir le petit rond de statut
-  const getEtatRond = (etat) => {
-    switch(etat) {
-      case 0:
-        return (
-          <span 
-            style={{ 
-              display: 'inline-block',
-              width: '16px', 
-              height: '16px', 
-              borderRadius: '50%',
-              backgroundColor: '#dc3545',
-              margin: '0 auto'
-            }}
-            title="Période inactive"
-          />
-        );
-      case 1:
-        return (
-          <span 
-            style={{ 
-              display: 'inline-block',
-              width: '16px', 
-              height: '16px', 
-              borderRadius: '50%',
-              backgroundColor: '#ffc107',
-              margin: '0 auto'
-            }}
-            title="En attente"
-          />
-        );
-      case 2:
-        return (
-          <span 
-            style={{ 
-              display: 'inline-block',
-              width: '16px', 
-              height: '16px', 
-              borderRadius: '50%',
-              backgroundColor: '#28a745',
-              margin: '0 auto'
-            }}
-            title="Paie générée"
-          />
-        );
-      default:
-        return (
-          <span 
-            style={{ 
-              display: 'inline-block',
-              width: '16px', 
-              height: '16px', 
-              borderRadius: '50%',
-              backgroundColor: '#6c757d',
-              margin: '0 auto'
-            }}
-            title="Inconnu"
-          />
-        );
-    }
+  const getEtatBadge = (etat) => {
+    const map = {
+      0: { label: 'Période inactive', color: '#dc3545', bg: 'rgba(220, 53, 69, 0.12)', border: 'rgba(220, 53, 69, 0.25)' },
+      1: { label: 'En attente', color: '#ff9800', bg: 'rgba(255, 152, 0, 0.12)', border: 'rgba(255, 152, 0, 0.28)' },
+      2: { label: 'Paie générée', color: '#2e7d32', bg: 'rgba(46, 125, 50, 0.12)', border: 'rgba(46, 125, 50, 0.28)' }
+    };
+
+    const current = map[etat] || { label: 'Inconnu', color: '#6c757d', bg: 'rgba(108, 117, 125, 0.12)', border: 'rgba(108, 117, 125, 0.28)' };
+
+    return (
+      <span
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '6px',
+          padding: '4px 10px',
+          borderRadius: '999px',
+          fontSize: '0.78rem',
+          fontWeight: 700,
+          color: current.color,
+          background: current.bg,
+          border: `1px solid ${current.border}`,
+          whiteSpace: 'nowrap'
+        }}
+        title={current.label}
+      >
+        <span
+          style={{
+            width: '7px',
+            height: '7px',
+            borderRadius: '50%',
+            backgroundColor: current.color,
+            display: 'inline-block'
+          }}
+        />
+        {current.label}
+      </span>
+    );
   };
 
   const renderPaginationItems = () => {
@@ -476,111 +459,298 @@ function NouvelleEditionPaie() {
   }
 
   return (
-    <Container fluid className="py-3">
-      {/* Première ligne : Statistiques à gauche et boutons à droite */}
-      <Row className="mb-3 align-items-center">
-        <Col xs={12} md={6}>
-          <div className="d-flex gap-3 flex-wrap">
-            <div className="d-flex align-items-center gap-1">
-              <span 
-                style={{ 
-                  display: 'inline-block',
-                  width: '12px', 
-                  height: '12px', 
-                  borderRadius: '50%',
-                  backgroundColor: '#dc3545'
-                }}
-              />
-              <small className="text-muted">Inactif: <strong>{stats.inactif}</strong></small>
-            </div>
-            <div className="d-flex align-items-center gap-1">
-              <span 
-                style={{ 
-                  display: 'inline-block',
-                  width: '12px', 
-                  height: '12px', 
-                  borderRadius: '50%',
-                  backgroundColor: '#ffc107'
-                }}
-              />
-              <small className="text-muted">En attente: <strong>{stats.enAttente}</strong></small>
-            </div>
-            <div className="d-flex align-items-center gap-1">
-              <span 
-                style={{ 
-                  display: 'inline-block',
-                  width: '12px', 
-                  height: '12px', 
-                  borderRadius: '50%',
-                  backgroundColor: '#28a745'
-                }}
-              />
-              <small className="text-muted">Généré: <strong>{stats.actif}</strong></small>
-            </div>
-            {periodeActive && (
-              <Badge bg="success" className="ms-2">
-                {periodeActive.mois?.nom || ''} {periodeActive.annee || ''}
-              </Badge>
-            )}
+    <Container fluid className="py-4">
+      {/* Styles CSS */}
+      <style>
+        {`
+          .stat-card-hover {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+          }
+          .stat-card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+          }
+        `}
+      </style>
+
+      {/* En-tête principal (style demandé) */}
+      <Card
+        className="mb-4 border-0"
+        style={{
+          background: 'rgba(255,255,255,0.9)',
+          borderRadius: '20px',
+          boxShadow: '0 12px 28px rgba(92, 36, 88, 0.12)'
+        }}
+      >
+        <Card.Body className="p-4">
+          <Row className="align-items-center g-3">
+            <Col xs={12} md={8}>
+              <h2 className="mb-1" style={{ fontWeight: 800, color: '#3a1438' }}>
+                Édition de la paie – {periodeActive?.mois?.nom || 'Période'} {periodeActive?.annee || ''}
+              </h2>
+              <div style={{ color: '#5c2458' }}>
+                Suivi de la génération et validation des <strong>fiches de paie</strong>
+              </div>
+            </Col>
+
+            <Col xs={12} md={4} className="text-md-end">
+              <div className="d-flex flex-wrap gap-2 justify-content-md-end">
+                <Button
+                  variant="primary"
+                  onClick={goToPeriodesPaie}
+                  className="d-flex align-items-center gap-2 rounded-pill px-3"
+                  style={{ fontWeight: 600, background: '#b053ad', borderColor: '#b053ad', color: '#ffffff' }}
+                >
+                  <Calendar2Month size={16} color="#ffffff" />
+                  Périodes
+                </Button>
+                <Button
+                  variant="outline-danger"
+                  onClick={() => setShowClotureModal(true)}
+                  className="d-flex align-items-center gap-2 rounded-pill px-3"
+                  style={{ fontWeight: 600 }}
+                >
+                  <LockFill size={14} />
+                  Clôture
+                </Button>
+              </div>
+            </Col>
+          </Row>
+
+          <div
+            className="mt-3 p-3"
+            style={{
+              background: '#faf5fa',
+              borderRadius: '14px',
+              border: '1px solid #f0d9ef'
+            }}
+          >
+            <Row className="align-items-center g-3">
+              <Col xs={12} md={7}>
+                <div className="d-flex flex-wrap gap-3 align-items-center">
+                  <div className="d-flex align-items-center gap-2">
+                    <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#b053ad' }} />
+                    <strong style={{ color: '#3a1438' }}>Période :</strong>
+                    <span style={{ color: '#5c2458' }}>
+                      {periodeActive?.mois?.nom || '—'} {periodeActive?.annee || ''}
+                    </span>
+                  </div>
+                  <div className="d-flex align-items-center gap-2">
+                    <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#2e7d32' }} />
+                    <strong style={{ color: '#3a1438' }}>Statut :</strong>
+                    <span style={{ color: '#5c2458' }}>
+                      En cours ({generatedCount} / {totalEmployesStat} employés)
+                    </span>
+                  </div>
+                </div>
+
+                <div className="mt-2" style={{ background: '#ead7e7', height: 8, borderRadius: 999, overflow: 'hidden' }}>
+                  <div
+                    style={{
+                      width: `${progressPercent}%`,
+                      height: '100%',
+                      background: 'linear-gradient(90deg, #2e7d32 0%, #4caf50 100%)'
+                    }}
+                  />
+                </div>
+              </Col>
+
+              <Col xs={12} md={5} className="text-md-end">
+                {remainingCount > 0 ? (
+                  <div
+                    className="d-inline-flex align-items-center gap-2"
+                    style={{
+                      background: 'rgba(92, 36, 88, 0.08)',
+                      border: '1px solid rgba(92, 36, 88, 0.15)',
+                      borderRadius: '12px',
+                      padding: '8px 12px',
+                      color: '#5c2458',
+                      fontWeight: 600
+                    }}
+                  >
+                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#5c2458' }} />
+                    Impossible de clôturer : {remainingCount} paie(s) non générée(s)
+                  </div>
+                ) : (
+                  <Badge bg="success" pill className="px-3 py-2">
+                    Clôture possible
+                  </Badge>
+                )}
+              </Col>
+            </Row>
           </div>
+        </Card.Body>
+      </Card>
+
+      {/* Cartes de statistiques */}
+      <Row className="mb-4 g-3">
+        <Col xs={12} md={3}>
+          <Card 
+            className="border-0 shadow-sm h-100 stat-card-hover"
+            style={{ borderRadius: '15px', cursor: 'pointer' }}
+            onClick={() => setEtatFiltre(0)}
+          >
+            <Card.Body className="p-3">
+              <div className="d-flex align-items-center justify-content-between mb-2">
+                <div className="rounded-circle bg-danger bg-opacity-10 p-2">
+                  <XCircle size={24} className="text-danger" />
+                </div>
+                <Badge bg="danger" pill className="px-2 py-1">
+                  {stats.inactif}
+                </Badge>
+              </div>
+              <h6 className="text-muted mb-1" style={{ fontSize: '0.8rem', fontWeight: 600 }}>
+                PÉRIODE INACTIVE
+              </h6>
+              <h3 className="mb-0 fw-bold" style={{ color: '#dc3545' }}>
+                {stats.inactif}
+              </h3>
+              <small className="text-muted">employé(s) sans paie générée</small>
+            </Card.Body>
+          </Card>
         </Col>
-        
-        <Col xs={12} md={6} className="text-md-end mt-2 mt-md-0">
-          <div className="d-flex gap-2 justify-content-md-end">
-            <Button
-              variant="outline-info"
-              size="sm"
-              onClick={goToPeriodesPaie}
-              className="d-flex align-items-center gap-1"
-            >
-              <Calendar2Month size={16} />
-              <span>Périodes</span>
-            </Button>
-            <Button
-              variant="outline-danger"
-              size="sm"
-              onClick={() => setShowClotureModal(true)}
-              className="d-flex align-items-center gap-1"
-            >
-              <LockFill size={14} />
-              <span>Clôture</span>
-            </Button>
-          </div>
+
+        <Col xs={12} md={3}>
+          <Card 
+            className="border-0 shadow-sm h-100 stat-card-hover"
+            style={{ borderRadius: '15px', cursor: 'pointer' }}
+            onClick={() => setEtatFiltre(1)}
+          >
+            <Card.Body className="p-3">
+              <div className="d-flex align-items-center justify-content-between mb-2">
+                <div className="rounded-circle bg-warning bg-opacity-10 p-2">
+                  <Clock size={24} className="text-warning" />
+                </div>
+                <Badge bg="warning" pill className="px-2 py-1">
+                  {stats.enAttente}
+                </Badge>
+              </div>
+              <h6 className="text-muted mb-1" style={{ fontSize: '0.8rem', fontWeight: 600 }}>
+                EN ATTENTE
+              </h6>
+              <h3 className="mb-0 fw-bold" style={{ color: '#ff9800' }}>
+                {stats.enAttente}
+              </h3>
+              <small className="text-muted">employé(s) prêt(s) pour génération</small>
+            </Card.Body>
+          </Card>
+        </Col>
+
+        <Col xs={12} md={3}>
+          <Card 
+            className="border-0 shadow-sm h-100 stat-card-hover"
+            style={{ borderRadius: '15px', cursor: 'pointer' }}
+            onClick={() => setEtatFiltre(2)}
+          >
+            <Card.Body className="p-3">
+              <div className="d-flex align-items-center justify-content-between mb-2">
+                <div className="rounded-circle bg-success bg-opacity-10 p-2">
+                  <CheckCircle size={24} className="text-success" />
+                </div>
+                <Badge bg="success" pill className="px-2 py-1">
+                  {stats.actif}
+                </Badge>
+              </div>
+              <h6 className="text-muted mb-1" style={{ fontSize: '0.8rem', fontWeight: 600 }}>
+                PAIE GÉNÉRÉE
+              </h6>
+              <h3 className="mb-0 fw-bold" style={{ color: '#2e7d32' }}>
+                {stats.actif}
+              </h3>
+              <small className="text-muted">employé(s) avec paie générée</small>
+            </Card.Body>
+          </Card>
+        </Col>
+
+        <Col xs={12} md={3}>
+          <Card 
+            className="border-0 shadow-sm h-100"
+            style={{ 
+              borderRadius: '15px',
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+            }}
+          >
+            <Card.Body className="p-3">
+              <div className="d-flex align-items-center justify-content-between mb-2">
+                <div className="rounded-circle bg-white bg-opacity-25 p-2">
+                  <Receipt size={24} className="text-white" />
+                </div>
+                {periodeActive && (
+                  <Badge bg="light" text="primary" pill className="px-2 py-1">
+                    Actif
+                  </Badge>
+                )}
+              </div>
+              <h6 className="text-white-50 mb-1" style={{ fontSize: '0.8rem', fontWeight: 600 }}>
+                PÉRIODE ACTIVE
+              </h6>
+              {periodeActive ? (
+                <>
+                  <h5 className="text-white mb-0 fw-bold">
+                    {periodeActive.mois?.nom || 'Mois'} {periodeActive.annee || 'Année'}
+                  </h5>
+                  <small className="text-white-50">
+                    {periodeActive.dateDebut && new Date(periodeActive.dateDebut).toLocaleDateString('fr-FR')} - {periodeActive.dateFin && new Date(periodeActive.dateFin).toLocaleDateString('fr-FR')}
+                  </small>
+                </>
+              ) : (
+                <>
+                  <p className="text-white-50 mb-0" style={{ fontSize: '0.85rem' }}>
+                    Aucune période active
+                  </p>
+                  <Button 
+                    variant="light" 
+                    size="sm" 
+                    className="mt-2 rounded-pill"
+                    onClick={() => setShowAddPeriodeModal(true)}
+                  >
+                    <Plus size={14} className="me-1" />
+                    Créer une période
+                  </Button>
+                </>
+              )}
+            </Card.Body>
+          </Card>
         </Col>
       </Row>
 
       {/* Filtres et recherche */}
-      <Card className="mb-3">
-        <Card.Body className="py-2">
+      <Card className="mb-3 border-0 shadow-sm" style={{ borderRadius: '12px' }}>
+        <Card.Body className="py-2 px-3">
           <Row className="g-2 align-items-center">
-            <Col xs={12} md={4}>
-              <InputGroup size="sm">
-                <InputGroup.Text className="bg-light">
-                  <Search size={14} />
+            <Col xs={12} lg={5}>
+              <InputGroup className="rounded-pill shadow-sm" style={{ minHeight: '42px' }}>
+                <InputGroup.Text className="bg-white border-0" style={{ minWidth: '44px', borderTopLeftRadius: '999px', borderBottomLeftRadius: '999px' }}>
+                  <Search size={16} className="text-primary" />
                 </InputGroup.Text>
                 <Form.Control
                   type="text"
-                  placeholder="Rechercher (matricule, nom, poste...)"
+                  placeholder="Rechercher par matricule, nom, poste..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
+                  className="border-0"
+                  style={{ minHeight: '42px' }}
                 />
                 {searchTerm && (
                   <Button 
                     variant="outline-secondary" 
                     size="sm"
                     onClick={() => setSearchTerm('')}
+                    className="border-0"
+                    style={{ minHeight: '42px' }}
                   >
-                    <X size={14} />
+                    <X size={16} />
                   </Button>
                 )}
               </InputGroup>
             </Col>
             
-            <Col xs={6} md={3}>
+            <Col xs={12} sm={6} lg={2}>
               <Form.Select 
                 size="sm"
                 value={etatFiltre === null ? '' : etatFiltre}
                 onChange={(e) => setEtatFiltre(e.target.value === '' ? null : parseInt(e.target.value))}
+                className="rounded-pill shadow-sm"
               >
                 <option value="">Tous les états</option>
                 <option value="0">Période inactive</option>
@@ -588,28 +758,46 @@ function NouvelleEditionPaie() {
                 <option value="2">Paie générée</option>
               </Form.Select>
             </Col>
+
+            <Col xs={6} sm={3} lg={2}>
+              <Form.Select
+                size="sm"
+                value={itemsPerPage}
+                onChange={(e) => handleItemsPerPageChange(parseInt(e.target.value, 10))}
+                className="rounded-pill shadow-sm"
+                style={{ minHeight: '42px' }}
+              >
+                {itemsPerPageOptions.map((option) => (
+                  <option key={option} value={option}>
+                    {option} / page
+                  </option>
+                ))}
+              </Form.Select>
+            </Col>
             
-            <Col xs={6} md={2}>
+            <Col xs={6} sm={3} lg={2}>
               <Button 
-                variant="outline-secondary" 
+                variant="primary" 
                 size="sm"
                 onClick={resetSearch}
-                className="w-100"
+                className="w-100 rounded-pill"
+                style={{ background: '#b053ad', borderColor: '#b053ad', color: '#ffffff' }}
               >
-                <Filter size={14} className="me-1" />
+                <Filter size={14} className="me-1" color="#ffffff" />
                 Réinitialiser
               </Button>
             </Col>
             
-            <Col xs={12} md={3} className="text-md-end">
-              <small className="text-muted">
-                {filteredEmployes.length} employé(s) trouvé(s)
+            <Col xs={12} lg={2} className="text-lg-end">
+              <Badge bg="light" text="dark" className="rounded-pill px-3 py-2">
+                <Users size={14} className="me-1" />
+                {filteredEmployes.length} employé(s)
                 {filteredEmployes.filter(emp => emp.etat === 2).length > 0 && (
-                  <span className="ms-1 text-warning">
+                  <span className="ms-2 text-success">
                     ({filteredEmployes.filter(emp => emp.etat === 2).length} générés)
                   </span>
                 )}
-              </small>
+              </Badge>
             </Col>
           </Row>
         </Card.Body>
@@ -617,53 +805,56 @@ function NouvelleEditionPaie() {
 
       {/* Barre d'actions pour la sélection */}
       {selectedIds.length > 0 && (
-        <Card className="mb-3 border-primary">
-          <Card.Body className="py-2">
+        <Card className="mb-4 border-0 shadow-lg" style={{ background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)', borderRadius: '15px' }}>
+          <Card.Body className="p-3">
             <Row className="align-items-center">
               <Col>
-                <div className="d-flex align-items-center gap-2">
-                  <CheckCircle size={18} className="text-primary" />
-                  <span className="fw-medium">{selectedIds.length} employé(s) sélectionné(s)</span>
-                  <Badge bg="primary">{selectedIds.length}</Badge>
-                  {selectedIds.filter(id => {
-                    const emp = employesPaie.find(e => e.employeAvecInfosDTO?.employe?.id === id);
-                    return emp && emp.etat === 2;
-                  }).length > 0 && (
-                    <small className="text-warning">
-                      ({selectedIds.filter(id => {
-                        const emp = employesPaie.find(e => e.employeAvecInfosDTO?.employe?.id === id);
-                        return emp && emp.etat === 2;
-                      }).length} avec paie existante - ne seront pas générés)
-                    </small>
-                  )}
+                <div className="d-flex align-items-center gap-3">
+                  <div className="rounded-circle bg-primary bg-opacity-10 p-2">
+                    <CheckCircle size={20} className="text-primary" />
+                  </div>
+                  <div>
+                    <span className="fw-bold fs-6">{selectedIds.length} employé(s) sélectionné(s)</span>
+                    <Badge bg="primary" className="ms-2 rounded-pill">{selectedIds.length}</Badge>
+                    {selectedIds.filter(id => {
+                      const emp = employesPaie.find(e => e.employeAvecInfosDTO?.employe?.id === id);
+                      return emp && emp.etat === 2;
+                    }).length > 0 && (
+                      <div className="text-warning small mt-1">
+                        ⚠️ {selectedIds.filter(id => {
+                          const emp = employesPaie.find(e => e.employeAvecInfosDTO?.employe?.id === id);
+                          return emp && emp.etat === 2;
+                        }).length} employé(s) avec paie existante - ne seront pas générés
+                      </div>
+                    )}
+                  </div>
                 </div>
               </Col>
               <Col xs="auto">
                 <div className="d-flex gap-2">
                   <Button
-                    variant="outline-secondary"
+                    variant="light"
                     size="sm"
-                    onClick={() => {
-                      setSelectedIds([]);
-                    }}
-                    className="d-flex align-items-center gap-1"
+                    onClick={() => setSelectedIds([])}
+                    className="rounded-pill px-3"
                   >
-                    <X size={14} />
-                    <span>Tout désélectionner</span>
+                    <X size={14} className="me-1" />
+                    Tout désélectionner
                   </Button>
                   <Button
                     variant="success"
                     size="sm"
                     onClick={openGenerateModal}
                     disabled={!periodeActive || loadingPeriode}
-                    className="d-flex align-items-center gap-1"
+                    className="rounded-pill px-3"
+                    style={{ fontWeight: 600 }}
                   >
                     {loadingPeriode ? (
                       <Spinner size="sm" animation="border" />
                     ) : (
                       <>
-                        <BarChart2 size={14} />
-                        <span>Générer la paie</span>
+                        <BarChart2 size={14} className="me-1" />
+                        Générer la paie
                       </>
                     )}
                   </Button>
@@ -681,7 +872,7 @@ function NouvelleEditionPaie() {
       )}
 
       {/* Tableau des employés */}
-      <Card>
+      <Card className="border-0 shadow-sm" style={{ borderRadius: '15px', overflow: 'hidden' }}>
         <Card.Body className="p-0">
           <div className="table-responsive">
             <Table hover size="sm" className="mb-0">
@@ -700,6 +891,7 @@ function NouvelleEditionPaie() {
                   <th>Prénom(s)</th>
                   <th>Département</th>
                   <th>Poste</th>
+                  <th>Classification</th>
                   <th className="text-center">Statut</th>
                 </tr>
               </thead>
@@ -759,8 +951,13 @@ function NouvelleEditionPaie() {
                             {poste}
                           </small>
                         </td>
+                        <td>
+                          <small className={emp.etat === 2 ? 'text-muted' : ''}>
+                            {infos.classification || '-'}
+                          </small>
+                        </td>
                         <td className="text-center">
-                          {getEtatRond(emp.etat)}
+                          {getEtatBadge(emp.etat)}
                         </td>
                       </tr>
                     );
@@ -789,8 +986,7 @@ function NouvelleEditionPaie() {
               <div className="d-flex justify-content-between align-items-center flex-wrap gap-3">
                 <div>
                   <small className="text-muted">
-                    Page {currentPage} sur {totalPages} • 
-                    {filteredEmployes.length} employé(s) au total
+                    Page {currentPage} sur {totalPages} - {filteredEmployes.length} employé(s) au total
                   </small>
                 </div>
                 <Pagination size="sm">
@@ -863,11 +1059,10 @@ function NouvelleEditionPaie() {
               </div>
               
               <p className="text-muted small mb-0">
-                Cette action va créer les bulletins de paie pour la période active.
+                Cette action va créer les bulletins de paie pour la Période active.
               </p>
             </>
           ) : (
-            // Affichage du résultat
             <div className="text-center py-3">
               {generateResult.success ? (
                 <>
@@ -881,7 +1076,7 @@ function NouvelleEditionPaie() {
                     <div className="d-flex justify-content-center gap-4 mt-3">
                       <div>
                         <Badge bg="success" pill className="px-3 py-2">
-                          ✅ {generateResult.resume.generes} généré(s)
+                          ✓ {generateResult.resume.generes} généré(s)
                         </Badge>
                       </div>
                       {generateResult.resume.doublons > 0 && (

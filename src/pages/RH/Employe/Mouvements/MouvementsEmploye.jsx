@@ -77,6 +77,7 @@ const MouvementsEmploye = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statutFilter, setStatutFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
+  const [showFilters, setShowFilters] = useState(false);
   
   // États pour les modaux
   const [showDetailsModal, setShowDetailsModal] = useState(false);
@@ -618,7 +619,7 @@ const MouvementsEmploye = () => {
       `}</style>
 
       {/* En-tête avec informations de l'employé */}
-      <Row className="mb-4 align-items-center fade-in">
+      <Row className="mb-4 align-items-start fade-in">
         <Col>
           <div className="d-flex align-items-center gap-3 mb-3">
             <Button
@@ -638,6 +639,17 @@ const MouvementsEmploye = () => {
             </div>
           </div>
           
+          <div className="d-flex justify-content-end mb-2">
+            <Button
+              variant="outline-secondary"
+              onClick={() => setShowFilters((prev) => !prev)}
+              className="rounded-pill shadow-sm"
+            >
+              <FaFilter className="me-2" />
+              Filtres
+            </Button>
+          </div>
+
           {employe && (() => {
             const infosArray = Array.isArray(employe.infosProfessionnelles)
               ? employe.infosProfessionnelles
@@ -653,7 +665,7 @@ const MouvementsEmploye = () => {
               'Département non défini';
 
             return (
-              <Card className="border-0 shadow-lg rounded-4 mt-3">
+              <Card className="border-0 shadow-lg rounded-4 mt-3 w-100" style={{ width: "100%" }}>
                 <Card.Body className="py-3">
                   <Row className="align-items-center">
                     <Col md="auto" className="text-center mb-3 mb-md-0">
@@ -762,6 +774,7 @@ const MouvementsEmploye = () => {
       </Card>
 
       {/* Filtres et recherche améliorés */}
+      {showFilters && (
       <Card className="mb-4 border-0 shadow-sm rounded-4 fade-in">
         <Card.Body>
           <Row className="g-3">
@@ -840,6 +853,7 @@ const MouvementsEmploye = () => {
           </div>
         </Card.Body>
       </Card>
+      )}
 
       {/* Table des mouvements améliorée */}
       <Card className="border-0 shadow-sm rounded-4 fade-in overflow-hidden">

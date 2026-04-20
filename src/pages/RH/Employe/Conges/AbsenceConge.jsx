@@ -106,8 +106,9 @@ const AbsenceConge = () => {
     
     try {
       const response = await axiosInstance.get(`/api/absences-conges/employe/${id}`);
-      console.log("Absences et congés:", response.data);
+      // console.log("Absences et congés:", response.data);
       setAbsencesConges(response.data || []);
+      // console.log("absence : ", absencesConges[0].nomPoste);
     } catch (err) {
       setError('Erreur lors du chargement des absences et congés');
       console.error('Erreur:', err);
@@ -144,11 +145,13 @@ const AbsenceConge = () => {
   };
 
   // Obtenir l'icône selon le type d'absence
+  const normalizeAbsenceType = (type) => (type || '').toString().trim().toUpperCase();
+
   const getTypeIcon = (type) => {
-    switch (type) {
-      case 'conge':
+    switch (normalizeAbsenceType(type)) {
+      case 'CONGE':
         return <FaUmbrellaBeach className="text-success" />;
-      case 'absence':
+      case 'ABSENCE':
         return <FaBed className="text-warning" />;
       default:
         return <FaQuestionCircle className="text-secondary" />;
@@ -157,10 +160,10 @@ const AbsenceConge = () => {
 
   // Obtenir la couleur selon le type d'absence
   const getTypeColor = (type) => {
-    switch (type) {
-      case 'conge':
+    switch (normalizeAbsenceType(type)) {
+      case 'CONGE':
         return 'success';
-      case 'absence':
+      case 'ABSENCE':
         return 'warning';
       default:
         return 'secondary';
@@ -169,10 +172,10 @@ const AbsenceConge = () => {
 
   // Obtenir le libellé selon le type d'absence
   const getTypeLabel = (type) => {
-    switch (type) {
-      case 'conge':
+    switch (normalizeAbsenceType(type)) {
+      case 'CONGE':
         return 'Congé';
-      case 'absence':
+      case 'ABSENCE':
         return 'Absence';
       default:
         return 'Non spécifié';
@@ -188,7 +191,7 @@ const AbsenceConge = () => {
     return absencesConges.filter(absence => {
       const absenceDateStr = format(parseISO(absence.dateAbsence), 'yyyy-MM-dd');
       return absenceDateStr === dateStr && 
-             (typeFilter === 'all' || absence.typeAbsence === typeFilter);
+             (typeFilter === 'all' || normalizeAbsenceType(absence.typeAbsence) === typeFilter);
     });
   };
 
@@ -200,7 +203,7 @@ const AbsenceConge = () => {
     return absencesConges.filter(absence => {
       const absenceDate = parseISO(absence.dateAbsence);
       return absenceDate >= start && absenceDate <= end &&
-             (typeFilter === 'all' || absence.typeAbsence === typeFilter);
+             (typeFilter === 'all' || normalizeAbsenceType(absence.typeAbsence) === typeFilter);
     });
   };
 
@@ -238,7 +241,7 @@ const AbsenceConge = () => {
 
   // Filtrer les absences
   const filteredAbsences = absencesConges.filter(absence => {
-    const matchesType = typeFilter === 'all' || absence.typeAbsence === typeFilter;
+    const matchesType = typeFilter === 'all' || normalizeAbsenceType(absence.typeAbsence) === typeFilter;
     const matchesSearch = searchTerm === '' || 
       absence.nomComplet?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       absence.matricule?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -250,20 +253,51 @@ const AbsenceConge = () => {
   // Statistiques
   const getStats = () => {
     const total = absencesConges.length;
-    const conges = absencesConges.filter(a => a.typeAbsence === 'CONGE').length;
-    const absences = absencesConges.filter(a => a.typeAbsence === 'ABSENCE').length;
+    const conges = absencesConges.filter(a => normalizeAbsenceType(a.typeAbsence) === 'CONGE').length;
+    const absences = absencesConges.filter(a => normalizeAbsenceType(a.typeAbsence) === 'ABSENCE').length;
     
     return { total, conges, absences };
   };
 
   const stats = getStats();
 
+  const infosPro = Array.isArray(employe?.infosProfessionnelles)
+    ? employe?.infosProfessionnelles?.[0]
+    : employe?.infosProfessionnelles;
+
+  const employeIdAffiche = employe?.id || employe?.employeId || absencesConges?.[0]?.employeId || id;
+  const matriculeAffiche = employe?.matricule || absencesConges?.[0]?.matricule;
+  const nomCompletAffiche =
+    absencesConges?.[0]?.nomComplet ||
+    `${employe?.nom || ''} ${employe?.prenom || ''}`.trim() ||
+    'Employé';
+
+  const posteNom =
+    infosPro?.poste?.nom ||
+    infosPro?.poste?.libelle ||
+    absencesConges?.[0]?.nomPoste ||
+    'Poste non défini';
+
+  const departementNom =
+    infosPro?.departement?.nom ||
+    infosPro?.departement?.libelle ||
+    infosPro?.poste?.departement?.nom ||
+    infosPro?.poste?.departement?.libelle ||
+    absencesConges?.[0]?.departementNom ||
+    'Département non défini';
+
+  const idDepartementAffiche =
+    infosPro?.departement?.id ||
+    infosPro?.poste?.departement?.id ||
+    absencesConges?.[0]?.idDepartement ||
+    null;
+
   const calendarEvents = absencesConges
-    .filter(absence => typeFilter === 'all' || absence.typeAbsence === typeFilter)
+    .filter(absence => typeFilter === 'all' || normalizeAbsenceType(absence.typeAbsence) === typeFilter)
     .map(absence => {
       const start = absence.dateAbsence ? parseISO(absence.dateAbsence) : new Date();
       const end = start;
-      const isConge = absence.typeAbsence === 'CONGE';
+      const isConge = normalizeAbsenceType(absence.typeAbsence) === 'CONGE';
       return {
         title: `${getTypeLabel(absence.typeAbsence)}${absence.nomComplet ? ' - ' + absence.nomComplet : ''}`,
         start,
@@ -315,23 +349,37 @@ const AbsenceConge = () => {
               <Card.Body className="py-3">
                 <Row className="align-items-center">
                   <Col md="auto" className="text-center mb-3 mb-md-0">
-                    <div className="bg-primary text-white rounded-circle p-3 d-inline-block">
-                      <FaUserCircle size={24} />
+
+                    {/* <h1> Test code ravo </h1> bg-primary text-white*/}
+                    <div className="rounded-circle p-3 d-inline-block bg-primary text-white">
+                      <FaUserCircle size={60} />
                     </div>
                   </Col>
-                  <Col>
+                  <Col className="text-start">
+                  
                     <h5 className="mb-1">
-                      {employe.nom} {employe.prenom}
-                      {employe.matricule && (
+                      {nomCompletAffiche}
+                      {matriculeAffiche && (
                         <Badge bg="secondary" className="ms-2">
-                          {employe.matricule}
+                          {matriculeAffiche}
                         </Badge>
                       )}
                     </h5>
-                    <p className="text-muted mb-0">
-                      {employe.infosProfessionnelles?.poste?.nom || 'Poste non défini'} | 
-                      {employe.infosProfessionnelles?.departement?.nom || 'Département non défini'}
-                    </p>
+
+                    {/* <p className="text-muted mb-0">
+                      {posteNom} | {departementNom}
+                    </p> */}
+
+                    <div className="d-flex flex-wrap gap-2 mt-2">
+                      <Badge bg="light" text="dark" className="border">
+                        <FaBriefcase className="me-1 text-muted" />
+                        Poste : {posteNom}
+                      </Badge>
+                      <Badge bg="light" text="dark" className="border">
+                        <FaHome className="me-1 text-muted" />
+                        Département : {departementNom}
+                      </Badge>
+                    </div>
                   </Col>
                   <Col md="auto">
                     <Button
@@ -390,8 +438,8 @@ const AbsenceConge = () => {
       </Row>
 
       {/* Filtres et contrôles */}
-      <Card className="mb-4 border-0 shadow-sm">
-        <Card.Body>
+      <Card className="mb-4 border-0 shadow-sm" style={{ overflow: 'visible' }}>
+        <Card.Body style={{ overflow: 'visible' }}>
           <Row className="g-3 align-items-center">
             <Col md={4}>
               <div className="d-flex align-items-center gap-2">
@@ -457,12 +505,12 @@ const AbsenceConge = () => {
             
             <Col md={4}>
               <div className="d-flex gap-2 justify-content-end">
-                <Dropdown>
+                <Dropdown popperConfig={{ strategy: 'fixed' }}>
                   <Dropdown.Toggle variant="outline-secondary" size="sm">
                     <FaFilter className="me-2" />
                     {typeFilter === 'all' ? 'Tous les types' : getTypeLabel(typeFilter)}
                   </Dropdown.Toggle>
-                  <Dropdown.Menu>
+                  <Dropdown.Menu style={{ zIndex: 2000 }}>
                     <Dropdown.Item onClick={() => setTypeFilter('all')}>
                       Tous les types
                     </Dropdown.Item>
@@ -545,7 +593,7 @@ const AbsenceConge = () => {
                             <div 
                               key={idx} 
                               className={`calendar-event mb-1 p-1 rounded ${
-                                absence.typeAbsence === 'CONGE' 
+                                normalizeAbsenceType(absence.typeAbsence) === 'CONGE' 
                                   ? 'calendar-event-conge' 
                                   : 'calendar-event-absence'
                               }`}
@@ -626,7 +674,7 @@ const AbsenceConge = () => {
                         </p>
                         <p className="text-muted mb-0 small">
                           <FaBriefcase className="me-2" />
-                          {absence.nomPoste} | {absence.departementNom}
+                          {absence.nomPoste || 'Poste non défini'} | {absence.departementNom || 'Département non défini'}
                         </p>
                       </div>
                     </div>
@@ -661,12 +709,12 @@ const AbsenceConge = () => {
             <Col md={6}>
               <div className="mb-3">
                 <h6>Congés ce mois</h6>
-                {getAbsencesForMonth().filter(a => a.typeAbsence === 'CONGE').length === 0 ? (
+                {getAbsencesForMonth().filter(a => normalizeAbsenceType(a.typeAbsence) === 'CONGE').length === 0 ? (
                   <p className="text-muted">Aucun congé ce mois</p>
                 ) : (
                   <ListGroup variant="flush">
                     {getAbsencesForMonth()
-                      .filter(a => a.typeAbsence === 'CONGE')
+                      .filter(a => normalizeAbsenceType(a.typeAbsence) === 'CONGE')
                       .slice(0, 5)
                       .map((conge, idx) => (
                         <ListGroup.Item key={idx} className="border-0 py-2">
@@ -686,12 +734,12 @@ const AbsenceConge = () => {
             <Col md={6}>
               <div className="mb-3">
                 <h6>Absences ce mois</h6>
-                {getAbsencesForMonth().filter(a => a.typeAbsence === 'ABSENCE').length === 0 ? (
+                {getAbsencesForMonth().filter(a => normalizeAbsenceType(a.typeAbsence) === 'ABSENCE').length === 0 ? (
                   <p className="text-muted">Aucune absence ce mois</p>
                 ) : (
                   <ListGroup variant="flush">
                     {getAbsencesForMonth()
-                      .filter(a => a.typeAbsence === 'ABSENCE')
+                      .filter(a => normalizeAbsenceType(a.typeAbsence) === 'ABSENCE')
                       .slice(0, 5)
                       .map((absence, idx) => (
                         <ListGroup.Item key={idx} className="border-0 py-2">

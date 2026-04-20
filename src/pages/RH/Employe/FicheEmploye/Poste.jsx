@@ -14,7 +14,9 @@ import {
   Pagination,
   InputGroup,
   Dropdown,
-  DropdownButton
+  DropdownButton,
+  OverlayTrigger,
+  Tooltip
 } from 'react-bootstrap';
 import { 
   Plus, 
@@ -212,9 +214,6 @@ const PostesList = () => {
         <Col>
           <div className="d-flex align-items-center gap-2">
             <h1 className="h4 mb-0">Gestion des Postes</h1>
-            <Badge bg="light" text="dark" className="ms-2">
-              {filteredPostes.length}
-            </Badge>
           </div>
           <p className="text-muted mb-0">Liste de tous les postes dans l'entreprise</p>
         </Col>
@@ -240,7 +239,7 @@ const PostesList = () => {
       <Card className="mb-3 border">
         <Card.Body className="py-2">
           <Row className="g-2 align-items-center">
-            <Col xs={12} md={6}>
+            <Col xs={12} md={7}>
               <div className="input-group input-group-sm">
                 <span className="input-group-text bg-white">
                   <Search size={14} />
@@ -257,7 +256,7 @@ const PostesList = () => {
                 />
               </div>
             </Col>
-            <Col xs={12} md={4}>
+            <Col xs={12} md={5}>
               <div className="input-group input-group-sm">
                 <span className="input-group-text bg-white">
                   <Filter size={14} />
@@ -279,28 +278,26 @@ const PostesList = () => {
                 </Form.Select>
               </div>
             </Col>
-            <Col xs={12} md={2}>
-              <div className="d-flex align-items-center gap-1 px-2 py-1 bg-light rounded justify-content-end">
-                <small className="fw-medium">{filteredPostes.length}</small>
-                <small className="text-muted ms-1">poste{filteredPostes.length !== 1 ? 's' : ''}</small>
-              </div>
-            </Col>
           </Row>
         </Card.Body>
       </Card>
 
       <Card className="border">
         <Card.Body className="p-0">
+          <div className="d-flex justify-content-end align-items-center px-3 py-2 bg-light border-bottom">
+            <small className="fw-medium">{filteredPostes.length}</small>
+            <small className="text-muted ms-1">poste{filteredPostes.length !== 1 ? 's' : ''}</small>
+          </div>
           <div className="table-responsive">
             <Table hover size="sm" className="mb-0">
               <thead className="bg-light">
                 <tr>
-                  <th className="py-2 ps-3">ID</th>
+                  {/* <th className="py-2 ps-3">ID</th> */}
                   <th className="py-2">Nom du Poste</th>
                   <th className="py-2">Description</th>
-                  <th className="py-2">Département</th>
+                  <th className="py-2 text-start">Département</th>
                   <th className="py-2">Niveau Hiérarchique</th>
-                  <th className="py-2">Créé le</th>
+                  {/* <th className="py-2">Créé le</th> */}
                   <th className="py-2 pe-3 text-end">Actions</th>
                 </tr>
               </thead>
@@ -318,11 +315,11 @@ const PostesList = () => {
                 ) : (
                   getCurrentPageItems().map(poste => (
                     <tr key={poste.id}>
-                      <td className="py-2 ps-3">
+                      {/* <td className="py-2 ps-3">
                         <div>
                           <small className="fw-medium">{poste.id}</small>
                         </div>
-                      </td>
+                      </td> */}
                       <td className="py-2">
                         <div className="fw-medium">{poste.nom}</div>
                       </td>
@@ -333,9 +330,9 @@ const PostesList = () => {
                             : 'Aucune description'}
                         </small>
                       </td>
-                      <td className="py-2">
+                      <td className="py-2 text-start">
                         {poste.departement ? (
-                          <div className="d-flex align-items-center gap-1">
+                          <div className="d-flex align-items-center justify-content-start gap-1 w-100">
                             <Briefcase size={12} className="text-info" />
                             <small className="fw-medium">{poste.departement.nom}</small>
                           </div>
@@ -352,43 +349,58 @@ const PostesList = () => {
                           <small className="text-muted">Non défini</small>
                         )}
                       </td>
-                      <td className="py-2">
+                      {/* <td className="py-2">
                         <div className="d-flex align-items-center gap-1">
                           <Calendar size={12} className="text-muted" />
                           <small className="text-muted">
                             {formatDate(poste.createdAt).split(' ')[0]}
                           </small>
                         </div>
-                      </td>
+                      </td> */}
                       <td className="py-2 pe-3 text-end">
                         <div className="d-flex justify-content-end gap-1">
-                          <Button
-                            variant="outline-info"
-                            size="sm"
-                            onClick={() => handleViewDetails(poste)}
-                            aria-label="Voir détails"
-                            className="px-2"
+                          <OverlayTrigger
+                            placement="top"
+                            overlay={<Tooltip id={`tooltip-view-${poste.id}`}>Voir détails</Tooltip>}
                           >
-                            <Eye size={12} />
-                          </Button>
-                          <Button
-                            variant="outline-secondary"
-                            size="sm"
-                            onClick={() => handleEditClick(poste)}
-                            aria-label="Modifier"
-                            className="px-2"
+                            <Button
+                              variant="outline-info"
+                              size="sm"
+                              onClick={() => handleViewDetails(poste)}
+                              className="px-2"
+                            >
+                              <Eye size={12} />
+                            </Button>
+                          </OverlayTrigger>
+
+                          <OverlayTrigger
+                            placement="top"
+                            overlay={<Tooltip id={`tooltip-edit-${poste.id}`}>Modifier</Tooltip>}
                           >
-                            <Edit size={12} />
-                          </Button>
-                          <Button
-                            variant="outline-danger"
-                            size="sm"
-                            onClick={() => handleDeleteClick(poste)}
-                            aria-label="Supprimer"
-                            className="px-2"
+                            <Button
+                              variant="outline-secondary"
+                              size="sm"
+                              onClick={() => handleEditClick(poste)}
+                              className="px-2"
+                            >
+                              <Edit size={12} />
+                            </Button>
+                          </OverlayTrigger>
+            
+
+                          <OverlayTrigger
+                            placement="top"
+                            overlay={<Tooltip id={`tooltip-delete-${poste.id}`}>Supprimer</Tooltip>}
                           >
-                            <Trash2 size={12} />
-                          </Button>
+                            <Button
+                              variant="outline-danger"
+                              size="sm"
+                              onClick={() => handleDeleteClick(poste)}
+                              className="px-2"
+                            >
+                              <Trash2 size={12} />
+                            </Button>
+                          </OverlayTrigger>
                         </div>
                       </td>
                     </tr>

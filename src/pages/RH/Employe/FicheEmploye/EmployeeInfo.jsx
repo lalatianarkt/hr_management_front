@@ -432,12 +432,6 @@ const ProModal = ({ show, onClose, proData, onDataChange, onSave, isSubmitting, 
       </div>
       <div className="col-md-6">
         <Form.Group className="mb-3">
-          <Form.Label>Date fin d'assignation</Form.Label>
-          <Form.Control type="date" value={proData.dateFinAssignationPoste || ''} onChange={(e) => onDataChange('dateFinAssignationPoste', e.target.value)} />
-        </Form.Group>
-      </div>
-      <div className="col-md-6">
-        <Form.Group className="mb-3">
           <Form.Label>Salaire de base (Ar)</Form.Label>
           <Form.Control type="number" step="1000" min="0" value={proData.salaireBase || ''} onChange={(e) => onDataChange('salaireBase', e.target.value)} placeholder="0" />
         </Form.Group>
@@ -475,17 +469,56 @@ const ProModal = ({ show, onClose, proData, onDataChange, onSave, isSubmitting, 
           </Form.Select>
         </Form.Group>
       </div>
-      <div className="col-md-6">
-        <Form.Group className="mb-3">
-          <Form.Label>Date débauche</Form.Label>
-          <Form.Control type="date" value={proData.dateDebauche || ''} onChange={(e) => onDataChange('dateDebauche', e.target.value)} />
-        </Form.Group>
-      </div>
-      <div className="col-md-6">
-        <Form.Group className="mb-3">
-          <Form.Label>Motif de départ</Form.Label>
-          <Form.Control value={proData.motifDepart || ''} onChange={(e) => onDataChange('motifDepart', e.target.value)} placeholder="Motif de départ" />
-        </Form.Group>
+
+      <div className="col-12">
+        <InfoPanel title="Sortie de l'employé">
+          <div className="row g-3">
+            <div className="col-md-4">
+              <Form.Group className="mb-3">
+                <Form.Label>Date fin d'assignation</Form.Label>
+                <Form.Control
+                  type="date"
+                  value={proData.dateFinAssignationPoste || ''}
+                  onChange={(e) => onDataChange('dateFinAssignationPoste', e.target.value)}
+                />
+              </Form.Group>
+            </div>
+            <div className="col-md-4">
+              <Form.Group className="mb-3">
+                <Form.Label>Date de débauche</Form.Label>
+                <Form.Control
+                  type="date"
+                  value={proData.dateDebauche || ''}
+                  onChange={(e) => onDataChange('dateDebauche', e.target.value)}
+                />
+              </Form.Group>
+            </div>
+            <div className="col-md-4">
+              <Form.Group className="mb-3">
+                <Form.Label>Motif de départ</Form.Label>
+                <Form.Control
+                  list="motifDepartOptions"
+                  value={proData.motifDepart || ''}
+                  onChange={(e) => onDataChange('motifDepart', e.target.value)}
+                  placeholder="Sélectionner ou saisir un motif"
+                  required={!!proData.dateDebauche}
+                  isInvalid={!!proData.dateDebauche && !proData.motifDepart?.trim()}
+                />
+                <datalist id="motifDepartOptions">
+                  <option value="Démission" />
+                  <option value="Fin de contrat" />
+                  <option value="Licenciement" />
+                  <option value="Retraite" />
+                  <option value="Mutation" />
+                  <option value="Autre" />
+                </datalist>
+                <Form.Control.Feedback type="invalid">
+                  Le motif de départ est obligatoire si la date de débauche est renseignée.
+                </Form.Control.Feedback>
+              </Form.Group>
+            </div>
+          </div>
+        </InfoPanel>
       </div>
     </div>
   </BaseModal>
@@ -1375,8 +1408,8 @@ function EmployeeInfo() {
       window.URL.revokeObjectURL(url);
       
     } catch (error) {
-      console.error('Erreur lors de l\'export PDF:', error);
-      alert('Erreur lors de l\'export du PDF');
+      // console.error('Erreur lors de l\'export PDF:', error);
+      // alert('Erreur lors de l\'export du PDF');
     }
   };
 
@@ -1389,6 +1422,9 @@ function EmployeeInfo() {
       if (field === 'idCategorie') return { ...prev, idCategorie: value, categorieProfessionnelle: value ? { id: value } : null };
       if (field === 'idTempsTravail') return { ...prev, idTempsTravail: value, typeTempsTravail: value ? { id: value } : null };
       if (field === 'idTypeEntree') return { ...prev, idTypeEntree: value, typeEntree: value ? { id: value } : null };
+      if (field === 'dateFinAssignationPoste' && value) {
+        return { ...prev, dateFinAssignationPoste: value, dateDebauche: value };
+      }
       return { ...prev, [field]: value };
     });
   }, []);
@@ -1511,6 +1547,13 @@ function EmployeeInfo() {
   };
 
   const savePro = async () => {
+    if (proData.dateDebauche && !proData.motifDepart?.trim()) {
+      const msg = "Le motif de départ est obligatoire lorsque la date de débauche est renseignée.";
+      setError(msg);
+      toast.error(msg);
+      return;
+    }
+
     setIsSubmittingPro(true);
     try {
       const infoId = proData.id;
@@ -1647,22 +1690,63 @@ function EmployeeInfo() {
         theme="colored"
       />
             
-    <Card className="border mb-4 position-relative overflow-visible">
-      <Card.Body className="p-3 overflow-visible">
-        <div className="d-flex justify-content-between align-items-start gap-4 flex-wrap">
-          <div style={{ maxWidth: "760px" }}>
-            <div className="d-flex align-items-center gap-3 mb-3">
-              <div className="bg-light rounded-circle p-2" style={{ width: "52px", height: "52px", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <PersonFill size={28} className="text-primary" />
-              </div>
-              <div>
-                <h1 className="h4 mb-1 fw-bold">{employe.prenom} {employe.nom}</h1>
-                <div className="text-muted small">Fiche employé</div>
-              </div>
-            </div>
-            <div className="d-flex flex-wrap gap-2">
-              <Badge bg="light" text="dark" className="border px-3 py-2">{infosPro?.matricule || employe.matricule || "-"}</Badge>
-              <StatusBadge contrat={contratActuel} />
+      <Card className="border mb-4 position-relative overflow-visible">
+        <Card.Body className="p-3 pt-2 overflow-visible">
+          <div className="d-flex justify-content-between align-items-center gap-3 flex-wrap mb-2">
+           <Button
+             variant="outline-secondary"
+             size="sm"
+             onClick={() => navigate(-1)}
+             className="d-inline-flex align-items-center gap-2"
+           >
+             <ChevronLeft size={16} />
+             Retour
+           </Button>
+
+           <Dropdown drop="down">
+             <Dropdown.Toggle variant="outline-primary" className="d-flex align-items-center gap-2">
+               <Download size={16} /> Actions
+             </Dropdown.Toggle>
+             <Dropdown.Menu style={{ zIndex: 1050 }}>
+               <Dropdown.Item onClick={() => handleExportPDF(employe.id)}>
+                 <FileEarmarkTextFill className="me-2" />
+                 Exporter en PDF
+               </Dropdown.Item>
+               <Dropdown.Divider />
+               <Dropdown.Item onClick={() => navigate(`/dashboard-RH/employees/${id}/conges`)}>
+                 <CalendarFill className="me-2" />
+                 Voir les demandes de congé
+               </Dropdown.Item>
+               <Dropdown.Item onClick={() => navigate(`/dashboard-RH/employees/${id}/absences`)}>
+                 <CalendarFill className="me-2" />
+                 Voir les absences
+               </Dropdown.Item>
+               <Dropdown.Item onClick={() => navigate(`/dashboard-RH/employees/${id}/soldesConges`)}>
+                 <CalendarFill className="me-2" />
+                 Voir les soldes de conge
+               </Dropdown.Item>
+               <Dropdown.Item onClick={() => navigate(`/dashboard-RH/employees/${id}/mouvements`)}>
+                 <ClockHistory className="me-2" />
+                 Voir les mouvements
+               </Dropdown.Item>
+             </Dropdown.Menu>
+           </Dropdown>
+         </div>
+
+         <div className="d-flex justify-content-between align-items-start gap-4 flex-wrap">
+           <div style={{ maxWidth: "760px" }}>
+              <div className="d-flex align-items-center gap-3 mb-2">
+               <div className="bg-light rounded-circle p-2" style={{ width: "52px", height: "52px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                 <PersonFill size={28} className="text-primary" />
+               </div>
+               <div>
+                 <h1 className="h4 mb-1 fw-bold">{employe.prenom} {employe.nom}</h1>
+                 <div className="text-muted small">Fiche employé</div>
+               </div>
+             </div>
+             <div className="d-flex flex-wrap gap-2">
+               <Badge bg="light" text="dark" className="border px-3 py-2">{infosPro?.matricule || employe.matricule || "-"}</Badge>
+               <StatusBadge contrat={contratActuel} />
               {infosPro?.poste?.departement?.nom && (
                 <Badge bg="light" text="dark" className="border px-3 py-2 d-flex align-items-center gap-1">
                   <BuildingFill size={12} />
@@ -1678,48 +1762,23 @@ function EmployeeInfo() {
               {infosPro?.typeContrat?.intitule && (
                 <Badge bg="light" text="dark" className="border px-3 py-2">{infosPro.typeContrat.intitule}</Badge>
               )}
-            </div>
-          </div>
-        <div style={{ position: 'absolute', top: '20px', right: '20px', zIndex: 10 }}>
-          <Dropdown drop="down">
-            <Dropdown.Toggle variant="outline-primary" className="d-flex align-items-center gap-2">
-              <Download size={16} /> Actions
-            </Dropdown.Toggle>
-            <Dropdown.Menu style={{ zIndex: 1050 }}>
-              <Dropdown.Item onClick={() => handleExportPDF(employe.id)}>
-                <FileEarmarkTextFill className="me-2" />
-                Exporter en PDF
-              </Dropdown.Item>
-              <Dropdown.Divider />
-              <Dropdown.Item onClick={() => navigate(`/dashboard-RH/employees/${id}/conges`)}>
-                <CalendarFill className="me-2" />
-                Voir les demandes de congé
-              </Dropdown.Item>
-              <Dropdown.Item onClick={() => navigate(`/dashboard-RH/employees/${id}/absences`)}>
-                <CalendarFill className="me-2" />
-                Voir les absences
-              </Dropdown.Item>
-              <Dropdown.Item onClick={() => navigate(`/dashboard-RH/employees/${id}/soldesConges`)}>
-                <CalendarFill className="me-2" />
-                Voir les soldes de conge
-              </Dropdown.Item>
-              <Dropdown.Item onClick={() => navigate(`/dashboard-RH/employees/${id}/mouvements`)}>
-                <ClockHistory className="me-2" />
-                Voir les mouvements
-              </Dropdown.Item>
-            </Dropdown.Menu>
-          </Dropdown>
-        </div>
-        </div>
-      </Card.Body>
-    </Card>
+             </div>
+           </div>
+         </div>
+       </Card.Body>
+     </Card>
 
       {error && <Alert variant="danger" dismissible onClose={() => setError('')} className="mb-4"><ExclamationTriangleFill className="me-2" />{error}</Alert>}
       {success && <Alert variant="success" dismissible onClose={() => setSuccess('')} className="mb-4"><CheckCircleFill className="me-2" />{success}</Alert>}
 
-      <Card className="border mb-4 position-relative">
+      <Card className="employee-info__tabs-card border mb-4 position-relative">
         <Card.Body className="p-0">
-          <Tabs activeKey={activeKey} onSelect={(k) => setActiveKey(k)} className="border-0" fill>
+          <Tabs
+            activeKey={activeKey}
+            onSelect={(k) => setActiveKey(k)}
+            className="employee-info__tabs border-0"
+            fill
+          >
             <Tab eventKey="personnel" title={<span className="d-flex align-items-center gap-2"><PersonFill /> Personnel</span>}>
               <div className="p-3">
                 <InfoCard title="Informations personnelles" icon={PersonFill} onEdit={openPersonnelModal}>
@@ -1844,7 +1903,15 @@ function EmployeeInfo() {
                           <InfoPanel title="Conditions du contrat">
                             <InfoItem label="Date d'embauche" value={formatDate(infosPro?.dateEmbauche)} icon={CalendarFill} />
                             <InfoItem label="Date début d'assignation" value={formatDate(infosPro?.dateDebutAssignationPoste)} icon={ClockFill} />
-                            <InfoItem label="Date fin d'assignation" value={formatDate(infosPro?.dateFinAssignationPoste)} icon={ClockFill} />
+
+                            <div className="mt-2 rounded-3 p-2" style={{ background: '#fcf7fb', border: '1px solid #edd8ea' }}>
+                              <div className="fw-semibold mb-2" style={{ color: '#5c2458', fontSize: '0.9rem' }}>
+                                Sortie de l'employé
+                              </div>
+                              <InfoItem label="Date fin d'assignation" value={formatDate(infosPro?.dateFinAssignationPoste)} icon={ClockFill} />
+                              <InfoItem label="Date de débauche" value={formatDate(infosPro?.dateDebauche)} icon={CalendarFill} />
+                              <InfoItem label="Motif de départ" value={infosPro?.motifDepart} />
+                            </div>
                             <div className="rounded-3 px-3 py-2 mb-2" style={{ background: '#ffffff', border: '1px solid #f1e3ef' }}>
                               <small className="text-muted fw-semibold d-block mb-1">Type de contrat</small>
                               <ContratBadge typeContrat={infosPro?.typeContrat} />
@@ -1922,11 +1989,6 @@ function EmployeeInfo() {
             </Tab>
           </Tabs>
         </Card.Body>
-        <Card.Footer className="bg-white py-3">
-          <div className="d-flex justify-content-between">
-            <Button variant="outline-secondary" onClick={() => navigate(-1)} className="d-flex align-items-center gap-2"><ChevronLeft /> Retour</Button>
-          </div>
-        </Card.Footer>
       </Card>
 
       <PersonnelModal show={showPersonnelModal} onClose={() => setShowPersonnelModal(false)} personnelData={personnelData} onDataChange={handlePersonnelDataChange} onSave={savePersonnel} isSubmitting={isSubmittingPersonnel} etatsCivilOptions={etatsCivilOptions} sexes={sexes} nationalites={nationalites} regions={regions} />

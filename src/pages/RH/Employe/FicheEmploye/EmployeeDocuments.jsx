@@ -22,6 +22,7 @@ function EmployeeDocuments() {
     try {
       setLoading(true);
       const response = await axiosInstance.get(`/api/documents/employe/${id}`);
+
       const documentsData = response.data;
 
       if (documentsData.length > 0) {
@@ -30,17 +31,17 @@ function EmployeeDocuments() {
           id: firstDocument.employe.id,
           nom: firstDocument.employe.nom,
           prenom: firstDocument.employe.prenom,
-          matricule: firstDocument.employe.infosProfessionnelles?.matricule || 'N/A'
+          // matricule: firstDocument.employe.infosProfessionnelles?.matricule || 'N/A'
         }); 
       } else {
         try {
           const empResponse = await axiosInstance.get(`/api/employes/${id}`);
           const empData = empResponse.data;
           setEmployee({
-            id: empData.id,
-            nom: empData.nom,
-            prenom: empData.prenom,
-            matricule: empData.infosProfessionnelles?.matricule || 'N/A'
+            id: empData.employe.id,
+            nom: empData.employe.nom,
+            prenom: empData.employe.prenom,
+            matricule: empData.infosProfessionnelles[0]?.matricule || 'N/A'
           });
         } catch (empError) {
           console.error('Erreur lors de la récupération des infos employé:', empError);
@@ -192,21 +193,6 @@ function EmployeeDocuments() {
 
   return (
     <Container fluid className="py-4">
-      {/* Navigation avec breadcrumb */}
-      <Row className="mb-4">
-        <Col>
-          <Breadcrumb>
-            <Breadcrumb.Item onClick={() => navigate('/dashboard-RH/employees')} style={{ cursor: 'pointer' }}>
-              Employés
-            </Breadcrumb.Item>
-            <Breadcrumb.Item onClick={() => navigate(`/dashboard-RH/employees/${id}/personnel`)} style={{ cursor: 'pointer' }}>
-              {employee.prenom} {employee.nom}
-            </Breadcrumb.Item>
-            <Breadcrumb.Item active>Documents</Breadcrumb.Item>
-          </Breadcrumb>
-        </Col>
-      </Row>
-
       {/* En-tête avec bouton d'ajout */}
       <Row className="mb-4 align-items-center">
         <Col md={8}>
@@ -221,7 +207,7 @@ function EmployeeDocuments() {
             <div>
               <h1 className="h3 mb-1">Documents</h1>
               <p className="text-muted mb-0">
-                {employee.prenom} {employee.nom} • Matricule: {employee.matricule}
+                {employee.prenom} {employee.nom}
               </p>
             </div>
           </div>
@@ -249,7 +235,7 @@ function EmployeeDocuments() {
         <Col>
           <Card className="border">
             <Card.Body className="py-2">
-              <div className="d-flex align-items-center">
+              <div className="d-flex align-items-center justify-content-start flex-wrap w-100 gap-2">
                 <Filter size={16} className="me-2 text-muted" />
                 <span className="me-3 small fw-medium">Filtrer par :</span>
                 <ButtonGroup size="sm">

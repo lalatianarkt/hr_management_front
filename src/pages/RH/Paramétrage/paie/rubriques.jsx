@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Tag, PlusCircle, Search, CheckCircle, XCircle, Eye, Edit, Trash2, Calculator, Filter, ChevronDown, ChevronUp } from 'lucide-react';
-import axiosInstance from '../../../utils/AxiosInstance'; // Importer axiosInstance
+import axiosInstance from '../../../utils/AxiosInstance'; 
 
 const RubriquesPaiePage = () => {
   const [rubriques, setRubriques] = useState([]);
@@ -13,7 +13,7 @@ const RubriquesPaiePage = () => {
   const [modesCalcul, setModesCalcul] = useState([]);
   
   const [selectedIds, setSelectedIds] = useState([]);
-  const [selectAll, setSelectAll] = useState(false);
+  const [selectionMode, setSelectionMode] = useState(null); // 'activate' | 'deactivate' | null
   
   const [showModal, setShowModal] = useState(false);
   const [currentRubrique, setCurrentRubrique] = useState(null);
@@ -276,57 +276,115 @@ const RubriquesPaiePage = () => {
     return '-';
   };
 
+  const rubriquesById = useMemo(() => {
+    return new Map(rubriques.map(rubrique => [rubrique.id, rubrique]));
+  }, [rubriques]);
+
+  const selectedRubriques = useMemo(() => {
+    return selectedIds.map(id => rubriquesById.get(id)).filter(Boolean);
+  }, [selectedIds, rubriquesById]);
+
+  const selectedActiveIds = useMemo(() => {
+    return selectedRubriques.filter(rubrique => rubrique.estActif).map(rubrique => rubrique.id);
+  }, [selectedRubriques]);
+
+  const selectedInactiveIds = useMemo(() => {
+    return selectedRubriques.filter(rubrique => !rubrique.estActif).map(rubrique => rubrique.id);
+  }, [selectedRubriques]);
+
+  const effectiveSelectionMode = selectionMode ?? 'activate';
+  const selectableRubriques = useMemo(() => {
+    return rubriques.filter(rubrique => {
+      return effectiveSelectionMode === 'deactivate' ? !!rubrique.estActif : !rubrique.estActif;
+    });
+  }, [rubriques, effectiveSelectionMode]);
+
+  const allSelectableSelected = useMemo(() => {
+    return selectableRubriques.length > 0 && selectableRubriques.every(rubrique => selectedIds.includes(rubrique.id));
+  }, [selectableRubriques, selectedIds]);
+
   const handleSelectAll = (e) => {
-    setSelectAll(e.target.checked);
     if (e.target.checked) {
-      setSelectedIds(rubriques.map(r => r.id));
+      const idsToSelect = selectableRubriques.map(rubrique => rubrique.id);
+      setSelectedIds(idsToSelect);
+      if (!selectionMode) {
+        setSelectionMode(effectiveSelectionMode);
+      }
     } else {
       setSelectedIds([]);
+      setSelectionMode(null);
     }
   };
 
-  const handleSelectOne = (id) => {
-    if (selectedIds.includes(id)) {
-      setSelectedIds(selectedIds.filter(selectedId => selectedId !== id));
+  const handleSelectOne = (rubrique) => {
+    const rowMode = rubrique?.estActif ? 'deactivate' : 'activate';
+
+    if (selectionMode && selectionMode !== rowMode && !selectedIds.includes(rubrique.id)) {
+      return;
+    }
+
+    if (!selectionMode && selectedIds.length === 0) {
+      setSelectionMode(rowMode);
+    }
+
+    if (selectedIds.includes(rubrique.id)) {
+      const nextIds = selectedIds.filter(selectedId => selectedId !== rubrique.id);
+      setSelectedIds(nextIds);
+      if (nextIds.length === 0) {
+        setSelectionMode(null);
+      }
     } else {
-      setSelectedIds([...selectedIds, id]);
+      setSelectedIds([...selectedIds, rubrique.id]);
     }
   };
 
   const handleActivateSelected = async () => {
+    if (selectedInactiveIds.length === 0) {
+      alert('Sélectionnez des rubriques inactives à activer.');
+      return;
+    }
+
+    if (!window.confirm(`Activer ${selectedInactiveIds.length} rubrique(s) ?`)) return;
+    const countToActivate = selectedInactiveIds.length;
+
     try {
       await Promise.all(
-        selectedIds.map(id => 
+        selectedInactiveIds.map(id =>
           axiosInstance.put(`/api/rubriques-paie/${id}/activate`)
         )
       );
       fetchRubriquesWithSearch();
       setSelectedIds([]);
-      setSelectAll(false);
-      alert(`${selectedIds.length} rubrique(s) activée(s)`);
+      setSelectionMode(null);
+      alert(`${countToActivate} rubrique(s) activée(s)`);
     } catch (err) {
       alert('Erreur lors de l\'activation');
     }
   };
 
   const handleDeactivateSelected = async () => {
-    if (!window.confirm(`Désactiver ${selectedIds.length} rubrique(s) ?`)) return;
-    
+    if (selectedActiveIds.length === 0) {
+      alert('Sélectionnez des rubriques actives à désactiver.');
+      return;
+    }
+
+    if (!window.confirm(`Désactiver ${selectedActiveIds.length} rubrique(s) ?`)) return;
+    const countToDeactivate = selectedActiveIds.length;
+
     try {
       await Promise.all(
-        selectedIds.map(id => 
+        selectedActiveIds.map(id =>
           axiosInstance.put(`/api/rubriques-paie/${id}/deactivate`)
         )
       );
       fetchRubriquesWithSearch();
       setSelectedIds([]);
-      setSelectAll(false);
-      alert(`${selectedIds.length} rubrique(s) désactivée(s)`);
+      setSelectionMode(null);
+      alert(`${countToDeactivate} rubrique(s) désactivée(s)`);
     } catch (err) {
       alert('Erreur lors de la désactivation');
     }
   };
-
   const openEditModal = (rubrique) => {
     setCurrentRubrique({ 
       ...rubrique,
@@ -490,18 +548,19 @@ const RubriquesPaiePage = () => {
 
   return (
     <div className="container-fluid p-4 rubriques-page">
-      <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4 rubriques-header">
+      <div className="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4 rubriques-header">
         <div>
-          <h1 className="h3 mb-0">
-            <Tag className="me-2" size={24} />
+          <h1 className="h3 mb-1 d-flex align-items-center rubriques-title">
+            <Tag className="me-2" size={26} />
             Rubriques de paie
           </h1>
-          <p className="text-muted mb-0">
+          <p className="rubriques-subtitle mb-0">
             {totalElements} rubriques trouvées • {rubriquesActivesCount} actives
           </p>
         </div>
-        <button 
-          className="btn btn-primary d-flex align-items-center gap-2"
+
+        <button
+          className="btn rubriques-btn-primary d-flex align-items-center gap-2"
           onClick={openCreateModal}
         >
           <PlusCircle size={18} />
@@ -512,8 +571,8 @@ const RubriquesPaiePage = () => {
       <div className="card mb-4 rubriques-filters">
         <div className="card-body">
           {/* Ligne 1: Recherche et filtres principaux */}
-          <div className="row g-3 mb-0 rubriques-filters-main">
-            <div className="col-md-4 col-lg-4">
+          <div className="row g-3 align-items-end rubriques-filters-main">
+            <div className="col-12 col-lg-4">
               <div className="input-group rubriques-search">
                 <span className="input-group-text">
                   <Search size={16} />
@@ -535,30 +594,9 @@ const RubriquesPaiePage = () => {
                   </button>
                 )}
               </div>
-
-              <div className="rubriques-bulk-actions mt-2">
-                <button
-                  className="btn btn-success"
-                  onClick={handleActivateSelected}
-                  disabled={selectedIds.length === 0}
-                  title="Activer les sélectionnées"
-                >
-                  <CheckCircle size={16} />
-                  <span className="d-none d-xl-inline">Activer</span>
-                </button>
-                <button
-                  className="btn btn-warning"
-                  onClick={handleDeactivateSelected}
-                  disabled={selectedIds.length === 0}
-                  title="Désactiver les sélectionnées"
-                >
-                  <XCircle size={16} />
-                  <span className="d-none d-xl-inline">Désactiver</span>
-                </button>
-              </div>
             </div>
 
-            <div className="col-md-2 col-lg-2">
+            <div className="col-12 col-sm-6 col-lg-2">
               <select
                 className="form-select"
                 value={filters.type}
@@ -573,7 +611,7 @@ const RubriquesPaiePage = () => {
               </select>
             </div>
 
-            <div className="col-md-2 col-lg-2">
+            <div className="col-12 col-sm-6 col-lg-2">
               <select
                 className="form-select"
                 value={filters.categorie}
@@ -588,7 +626,7 @@ const RubriquesPaiePage = () => {
               </select>
             </div>
 
-            <div className="col-md-2 col-lg-2">
+            <div className="col-12 col-sm-6 col-lg-2">
               <select
                 className="form-select"
                 value={filters.actif}
@@ -600,9 +638,9 @@ const RubriquesPaiePage = () => {
               </select>
             </div>
 
-            <div className="col-md-2 col-lg-2">
+            <div className="col-12 col-sm-6 col-lg-2">
               <button
-                className="btn btn-outline-primary rubriques-advanced-toggle w-100"
+                className="btn btn-outline-primary rubriques-advanced-toggle w-100 d-flex align-items-center justify-content-center gap-2"
                 onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
               >
                 <Filter size={16} />
@@ -613,8 +651,9 @@ const RubriquesPaiePage = () => {
           </div>
     {/* Ligne 2: Filtres avancés (conditionnel) */}
     {showAdvancedFilters && (
-      <div className="row g-3 mt-3 pt-3 border-top rubriques-advanced">
-        <div className="col-md-2 col-sm-6">
+      <div className="rubriques-advanced-panel mt-3">
+      <div className="row g-3 rubriques-advanced">
+        <div className="col-12 col-sm-6 col-lg-2">
           <label className="form-label small text-muted mb-1">Imposable</label>
           <select 
             className="form-select form-select-sm"
@@ -627,7 +666,7 @@ const RubriquesPaiePage = () => {
           </select>
         </div>
         
-        <div className="col-md-2 col-sm-6">
+        <div className="col-12 col-sm-6 col-lg-2">
           <label className="form-label small text-muted mb-1">Cotisations</label>
           <select 
             className="form-select form-select-sm"
@@ -640,7 +679,7 @@ const RubriquesPaiePage = () => {
           </select>
         </div>
 
-        <div className="col-md-2 col-sm-6">
+        <div className="col-12 col-sm-6 col-lg-2">
           <label className="form-label small text-muted mb-1">Déductible IRSA</label>
           <select 
             className="form-select form-select-sm"
@@ -653,8 +692,8 @@ const RubriquesPaiePage = () => {
           </select>
         </div>
         
-        <div className="col-md-6 col-sm-12">
-          <div className="d-flex align-items-end justify-content-end gap-2 h-100">
+        <div className="col-12 col-lg-6">
+          <div className="d-flex flex-wrap align-items-end justify-content-lg-end gap-2 h-100 rubriques-advanced-actions">
             <button 
               className="btn btn-sm btn-outline-secondary"
               onClick={() => {
@@ -679,7 +718,34 @@ const RubriquesPaiePage = () => {
           </div>
         </div>
       </div>
+      </div>
     )}
+
+    <div className="rubriques-bulk-bar mt-3">
+      <button
+        className="btn btn-sm rubriques-bulk-btn rubriques-bulk-btn-success"
+        onClick={handleActivateSelected}
+        disabled={selectedInactiveIds.length === 0}
+      >
+        <CheckCircle size={15} />
+        <span>Activer</span>
+      </button>
+
+      <button
+        className="btn btn-sm rubriques-bulk-btn rubriques-bulk-btn-warning"
+        onClick={handleDeactivateSelected}
+        disabled={selectedActiveIds.length === 0}
+      >
+        <XCircle size={15} />
+        <span>Désactiver</span>
+      </button>
+
+      {selectedIds.length > 0 && (
+        <span className="rubriques-selected-pill">
+          {selectedIds.length} {selectionMode === 'deactivate' ? 'active(s)' : 'inactive(s)'} sélectionnée(s)
+        </span>
+      )}
+    </div>
 
     {/* Ligne 3: Pagination et infos */}
     <div className="row mt-3 align-items-center rubriques-meta">
@@ -742,7 +808,7 @@ const RubriquesPaiePage = () => {
                       <input
                         className="form-check-input"
                         type="checkbox"
-                        checked={selectAll}
+                        checked={allSelectableSelected}
                         onChange={handleSelectAll}
                       />
                     </div>
@@ -793,7 +859,7 @@ const RubriquesPaiePage = () => {
                   rubriques.map((rubrique) => (
                     <tr 
                       key={rubrique.id}
-                      className={!rubrique.estActif ? 'table-secondary' : ''}
+                      className={!rubrique.estActif ? 'rubrique-inactive-row' : ''}
                     >
                       <td>
                         <div className="form-check">
@@ -801,7 +867,12 @@ const RubriquesPaiePage = () => {
                             className="form-check-input"
                             type="checkbox"
                             checked={selectedIds.includes(rubrique.id)}
-                            onChange={() => handleSelectOne(rubrique.id)}
+                            disabled={
+                              selectionMode &&
+                              selectionMode !== (rubrique.estActif ? 'deactivate' : 'activate') &&
+                              !selectedIds.includes(rubrique.id)
+                            }
+                            onChange={() => handleSelectOne(rubrique)}
                           />
                         </div>
                       </td>
@@ -819,7 +890,7 @@ const RubriquesPaiePage = () => {
                       </td>
                       
                       <td>
-                        <span className={`badge bg-${getTypeColor(extractId(rubrique.type))}`}>
+                        <span className={`badge rubriques-type-badge rubriques-type-${(extractId(rubrique.type) || '').toLowerCase()}`}>
                           {extractLibelle(rubrique.type)}
                         </span>
                       </td>
@@ -868,7 +939,7 @@ const RubriquesPaiePage = () => {
                       
                       <td>
                         {rubrique.modeCalcul ? (
-                          <span className="badge bg-info">
+                          <span className="badge rubriques-mode-badge">
                             {rubrique.modeCalcul}
                           </span>
                         ) : (
@@ -878,9 +949,9 @@ const RubriquesPaiePage = () => {
                       
                       <td>
                         {rubrique.formule ? (
-                          <div className="d-flex align-items-center">
-                            <Calculator className="text-success me-2" size={16} />
-                            <span className="text-primary fw-medium rubrique-formule-text" title={formatFormule(rubrique.formule)}>
+                          <div className="d-flex align-items-center rubrique-formule-box">
+                            <Calculator className="me-2 rubrique-formule-icon" size={16} />
+                            <span className="rubrique-formule-text" title={formatFormule(rubrique.formule)}>
                               {formatFormule(rubrique.formule)}
                             </span>
                           </div>
@@ -898,8 +969,10 @@ const RubriquesPaiePage = () => {
                             onChange={async (e) => {
                               try {
                                 if (e.target.checked) {
+                                  if (!window.confirm(`Activer la rubrique "${rubrique.code}" ?`)) return;
                                   await axiosInstance.patch(`/api/rubriques-paie/${rubrique.id}/activate`);
                                 } else {
+                                  if (!window.confirm(`Désactiver la rubrique "${rubrique.code}" ?`)) return;
                                   await axiosInstance.patch(`/api/rubriques-paie/${rubrique.id}/deactivate`);
                                 }
                                 fetchRubriquesWithSearch();
@@ -924,21 +997,23 @@ const RubriquesPaiePage = () => {
                       <td className="text-end">
                         <div className="btn-group btn-group-sm rubriques-table-actions">
                           <button
-                            className="btn btn-outline-info"
+                            className="btn rubriques-action-btn rubriques-action-view"
                             onClick={() => openViewModal(rubrique)}
                             title="Voir détails"
                           >
                             <Eye size={14} />
                           </button>
+
                           <button
-                            className="btn btn-outline-primary"
+                            className="btn rubriques-action-btn rubriques-action-edit"
                             onClick={() => openEditModal(rubrique)}
                             title="Modifier"
                           >
                             <Edit size={14} />
                           </button>
+
                           <button
-                            className="btn btn-outline-danger"
+                            className="btn rubriques-action-btn rubriques-action-delete"
                             onClick={async () => {
                               if (window.confirm(`Supprimer la rubrique ${rubrique.code} ?`)) {
                                 try {
@@ -1065,8 +1140,8 @@ const RubriquesPaiePage = () => {
 
       {/* MODAL avec modal_perso */}
       {showModal && (
-        <div className="modal_perso">
-          <div className="modal-dialog-custom" style={{ maxWidth: '900px', width: '95%' }}>
+        <div className="modal_perso rubriques-modal">
+          <div className="modal-dialog-custom">
             <div className="modal-content-custom" style={{ 
               background: 'white', 
               border: '1px solid #e1b2db',
@@ -1101,7 +1176,6 @@ const RubriquesPaiePage = () => {
               <div className="modal-body-custom" style={{ 
                 maxHeight: '70vh', 
                 overflowY: 'auto', 
-                padding: '1.5rem',
                 background: 'white'
               }}>
                 <RubriqueForm 
@@ -1141,7 +1215,7 @@ const RubriquesPaiePage = () => {
                   {modalType !== 'view' && (
                     <button
                       type="button"
-                      className="btn btn-primary"
+                      className="btn btn-link p-0 border-0 text-decoration-none rubriques-sort-btn"
                       onClick={saveRubrique}
                       style={{ padding: '0.5rem 1rem' }}
                     >

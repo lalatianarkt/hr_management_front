@@ -213,7 +213,7 @@ const ValidationInscription = () => {
           )}
 
           <div className="mb-5">
-            <label className="form-label small fw-bold text-uppercase ms-1" style={{ color: 'var(--color-text-muted)', letterSpacing: '0.5px' }}>Code de Confirmation</label>
+            <label className="form-label small fw-bold text-uppercase ms-1" style={{ color: 'var(--color-text-muted)', letterSpacing: '0.5px' }}>Code de Validation Gmail</label>
             <div className="input-group">
               <span className="input-group-text bg-light border-0 px-3" style={{ borderRadius: '15px 0 0 15px' }}>
                 <i className="bi bi-shield-lock text-muted"></i>
@@ -222,10 +222,12 @@ const ValidationInscription = () => {
                 type="text"
                 className="form-control bg-light border-0 py-3 text-center fw-bold"
                 value={token}
-                onChange={(e) => setToken(e.target.value)}
-                placeholder="Code"
+                onChange={(e) => setToken(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                placeholder="Code Gmail"
                 required
-                maxLength="40"
+                inputMode="numeric"
+                pattern="\d{6}"
+                maxLength="6"
                 disabled={isConfirmed}
                 style={{ boxShadow: 'none', borderRadius: '0 15px 15px 0', fontSize: '20px', letterSpacing: '2px' }}
               />

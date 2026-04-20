@@ -512,8 +512,10 @@ const ManagerList = () => {
               size="sm"
               onClick={() => handleViewDetails(manager)}
               className="px-2"
-              aria-label="Voir détails"
+              
             >
+
+            {/* aria-label="Voir détails" */}
               <FaEye size={12} />
             </Button>
             {manager.statutManager === 0 && (
@@ -522,10 +524,13 @@ const ManagerList = () => {
                 size="sm"
                 onClick={() => handleOpenArchive(manager)}
                 className="px-2"
-                aria-label="Archiver"
+                
               >
                 <FaArchive size={12} />
               </Button>
+
+              // aria-label="Archiver"
+              
             )}
           </div>
         </td>

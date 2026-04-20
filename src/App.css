@@ -391,7 +391,7 @@
 .card,
 .ant-card,
 .MuiCard-root {
-  background-color: #ffffff !important;
+  background-color: #ffffff;
   border: 1px solid rgba(0, 0, 0, 0.06) !important;
   border-radius: 20px !important;
   padding: 1.75rem;
@@ -432,6 +432,13 @@
   background: rgba(255, 255, 255, 0.1);
   border-radius: 50%;
   filter: blur(50px);
+}
+
+/* RubriqueFormule: preserve gradient header card */
+.rubrique-formule-header-card {
+  background: linear-gradient(135deg, #f6edf7 0%, #f3e6f5 100%) !important;
+  background-color: #f6edf7 !important;
+  color: #3a1438 !important;
 }
 
 /* Bulletin Paie hero card: keep intended gradient background */
@@ -757,11 +764,18 @@ small,
   border-top: 1px solid #f9f1f8 !important;
 }
 
+/* Modal backdrop - match model.png (darker + blur) */
+.modal-backdrop {
+  background-color: rgba(58, 20, 56, 0.35) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
 .modal-backdrop.show {
-  background-color: var(--color-dark) !important;
-  opacity: 0.4 !important;
-  backdrop-filter: blur(8px) !important;
-  -webkit-backdrop-filter: blur(8px) !important;
+  background-color: rgba(58, 20, 56, 0.35) !important;
+  opacity: 1 !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
 }
 
 .modal.fade .modal-dialog {
@@ -797,16 +811,16 @@ small,
   padding: 2rem !important;
 }
 
-/* Hide nav when modal is open */
+/* Keep header/sidebar visible when modal is open */
 body.ant-modal-open .app-sidebar,
 body.modal-open .app-sidebar,
 body.ant-modal-open .app-header,
 body.modal-open .app-header,
 body.ant-modal-open .sidebar-overlay,
 body.modal-open .sidebar-overlay {
-  visibility: hidden !important;
-  opacity: 0 !important;
-  pointer-events: none !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
 }
 
 /* ==================== TABLES ==================== */
@@ -1112,7 +1126,7 @@ h5.text-primary,
 }
 
 /* Time entry icons - brand purple instead of blue */
-.card-body svg,
+/* .card-body svg, */
 .card-body .text-warning svg,
 .card-body .text-info svg {
   color: #b053ad !important;
@@ -1262,9 +1276,11 @@ button.btn-primary {
   color: #ffffff !important;
 }
 
-/* Modal backdrop */
-.modal-backdrop {
-  background-color: rgba(58, 20, 56, 0.4) !important;
+/* Ant Design modal backdrop - align with Bootstrap modal backdrop */
+.ant-modal-mask {
+  background-color: rgba(58, 20, 56, 0.35) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
 }
 
 /* Remove all blue from icons */
@@ -1680,6 +1696,15 @@ a:hover {
   width: 100%;
   max-width: 900px;
   margin: auto;
+}
+
+.rubriques-modal .modal-dialog-custom {
+  max-width: 1150px !important;
+  width: 98% !important;
+}
+
+.rubriques-modal .modal-body-custom {
+  padding: 1.75rem !important;
 }
 
 .modal-content-custom {

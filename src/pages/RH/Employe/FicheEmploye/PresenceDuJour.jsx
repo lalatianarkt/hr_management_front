@@ -36,7 +36,7 @@ import {
   FaClock,
   FaInfoCircle
 } from 'react-icons/fa';
-import axiosInstance from '../../../utils/AxiosInstance'; // Import d'axiosInstance
+import axiosInstance from '../../../utils/AxiosInstance'; 
 
 function Pointages() {
   const navigate = useNavigate();
@@ -737,7 +737,6 @@ function Pointages() {
                           onClick={() => handleOpenDetails(pointage)}
                         >
                           <Eye size={14} />
-                          Voir détails
                         </Button>
                       </td>
                     </tr>

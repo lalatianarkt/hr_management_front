@@ -8,7 +8,7 @@ import {
   Dialog, DialogTitle, DialogContent, DialogActions,
   Pagination, PaginationItem as MuiPaginationItem,
   InputAdornment, ToggleButton, ToggleButtonGroup,
-  Autocomplete
+  Autocomplete, Tab, Tabs
 } from '@mui/material';
 import {
   ArrowBack, CheckCircle, Cancel,
@@ -19,7 +19,8 @@ import {
   ViewList, ViewModule,
   NavigateBefore, NavigateNext,
   ChevronLeft, ChevronRight,
-  Business, Badge, HourglassEmpty, TaskAlt, Block, VerifiedUser
+  Business, Badge, HourglassEmpty, TaskAlt, Block, VerifiedUser,
+  AddCircleOutline, EventBusy
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { DemoContainer } from '@mui/x-date-pickers/internals/demo';
@@ -39,6 +40,9 @@ const localizer = dayjsLocalizer(dayjs);
 
 const SuiviConges = () => {
   const navigate = useNavigate();
+  
+  // État pour l'onglet actif (0 = Congés, 1 = Absences)
+  const [activeTab, setActiveTab] = useState(0);
   
   // États pour les données
   const [demandes, setDemandes] = useState([]);
@@ -116,6 +120,15 @@ const SuiviConges = () => {
     '&.Mui-selected:hover': {
       bgcolor: 'var(--bg-primary)',
       opacity: 0.9
+    }
+  };
+
+  // Fonction pour naviguer vers la page d'ajout de demande
+  const handleAjouterDemande = () => {
+    if (activeTab === 0) {
+      navigate('/dashboard-RH/conges/ajouter');
+    } else {
+      navigate('/dashboard-RH/absences/ajouter');
     }
   };
 
@@ -363,6 +376,14 @@ const SuiviConges = () => {
     refuseRH: demandes.filter(d => d.statut === 7).length
   };
 
+  // Données factices pour les absences (pour le test)
+  const absencesData = {
+    enAttente: 0,
+    validees: 0,
+    refusees: 0,
+    total: 0
+  };
+
   // Préparer les événements pour le calendrier
   const prepareCalendarEvents = () => {
     return filteredDemandes.map(demande => {
@@ -546,6 +567,10 @@ const SuiviConges = () => {
     setCalendarDate(newDate);
   };
 
+  const handleTabChange = (event, newValue) => {
+    setActiveTab(newValue);
+  };
+
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
@@ -560,70 +585,185 @@ const SuiviConges = () => {
   return (
     <Box p={3}>
       {/* En-tête */}
-      <Card sx={{ mb: 3, borderRadius: '20px', border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 10px 24px rgba(0,0,0,0.04)' }}>
-        <CardContent>
-          <Grid container alignItems="center" spacing={2}>
-            <Grid item>
+      <Card
+        sx={{
+          mb: 3,
+          borderRadius: '20px',
+          border: '1px solid rgba(176, 83, 173, 0.14)',
+          boxShadow: '0 10px 24px rgba(176, 83, 173, 0.08)',
+          background: 'linear-gradient(135deg, #fff 0%, #fcf8fc 100%)'
+        }}
+      >
+        <CardContent sx={{ px: { xs: 2, md: 3 }, py: 3 }}>
+          {/* Ligne 1 : Flèche retour + Titre + Bouton Ajouter */}
+          <Box display="flex" alignItems="center" justifyContent="space-between" mb={3}>
+            <Box display="flex" alignItems="center" gap={2}>
               <IconButton
                 onClick={() => navigate(-1)}
-                sx={{ color: 'var(--bg-primary)' }}
+                sx={{
+                  color: 'var(--bg-primary)',
+                  bgcolor: 'rgba(176, 83, 173, 0.08)',
+                  border: '1px solid rgba(176, 83, 173, 0.16)',
+                  '&:hover': {
+                    bgcolor: 'rgba(176, 83, 173, 0.14)'
+                  }
+                }}
               >
                 <ArrowBack />
               </IconButton>
-            </Grid>
-            <Grid item xs>
-              <Typography variant="h4" component="h1" gutterBottom>
-                <CalendarMonth sx={{ mr: 1, verticalAlign: 'middle' }} />
-                Suivi des Congés
-              </Typography>
               
-              <Box display="flex" alignItems="center" flexWrap="wrap" gap={2} mt={1}>
-                <Chip
-                  label={`${stats.enAttenteManager} en attente Manager`}
-                  variant="outlined"
-                  sx={{ bgcolor: 'rgba(176, 83, 173, 0.08)', color: 'var(--bg-primary)' }}
-                  icon={<HourglassEmpty />}
+              <Box display="flex" alignItems="center" gap={1}>
+                {activeTab === 0 ? (
+                  <CalendarMonth sx={{ color: 'var(--bg-primary)', fontSize: 32 }} />
+                ) : (
+                  <EventBusy sx={{ color: 'var(--bg-primary)', fontSize: 32 }} />
+                )}
+                <Typography
+                  variant="h4"
+                  sx={{
+                    fontWeight: 700,
+                    fontSize: { xs: '1.6rem', md: '2.1rem' }
+                  }}
+                >
+                  {activeTab === 0 ? 'Suivi des Congés' : 'Suivi des Absences'}
+                </Typography>
+              </Box>
+            </Box>
+
+            {/* Bouton Ajouter à droite */}
+            <Button
+              variant="contained"
+              onClick={handleAjouterDemande}
+              startIcon={<AddCircleOutline />}
+              sx={{
+                borderRadius: '12px',
+                px: 2.5,
+                py: 1,
+                textTransform: 'none',
+                fontWeight: 700,
+                bgcolor: 'var(--bg-primary)',
+                boxShadow: '0 6px 16px rgba(176, 83, 173, 0.25)',
+                '&:hover': {
+                  bgcolor: 'var(--bg-primary)',
+                  opacity: 0.9
+                }
+              }}
+            >
+              Ajouter une demande
+            </Button>
+          </Box>
+
+          {/* Onglets */}
+          <Box sx={{ borderBottom: 1, borderColor: 'rgba(176, 83, 173, 0.25)', mb: 2 }}>
+            <Tabs
+              value={activeTab}
+              onChange={handleTabChange}
+              aria-label="onglets congés et absences"
+              sx={{
+                minHeight: 44,
+                '& .MuiTabs-indicator': {
+                  backgroundColor: 'var(--bg-primary)',
+                  height: 3,
+                  borderRadius: 3
+                },
+                '& .MuiTab-root': {
+                  minHeight: 44,
+                  textTransform: 'none',
+                  fontWeight: 700,
+                  color: '#64748b',
+                  px: 2,
+                  borderRadius: '12px 12px 0 0',
+                  '&:hover': { color: 'var(--bg-primary)' }
+                },
+                '& .MuiTab-root.Mui-selected': { color: 'var(--bg-primary)' },
+                '& .MuiTab-root .MuiSvgIcon-root': { color: 'inherit' }
+              }}
+            >
+              <Tab 
+                label="Suivi des Congés" 
+                icon={<CalendarMonth />} 
+                iconPosition="start"
+                sx={{ textTransform: 'none', fontWeight: 700 }}
+              />
+              <Tab 
+                label={`Absences (${absencesData.total})`} 
+                icon={<EventBusy />} 
+                iconPosition="start"
+                sx={{ textTransform: 'none', fontWeight: 700 }}
+              />
+            </Tabs>
+          </Box>
+
+          {/* Ligne 2 : Statuts + Actualiser (uniquement pour l'onglet Congés) */}
+          {activeTab === 0 && (
+            <Box
+              display="flex"
+              alignItems="center"
+              justifyContent="space-between"
+              flexWrap="wrap"
+              gap={2}
+            >
+              {/* Statuts */}
+              <Box display="flex" gap={1} flexWrap="wrap">
+                <Chip 
+                  label={`${stats.enAttenteManager} en attente`}
+                  sx={{ bgcolor: 'rgba(255, 152, 0, 0.1)', color: '#ed6c02', fontWeight: 500 }}
                 />
-                <Chip
-                  label={`${stats.valideManager} validés Manager`}
-                  variant="outlined"
-                  sx={{ bgcolor: 'rgba(176, 83, 173, 0.08)', color: 'var(--bg-primary)' }}
-                  icon={<TaskAlt />}
+                <Chip 
+                  label={`${stats.valideManager} validés`}
+                  sx={{ bgcolor: 'rgba(2, 136, 209, 0.1)', color: '#0288d1', fontWeight: 500 }}
                 />
-                <Chip
+                <Chip 
                   label={`${stats.acquis} acquis`}
-                  variant="outlined"
-                  sx={{ bgcolor: 'rgba(176, 83, 173, 0.08)', color: 'var(--bg-primary)' }}
-                  icon={<CheckCircle />}
+                  sx={{ bgcolor: 'rgba(76, 175, 80, 0.1)', color: '#2e7d32', fontWeight: 500 }}
                 />
-                <Chip
+                <Chip 
                   label={`${stats.valideRH} validés RH`}
-                  variant="outlined"
-                  sx={{ bgcolor: 'rgba(176, 83, 173, 0.08)', color: 'var(--bg-primary)' }}
-                  icon={<VerifiedUser />}
+                  sx={{ bgcolor: 'rgba(33, 150, 243, 0.1)', color: '#1976d2', fontWeight: 500 }}
                 />
-                <Chip
+                <Chip 
                   label={`${stats.refuseRH} refusés`}
-                  variant="outlined"
-                  sx={{ bgcolor: 'rgba(176, 83, 173, 0.08)', color: 'var(--bg-primary)' }}
-                  icon={<Cancel />}
+                  sx={{ bgcolor: 'rgba(244, 67, 54, 0.1)', color: '#d32f2f', fontWeight: 500 }}
                 />
               </Box>
-            </Grid>
-            <Grid item>
-              <Stack direction="row" spacing={1}>
-                <Tooltip title="Actualiser">
-                  <IconButton
-                    onClick={chargerDonneesInitiales}
-                    sx={{ color: 'var(--bg-primary)' }}
-                    disabled={loading}
-                  >
-                    <Refresh />
-                  </IconButton>
-                </Tooltip>
-              </Stack>
-            </Grid>
-          </Grid>
+
+              {/* Bouton Actualiser */}
+              <Button
+                variant="outlined"
+                onClick={chargerDonneesInitiales}
+                startIcon={<Refresh />}
+                sx={{
+                  borderRadius: '10px',
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  color: 'var(--bg-primary)',
+                  borderColor: 'rgba(176,83,173,0.3)',
+                  '&:hover': {
+                    borderColor: 'var(--bg-primary)',
+                    bgcolor: 'rgba(176,83,173,0.04)'
+                  }
+                }}
+              >
+                Actualiser
+              </Button>
+            </Box>
+          )}
+
+          {/* Message pour l'onglet Absences */}
+          {activeTab === 1 && (
+            <Box
+              display="flex"
+              alignItems="center"
+              justifyContent="center"
+              py={4}
+            >
+              <Alert severity="info" icon={<EventBusy />}>
+                <Typography variant="body1">
+                  Module Absences en cours de développement. (Test - 0 absence pour le moment)
+                </Typography>
+              </Alert>
+            </Box>
+          )}
         </CardContent>
       </Card>
 
@@ -639,504 +779,628 @@ const SuiviConges = () => {
         </Alert>
       )}
 
-      {/* Filtres */}
-      <Card sx={{ mb: 3 }}>
-        <CardContent>
-          <Typography variant="h6" gutterBottom>
-            <FilterList sx={{ mr: 1, verticalAlign: 'middle' }} />
-            Filtres
-          </Typography>
-          
-          <Grid container spacing={2} alignItems="center">
-            <Grid item xs={12} md={2}>
-              <FormControl fullWidth size="small">
-                <InputLabel>Statut</InputLabel>
-                <Select
-                  value={filters.statut}
-                  label="Statut"
-                  name="statut"
-                  onChange={handleFilterChange}
-                >
-                  <MenuItem value="">Tous les statuts</MenuItem>
-                  <MenuItem value="0">En attente Manager</MenuItem>
-                  <MenuItem value="1">Validé par Manager</MenuItem>
-                  <MenuItem value="2">Validé par Manager</MenuItem>
-                  <MenuItem value="4">Annulé par RH/Manager</MenuItem>
-                  <MenuItem value="5">Acquis/Terminé</MenuItem>
-                  <MenuItem value="6">Validé par RH</MenuItem>
-                  <MenuItem value="7">Refusé par RH</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-            
-            <Grid item xs={12} md={2}>
-              <TextField
-                fullWidth
-                size="small"
-                label="Matricule"
-                value={matriculeInput}
-                onChange={handleMatriculeInputChange}
-                placeholder="Entrez un matricule"
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <Badge fontSize="small" />
-                    </InputAdornment>
-                  ),
-                }}
-              />
-            </Grid>
-            
-            <Grid item xs={12} md={2}>
-              <FormControl fullWidth size="small">
-                <InputLabel>Département</InputLabel>
-                <Select
-                  value={filters.idDepartement}
-                  label="Département"
-                  name="idDepartement"
-                  onChange={handleFilterChange}
-                >
-                  <MenuItem value="">Tous les départements</MenuItem>
-                  {departements.map(dept => (
-                    <MenuItem key={dept.id} value={dept.id}>
-                      {dept.nom}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-            
-            <Grid item xs={12} md={2}>
-              <FormControl fullWidth size="small">
-                <InputLabel>Période</InputLabel>
-                <Select
-                  value={filters.periode}
-                  label="Période"
-                  name="periode"
-                  onChange={handleFilterChange}
-                >
-                  <MenuItem value="7jours">7 derniers jours</MenuItem>
-                  <MenuItem value="30jours">30 derniers jours</MenuItem>
-                  <MenuItem value="90jours">90 derniers jours</MenuItem>
-                  <MenuItem value="personnalise">Période personnalisée</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-            
-            {filters.periode === 'personnalise' && (
-              <>
-                <Grid item xs={12} md={2}>
-                  <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="fr">
-                    <DatePicker
-                      label="Date début"
-                      value={filters.dateDebut}
-                      onChange={(newValue) => setFilters(prev => ({ ...prev, dateDebut: newValue }))}
-                      format="DD/MM/YYYY"
-                      slotProps={{ textField: { size: 'small', fullWidth: true } }}
-                    />
-                  </LocalizationProvider>
-                </Grid>
-                <Grid item xs={12} md={2}>
-                  <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="fr">
-                    <DatePicker
-                      label="Date fin"
-                      value={filters.dateFin}
-                      onChange={(newValue) => setFilters(prev => ({ ...prev, dateFin: newValue }))}
-                      format="DD/MM/YYYY"
-                      slotProps={{ textField: { size: 'small', fullWidth: true } }}
-                    />
-                  </LocalizationProvider>
-                </Grid>
-              </>
-            )}
-            
-            <Grid item xs={12} md={2}>
-              <Stack direction="row" spacing={1}>
-                <Button
-                  fullWidth
-                  variant="contained"
-                  onClick={appliquerFiltres}
-                  disabled={loading}
-                  sx={unifiedButtonContainedSx}
-                >
-                  Appliquer
-                </Button>
-                <Button
-                  fullWidth
-                  variant="outlined"
-                  onClick={reinitialiserFiltres}
-                  sx={unifiedButtonOutlinedSx}
-                >
-                  Réinitialiser
-                </Button>
-              </Stack>
-            </Grid>
-          </Grid>
-          
-          <Box mt={2}>
-            <Typography variant="caption" color="textSecondary">
-              Affichage de {filteredDemandes.length} demandes sur {demandes.length}
-            </Typography>
-          </Box>
-        </CardContent>
-      </Card>
-
-      {/* Sélecteur de vue */}
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-        <Typography variant="subtitle1" fontWeight="medium">
-          {viewMode === 'calendar' ? 'Vue Calendrier' : 'Vue Liste'} 
-          <Typography component="span" variant="body2" color="textSecondary" sx={{ ml: 1 }}>
-            ({filteredDemandes.length} demandes)
-          </Typography>
-        </Typography>
-        <ToggleButtonGroup
-          value={viewMode}
-          exclusive
-          onChange={(e, newView) => newView && setViewMode(newView)}
-          size="small"
-        >
-          <ToggleButton value="calendar" sx={unifiedToggleButtonSx}>
-            <ViewModule sx={{ mr: 1 }} />
-            Calendrier
-          </ToggleButton>
-          <ToggleButton value="list" sx={unifiedToggleButtonSx}>
-            <ViewList sx={{ mr: 1 }} />
-            Liste
-          </ToggleButton>
-        </ToggleButtonGroup>
-      </Box>
-
-      {/* Vue Calendrier */}
-      {viewMode === 'calendar' && (
-        <Card>
-          <CardContent>
-            <Box display="flex" justifyContent="space-between" alignItems="center" mb={2} p={1} bgcolor="var(--brand-50)" borderRadius={1}>
-              <Stack direction="row" spacing={1}>
-                <Button
-                  variant="outlined"
-                  size="small"
-                  onClick={goToToday}
-                  startIcon={<Today />}
-                  sx={unifiedButtonOutlinedSx}
-                >
-                  Aujourd'hui
-                </Button>
-                <IconButton onClick={goToPrevious} size="small">
-                  <ChevronLeft />
-                </IconButton>
-                <IconButton onClick={goToNext} size="small">
-                  <ChevronRight />
-                </IconButton>
-              </Stack>
-              
-              <Typography variant="h6" fontWeight="medium">
-                {calendarView === Views.MONTH && dayjs(calendarDate).format('MMMM YYYY')}
-                {calendarView === Views.WEEK && `Semaine du ${dayjs(calendarDate).startOf('week').format('DD/MM/YYYY')}`}
-                {calendarView === Views.DAY && dayjs(calendarDate).format('dddd DD MMMM YYYY')}
+      {/* Afficher le contenu uniquement pour l'onglet Congés */}
+      {activeTab === 0 && (
+        <>
+          {/* Filtres */}
+          <Card
+            sx={{
+              mb: 3,
+              borderRadius: '18px',
+              border: '1px solid rgba(176, 83, 173, 0.12)',
+              boxShadow: '0 10px 24px rgba(176, 83, 173, 0.05)',
+              overflow: 'hidden'
+            }}
+          >
+            <Box
+              sx={{
+                px: 2.5,
+                py: 1.5,
+                bgcolor: '#fcf7fb',
+                borderBottom: '1px solid rgba(176, 83, 173, 0.12)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1
+              }}
+            >
+              <FilterList sx={{ color: 'var(--bg-primary)' }} />
+              <Typography variant="subtitle1" sx={{ fontWeight: 800, color: '#3a1438' }}>
+                Filtres
               </Typography>
+            </Box>
+
+            <CardContent sx={{ p: 2.5 }}>
               
-              <ToggleButtonGroup
-                value={calendarView}
-                exclusive
-                onChange={(e, newView) => newView && handleViewChange(newView)}
-                size="small"
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexWrap: { xs: 'wrap', md: 'nowrap' },
+                  gap: 2,
+                  alignItems: 'center',
+                  overflowX: { md: 'auto' },
+                  pb: { md: 0.5 }
+                }}
               >
-                <ToggleButton value={Views.MONTH} sx={unifiedToggleButtonSx}>
-                  Mois
-                </ToggleButton>
-                <ToggleButton value={Views.WEEK} sx={unifiedToggleButtonSx}>
-                  Semaine
-                </ToggleButton>
-                <ToggleButton value={Views.DAY} sx={unifiedToggleButtonSx}>
-                  Jour
-                </ToggleButton>
-              </ToggleButtonGroup>
-            </Box>
-            
-            <Box sx={{ height: 600, mt: 1 }}>
-              <Calendar
-                localizer={localizer}
-                events={calendarEvents}
-                startAccessor="start"
-                endAccessor="end"
-                style={{ height: '100%' }}
-                onSelectEvent={handleSelectEvent}
-                view={calendarView}
-                onView={handleViewChange}
-                date={calendarDate}
-                onNavigate={handleNavigate}
-                views={[Views.MONTH, Views.WEEK, Views.DAY]}
-                messages={{
-                  today: "Aujourd'hui",
-                  previous: 'Précédent',
-                  next: 'Suivant',
-                  month: 'Mois',
-                  week: 'Semaine',
-                  day: 'Jour'
-                }}
-                eventPropGetter={(event) => ({
-                  style: event.style
-                })}
-                components={{
-                  toolbar: () => null,
-                }}
-              />
-            </Box>
-            
-            {/* Légende */}
-            <Box mt={3} p={2} bgcolor="var(--brand-50)" borderRadius={1}>
-              <Typography variant="subtitle2" gutterBottom>
-                Légende
-              </Typography>
-              <Grid container spacing={2}>
-                <Grid item xs={6} md={2.4}>
-                  <Box display="flex" alignItems="center">
-                    <Box width={20} height={20} bgcolor="#ff9800" mr={1} borderRadius={1} />
-                    <Typography variant="body2">En attente Manager (0)</Typography>
-                  </Box>
-                </Grid>
-                <Grid item xs={6} md={2.4}>
-                  <Box display="flex" alignItems="center">
-                    <Box width={20} height={20} bgcolor="#0288d1" mr={1} borderRadius={1} />
-                    <Typography variant="body2">Validé Manager (1,2)</Typography>
-                  </Box>
-                </Grid>
-                <Grid item xs={6} md={2.4}>
-                  <Box display="flex" alignItems="center">
-                    <Box width={20} height={20} bgcolor="#f44336" mr={1} borderRadius={1} />
-                    <Typography variant="body2">Refusé (7)</Typography>
-                  </Box>
-                </Grid>
-                <Grid item xs={6} md={2.4}>
-                  <Box display="flex" alignItems="center">
-                    <Box width={20} height={20} bgcolor="#9e9e9e" mr={1} borderRadius={1} />
-                    <Typography variant="body2">Annulé (4)</Typography>
-                  </Box>
-                </Grid>
-                <Grid item xs={6} md={2.4}>
-                  <Box display="flex" alignItems="center">
-                    <Box width={20} height={20} bgcolor="#4caf50" mr={1} borderRadius={1} />
-                    <Typography variant="body2">Acquis (5)</Typography>
-                  </Box>
-                </Grid>
-                <Grid item xs={6} md={2.4}>
-                  <Box display="flex" alignItems="center">
-                    <Box width={20} height={20} bgcolor="#2196f3" mr={1} borderRadius={1} />
-                    <Typography variant="body2">Validé RH (6)</Typography>
-                  </Box>
-                </Grid>
-              </Grid>
-            </Box>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Vue Liste */}
-      {viewMode === 'list' && (
-        <Card>
-          <CardContent>
-            <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-              <Typography variant="h6">
-                <ViewList sx={{ mr: 1, verticalAlign: 'middle' }} />
-                Liste des demandes
-                {filteredDemandes.length > 0 && (
-                  <Typography component="span" variant="body2" color="textSecondary" sx={{ ml: 1 }}>
-                    ({filteredDemandes.length} demandes)
+                <Box sx={{ flex: '0 1 240px', minWidth: 200 }}>
+                  <Typography
+                    variant="caption"
+                    sx={{ display: 'block', fontWeight: 800, color: '#4a2350', mb: 0.5, ml: 0.5 }}
+                  >
+                    Statut
                   </Typography>
-                )}
-              </Typography>
-            </Box>
+                  <FormControl
+                    fullWidth
+                    size="small"
+                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px', bgcolor: '#fff' } }}
+                  >
+                    <Select
+                      displayEmpty
+                      value={filters.statut}
+                      name="statut"
+                      onChange={handleFilterChange}
+                    >
+                      <MenuItem value="">
+                        <span style={{ color: '#94a3b8', fontWeight: 600 }}>Tous les statuts</span>
+                      </MenuItem>
+                      <MenuItem value="0">En attente Manager</MenuItem>
+                      <MenuItem value="1">Validé par Manager</MenuItem>
+                      <MenuItem value="2">Validé par Manager</MenuItem>
+                      <MenuItem value="4">Annulé par RH/Manager</MenuItem>
+                      <MenuItem value="5">Acquis/Terminé</MenuItem>
+                      <MenuItem value="6">Validé par RH</MenuItem>
+                      <MenuItem value="7">Refusé par RH</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Box>
 
-            {filteredDemandes.length === 0 ? (
-              <Alert severity="info">
-                Aucune demande trouvée correspondant aux critères de recherche.
-                <Button 
-                  variant="outlined"
-                  size="small"
-                  onClick={reinitialiserFiltres}
-                  sx={{ ...unifiedButtonOutlinedSx, ml: 2 }}
+                <Box sx={{ flex: '1 1 360px', minWidth: 260 }}>
+                  <Typography
+                    variant="caption"
+                    sx={{ display: 'block', fontWeight: 800, color: '#4a2350', mb: 0.5, ml: 0.5 }}
+                  >
+                    Matricule
+                  </Typography>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    value={matriculeInput}
+                    onChange={handleMatriculeInputChange}
+                    placeholder="Entrez un matricule"
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <Badge fontSize="small" />
+                        </InputAdornment>
+                      ),
+                    }}
+                    sx={{
+                      '& .MuiOutlinedInput-root': { borderRadius: '12px', bgcolor: '#fff' },
+                    }}
+                  />
+                </Box>
+
+                <Box sx={{ flex: '0 1 280px', minWidth: 220 }}>
+                  <Typography
+                    variant="caption"
+                    sx={{ display: 'block', fontWeight: 800, color: '#4a2350', mb: 0.5, ml: 0.5 }}
+                  >
+                    Département
+                  </Typography>
+                  <FormControl
+                    fullWidth
+                    size="small"
+                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px', bgcolor: '#fff' } }}
+                  >
+                    <Select
+                      displayEmpty
+                      value={filters.idDepartement}
+                      name="idDepartement"
+                      onChange={handleFilterChange}
+                    >
+                      <MenuItem value="">
+                        <span style={{ color: '#94a3b8', fontWeight: 600 }}>Tous les départements</span>
+                      </MenuItem>
+                      {departements.map(dept => (
+                        <MenuItem key={dept.id} value={dept.id}>
+                          {dept.nom}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Box>
+
+                <Box sx={{ flex: '0 1 260px', minWidth: 220 }}>
+                  <Typography
+                    variant="caption"
+                    sx={{ display: 'block', fontWeight: 800, color: '#4a2350', mb: 0.5, ml: 0.5 }}
+                  >
+                    Période
+                  </Typography>
+                  <FormControl
+                    fullWidth
+                    size="small"
+                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px', bgcolor: '#fff' } }}
+                  >
+                    <Select
+                      value={filters.periode}
+                      name="periode"
+                      onChange={handleFilterChange}
+                    >
+                      <MenuItem value="7jours">7 derniers jours</MenuItem>
+                      <MenuItem value="30jours">30 derniers jours</MenuItem>
+                      <MenuItem value="90jours">90 derniers jours</MenuItem>
+                      <MenuItem value="personnalise">Période personnalisée</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Box>
+              </Box>
+
+              {filters.periode === 'personnalise' && (
+                <Box
+                  sx={{
+                    mt: 2,
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    gap: 2,
+                    alignItems: 'center'
+                  }}
                 >
-                  Réinitialiser les filtres
-                </Button>
-              </Alert>
-            ) : (
-              <>
-                <TableContainer component={Paper} sx={{ maxHeight: 500 }}>
-                  <Table stickyHeader size="small">
-                    <TableHead>
-                      <TableRow>
-                        <TableCell>Employé</TableCell>
-                        <TableCell>Matricule</TableCell>
-                        <TableCell>Département</TableCell>
-                        <TableCell>Période</TableCell>
-                        <TableCell align="right">Jours</TableCell>
-                        <TableCell align="right">Solde</TableCell>
-                        <TableCell>Statut</TableCell>
-                        <TableCell>Actions</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {demandesPage.map((demande) => {
-                        const soldeActuel = soldes[demande.idEmploye] !== undefined ? soldes[demande.idEmploye] : 0;
-                        const soldeSuffisant = verifierSoldeSuffisant(demande);
-                        
-                        return (
-                          <TableRow key={demande.id} hover>
-                            <TableCell>
-                              <Box>
-                                <Typography variant="body2" fontWeight="medium">
-                                  {demande.nomEmploye} {demande.prenomEmploye}
-                                </Typography>
-                                <Typography variant="caption" color="textSecondary">
-                                  ID: {demande.idEmploye}
-                                </Typography>
-                              </Box>
-                            </TableCell>
-                            <TableCell>
-                              <Typography variant="body2">
-                                {demande.matricule || 'N/A'}
-                              </Typography>
-                            </TableCell>
-                            <TableCell>
-                              <Typography variant="body2">
-                                {demande.nomDepartement}
-                              </Typography>
-                            </TableCell>
-                            <TableCell>
-                              <Box>
-                                <Typography variant="body2">
-                                  {formatDate(demande.dateDebut)} → {formatDate(demande.dateFin)}
-                                </Typography>
-                              </Box>
-                            </TableCell>
-                            <TableCell align="right">
-                              <Typography variant="body1" fontWeight="bold">
-                                {demande.nbJours}
-                              </Typography>
-                            </TableCell>
-                            <TableCell align="right">
-                              <Box display="flex" flexDirection="column" alignItems="flex-end">
-                                <Typography 
-                                  variant="body2" 
-                                  color={soldeSuffisant ? 'success.main' : 'error.main'}
-                                  fontWeight="medium"
-                                >
-                                  {soldeActuel.toFixed(1)} j
-                                </Typography>
-                                {!soldeSuffisant && soldeActuel > 0 && (
-                                  <Typography variant="caption" color="error">
-                                    <Warning fontSize="inherit" /> Insuffisant
-                                  </Typography>
-                                )}
-                                {soldeActuel === 0 && !loadingSoldes && (
-                                  <Typography variant="caption" color="warning.main">
-                                    Aucun solde
-                                  </Typography>
-                                )}
-                                {loadingSoldes && (
-                                  <Typography variant="caption" color="textSecondary">
-                                    <CircularProgress size={12} sx={{ mr: 0.5 }} />
-                                    Chargement...
-                                  </Typography>
-                                )}
-                              </Box>
-                            </TableCell>
-                            <TableCell>
-                              <Chip
-                                label={getStatutLabel(demande.statut)}
-                                color={getStatutColor(demande.statut)}
-                                size="small"
-                                icon={getStatutIcon(demande.statut)}
-                              />
-                            </TableCell>
-                            <TableCell>
-                              <Stack direction="row" spacing={0.5} alignItems="center">
-                                {canReviewDemande(demande) && (
-                                  <>
-                                    <Tooltip title="Accepter la demande">
-                                      <span>
-                                        <IconButton
-                                          size="small"
-                                          color="success"
-                                          onClick={() => openDecisionDialog(demande, 'accept')}
-                                          disabled={actionLoadingId === demande.id}
-                                        >
-                                          {actionLoadingId === demande.id ? (
-                                            <CircularProgress size={18} color="inherit" />
-                                          ) : (
-                                            <CheckCircle fontSize="small" />
-                                          )}
-                                        </IconButton>
-                                      </span>
-                                    </Tooltip>
-                                    <Tooltip title="Refuser la demande">
-                                      <span>
-                                        <IconButton
-                                          size="small"
-                                          color="error"
-                                          onClick={() => openDecisionDialog(demande, 'reject')}
-                                          disabled={actionLoadingId === demande.id}
-                                        >
-                                          {actionLoadingId === demande.id ? (
-                                            <CircularProgress size={18} color="inherit" />
-                                          ) : (
-                                            <Cancel fontSize="small" />
-                                          )}
-                                        </IconButton>
-                                      </span>
-                                    </Tooltip>
-                                  </>
-                                )}
-                                <Tooltip title="Voir les détails">
-                                  <IconButton
-                                    size="small"
-                                    onClick={() => setSelectedDemande(demande)}
-                                  >
-                                    <Visibility fontSize="small" />
-                                  </IconButton>
-                                </Tooltip>
-                              </Stack>
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
-
-                {totalPages > 1 && (
-                  <Box display="flex" justifyContent="center" alignItems="center" mt={3}>
-                    <Pagination
-                      count={totalPages}
-                      page={currentPage}
-                      onChange={handlePageChange}
-                      color="primary"
-                      size="small"
-                      showFirstButton
-                      showLastButton
-                      sx={{
-                        '& .MuiPaginationItem-root': {
-                          ...unifiedButtonSx,
-                          minWidth: '32px'
-                        },
-                        '& .MuiPaginationItem-root.Mui-selected': {
-                          bgcolor: 'var(--bg-primary)',
-                          color: '#ffffff'
-                        }
-                      }}
-                    />
+                  <Box sx={{ flex: '1 1 260px', minWidth: 240 }}>
+                    <Typography
+                      variant="caption"
+                      sx={{ display: 'block', fontWeight: 800, color: '#4a2350', mb: 0.5, ml: 0.5 }}
+                    >
+                      Date début
+                    </Typography>
+                    <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="fr">
+                      <DatePicker
+                        value={filters.dateDebut}
+                        onChange={(newValue) => setFilters(prev => ({ ...prev, dateDebut: newValue }))}
+                        format="DD/MM/YYYY"
+                        slotProps={{
+                          textField: {
+                            size: 'small',
+                            fullWidth: true,
+                            placeholder: 'DD/MM/YYYY',
+                            sx: { '& .MuiOutlinedInput-root': { borderRadius: '12px', bgcolor: '#fff' } }
+                          }
+                        }}
+                      />
+                    </LocalizationProvider>
                   </Box>
-                )}
+                  <Box sx={{ flex: '1 1 260px', minWidth: 240 }}>
+                    <Typography
+                      variant="caption"
+                      sx={{ display: 'block', fontWeight: 800, color: '#4a2350', mb: 0.5, ml: 0.5 }}
+                    >
+                      Date fin
+                    </Typography>
+                    <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="fr">
+                      <DatePicker
+                        value={filters.dateFin}
+                        onChange={(newValue) => setFilters(prev => ({ ...prev, dateFin: newValue }))}
+                        format="DD/MM/YYYY"
+                        slotProps={{
+                          textField: {
+                            size: 'small',
+                            fullWidth: true,
+                            placeholder: 'DD/MM/YYYY',
+                            sx: { '& .MuiOutlinedInput-root': { borderRadius: '12px', bgcolor: '#fff' } }
+                          }
+                        }}
+                      />
+                    </LocalizationProvider>
+                  </Box>
+                </Box>
+              )}
+
+              <Box
+                mt={2}
+                pt={2}
+                sx={{
+                  borderTop: '1px solid rgba(176, 83, 173, 0.12)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  flexWrap: 'wrap',
+                  gap: 2
+                }}
+              >
+                <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 600 }}>
+                  Affichage de {filteredDemandes.length} demandes sur {demandes.length}
+                </Typography>
+
+                <Stack direction="row" spacing={1}>
+                  <Button
+                    variant="outlined"
+                    onClick={reinitialiserFiltres}
+                    sx={unifiedButtonOutlinedSx}
+                  >
+                    Réinitialiser
+                  </Button>
+                  <Button
+                    variant="primary"
+                    onClick={appliquerFiltres}
+                    disabled={loading}
+                    sx={unifiedButtonContainedSx}
+                  >
+                    Appliquer
+                  </Button>
+                </Stack>
+              </Box>
+            </CardContent>
+          </Card>
+
+          {/* Sélecteur de vue */}
+          <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+            <Typography variant="subtitle1" fontWeight="medium">
+              {viewMode === 'calendar' ? 'Vue Calendrier' : 'Vue Liste'} 
+              <Typography component="span" variant="body2" color="textSecondary" sx={{ ml: 1 }}>
+                ({filteredDemandes.length} demandes)
+              </Typography>
+            </Typography>
+            <ToggleButtonGroup
+              value={viewMode}
+              exclusive
+              onChange={(e, newView) => newView && setViewMode(newView)}
+              size="small"
+            >
+              <ToggleButton value="calendar" sx={unifiedToggleButtonSx}>
+                <ViewModule sx={{ mr: 1 }} />
+                Calendrier
+              </ToggleButton>
+              <ToggleButton value="list" sx={unifiedToggleButtonSx}>
+                <ViewList sx={{ mr: 1 }} />
+                Liste
+              </ToggleButton>
+            </ToggleButtonGroup>
+          </Box>
+
+          {/* Vue Calendrier */}
+          {viewMode === 'calendar' && (
+            <Card>
+              <CardContent>
+                <Box display="flex" justifyContent="space-between" alignItems="center" mb={2} p={1} bgcolor="var(--brand-50)" borderRadius={1}>
+                  <Stack direction="row" spacing={1}>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      onClick={goToToday}
+                      startIcon={<Today />}
+                      sx={unifiedButtonOutlinedSx}
+                    >
+                      Aujourd'hui
+                    </Button>
+                    <IconButton onClick={goToPrevious} size="small">
+                      <ChevronLeft />
+                    </IconButton>
+                    <IconButton onClick={goToNext} size="small">
+                      <ChevronRight />
+                    </IconButton>
+                  </Stack>
+                  
+                  <Typography variant="h6" fontWeight="medium">
+                    {calendarView === Views.MONTH && dayjs(calendarDate).format('MMMM YYYY')}
+                    {calendarView === Views.WEEK && `Semaine du ${dayjs(calendarDate).startOf('week').format('DD/MM/YYYY')}`}
+                    {calendarView === Views.DAY && dayjs(calendarDate).format('dddd DD MMMM YYYY')}
+                  </Typography>
+                  
+                  <ToggleButtonGroup
+                    value={calendarView}
+                    exclusive
+                    onChange={(e, newView) => newView && handleViewChange(newView)}
+                    size="small"
+                  >
+                    <ToggleButton value={Views.MONTH} sx={unifiedToggleButtonSx}>
+                      Mois
+                    </ToggleButton>
+                    <ToggleButton value={Views.WEEK} sx={unifiedToggleButtonSx}>
+                      Semaine
+                    </ToggleButton>
+                    <ToggleButton value={Views.DAY} sx={unifiedToggleButtonSx}>
+                      Jour
+                    </ToggleButton>
+                  </ToggleButtonGroup>
+                </Box>
                 
-                <Box mt={1} textAlign="center">
-                  <Typography variant="caption" color="textSecondary">
-                    Affichage des demandes {indexDebut + 1} à {Math.min(indexFin, filteredDemandes.length)} sur {filteredDemandes.length}
+                <Box sx={{ height: 600, mt: 1 }}>
+                  <Calendar
+                    localizer={localizer}
+                    events={calendarEvents}
+                    startAccessor="start"
+                    endAccessor="end"
+                    style={{ height: '100%' }}
+                    onSelectEvent={handleSelectEvent}
+                    view={calendarView}
+                    onView={handleViewChange}
+                    date={calendarDate}
+                    onNavigate={handleNavigate}
+                    views={[Views.MONTH, Views.WEEK, Views.DAY]}
+                    messages={{
+                      today: "Aujourd'hui",
+                      previous: 'Précédent',
+                      next: 'Suivant',
+                      month: 'Mois',
+                      week: 'Semaine',
+                      day: 'Jour'
+                    }}
+                    eventPropGetter={(event) => ({
+                      style: event.style
+                    })}
+                    components={{
+                      toolbar: () => null,
+                    }}
+                  />
+                </Box>
+                
+                {/* Légende */}
+                <Box mt={3} p={2} bgcolor="var(--brand-50)" borderRadius={1}>
+                  <Typography variant="subtitle2" gutterBottom>
+                    Légende
+                  </Typography>
+                  <Grid container spacing={2}>
+                    <Grid item xs={6} md={2.4}>
+                      <Box display="flex" alignItems="center">
+                        <Box width={20} height={20} bgcolor="#ff9800" mr={1} borderRadius={1} />
+                        <Typography variant="body2">
+                          En attente Manager ({stats.enAttenteManager})
+                        </Typography>
+                      </Box>
+                    </Grid>
+                    <Grid item xs={6} md={2.4}>
+                      <Box display="flex" alignItems="center">
+                        <Box width={20} height={20} bgcolor="#0288d1" mr={1} borderRadius={1} />
+                        <Typography variant="body2">
+                          Validé Manager ({stats.valideManager})
+                        </Typography>
+                      </Box>
+                    </Grid>
+                    <Grid item xs={6} md={2.4}>
+                      <Box display="flex" alignItems="center">
+                        <Box width={20} height={20} bgcolor="#f44336" mr={1} borderRadius={1} />
+                        <Typography variant="body2">
+                          Refusé ({stats.refuseRH})
+                        </Typography>
+                      </Box>
+                    </Grid>
+                    <Grid item xs={6} md={2.4}>
+                      <Box display="flex" alignItems="center">
+                        <Box width={20} height={20} bgcolor="#9e9e9e" mr={1} borderRadius={1} />
+                        <Typography variant="body2">
+                          Annulé ({stats.annule})
+                        </Typography>
+                      </Box>
+                    </Grid>
+                    <Grid item xs={6} md={2.4}>
+                      <Box display="flex" alignItems="center">
+                        <Box width={20} height={20} bgcolor="#4caf50" mr={1} borderRadius={1} />
+                        <Typography variant="body2">
+                          Acquis ({stats.acquis})
+                        </Typography>
+                      </Box>
+                    </Grid>
+                    <Grid item xs={6} md={2.4}>
+                      <Box display="flex" alignItems="center">
+                        <Box width={20} height={20} bgcolor="#2196f3" mr={1} borderRadius={1} />
+                        <Typography variant="body2">
+                          Validé RH ({stats.valideRH})
+                        </Typography>
+                      </Box>
+                    </Grid>
+                  </Grid>
+                </Box>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Vue Liste */}
+          {viewMode === 'list' && (
+            <Card>
+              <CardContent>
+                <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+                  <Typography variant="h6">
+                    <ViewList sx={{ mr: 1, verticalAlign: 'middle' }} />
+                    Liste des demandes
+                    {filteredDemandes.length > 0 && (
+                      <Typography component="span" variant="body2" color="textSecondary" sx={{ ml: 1 }}>
+                        ({filteredDemandes.length} demandes)
+                      </Typography>
+                    )}
                   </Typography>
                 </Box>
-              </>
-            )}
-          </CardContent>
-        </Card>
+
+                {filteredDemandes.length === 0 ? (
+                  <Alert severity="info">
+                    Aucune demande trouvée correspondant aux critères de recherche.
+                    <Button 
+                      variant="outlined"
+                      size="small"
+                      onClick={reinitialiserFiltres}
+                      sx={{ ...unifiedButtonOutlinedSx, ml: 2 }}
+                    >
+                      Réinitialiser les filtres
+                    </Button>
+                  </Alert>
+                ) : (
+                  <>
+                    <TableContainer component={Paper} sx={{ maxHeight: 500 }}>
+                      <Table stickyHeader size="small">
+                        <TableHead>
+                          <TableRow>
+                            <TableCell>Employé</TableCell>
+                            <TableCell>Matricule</TableCell>
+                            <TableCell>Département</TableCell>
+                            <TableCell>Période</TableCell>
+                            <TableCell align="right">Jours</TableCell>
+                            <TableCell align="right">Solde</TableCell>
+                            <TableCell>Statut</TableCell>
+                            <TableCell>Actions</TableCell>
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {demandesPage.map((demande) => {
+                            const soldeActuel = soldes[demande.idEmploye] !== undefined ? soldes[demande.idEmploye] : 0;
+                            const soldeSuffisant = verifierSoldeSuffisant(demande);
+                            
+                            return (
+                              <TableRow key={demande.id} hover>
+                                <TableCell>
+                                  <Box>
+                                    <Typography variant="body2" fontWeight="medium">
+                                      {demande.nomEmploye} {demande.prenomEmploye}
+                                    </Typography>
+                                    {/* <Typography variant="caption" color="textSecondary">
+                                      ID: {demande.idEmploye}
+                                    </Typography> */}
+                                  </Box>
+                                </TableCell>
+                                <TableCell>
+                                  <Typography variant="body2">
+                                    {demande.matricule || 'N/A'}
+                                  </Typography>
+                                </TableCell>
+                                <TableCell>
+                                  <Typography variant="body2">
+                                    {demande.nomDepartement}
+                                  </Typography>
+                                </TableCell>
+                                <TableCell>
+                                  <Box>
+                                    <Typography variant="body2">
+                                      {formatDate(demande.dateDebut)} → {formatDate(demande.dateFin)}
+                                    </Typography>
+                                  </Box>
+                                </TableCell>
+                                <TableCell align="right">
+                                  <Typography variant="body1" fontWeight="bold">
+                                    {demande.nbJours}
+                                  </Typography>
+                                </TableCell>
+                                <TableCell align="right">
+                                  <Box display="flex" flexDirection="column" alignItems="flex-end">
+                                    <Typography 
+                                      variant="body2" 
+                                      color={soldeSuffisant ? 'success.main' : 'error.main'}
+                                      fontWeight="medium"
+                                    >
+                                      {soldeActuel.toFixed(1)} j
+                                    </Typography>
+                                    {!soldeSuffisant && soldeActuel > 0 && (
+                                      <Typography variant="caption" color="error">
+                                        <Warning fontSize="inherit" /> Insuffisant
+                                      </Typography>
+                                    )}
+                                    {soldeActuel === 0 && !loadingSoldes && (
+                                      <Typography variant="caption" color="warning.main">
+                                        Aucun solde
+                                      </Typography>
+                                    )}
+                                    {loadingSoldes && (
+                                      <Typography variant="caption" color="textSecondary">
+                                        <CircularProgress size={12} sx={{ mr: 0.5 }} />
+                                        Chargement...
+                                      </Typography>
+                                    )}
+                                  </Box>
+                                </TableCell>
+                                <TableCell>
+                                  <Chip
+                                    label={getStatutLabel(demande.statut)}
+                                    color={getStatutColor(demande.statut)}
+                                    size="small"
+                                    icon={getStatutIcon(demande.statut)}
+                                  />
+                                </TableCell>
+                                <TableCell>
+                                  <Stack direction="row" spacing={0.5} alignItems="center">
+                                    {canReviewDemande(demande) && (
+                                      <>
+                                        <Tooltip title="Accepter la demande">
+                                          <span>
+                                            <IconButton
+                                              size="small"
+                                              color="success"
+                                              onClick={() => openDecisionDialog(demande, 'accept')}
+                                              disabled={actionLoadingId === demande.id}
+                                            >
+                                              {actionLoadingId === demande.id ? (
+                                                <CircularProgress size={18} color="inherit" />
+                                              ) : (
+                                                <CheckCircle fontSize="small" />
+                                              )}
+                                            </IconButton>
+                                          </span>
+                                        </Tooltip>
+                                        <Tooltip title="Refuser la demande">
+                                          <span>
+                                            <IconButton
+                                              size="small"
+                                              color="error"
+                                              onClick={() => openDecisionDialog(demande, 'reject')}
+                                              disabled={actionLoadingId === demande.id}
+                                            >
+                                              {actionLoadingId === demande.id ? (
+                                                <CircularProgress size={18} color="inherit" />
+                                              ) : (
+                                                <Cancel fontSize="small" />
+                                              )}
+                                            </IconButton>
+                                          </span>
+                                        </Tooltip>
+                                      </>
+                                    )}
+                                    <Tooltip title="Voir les détails">
+                                      <IconButton
+                                        size="small"
+                                        onClick={() => setSelectedDemande(demande)}
+                                      >
+                                        <Visibility fontSize="small" />
+                                      </IconButton>
+                                    </Tooltip>
+                                  </Stack>
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
+
+                    {totalPages > 1 && (
+                      <Box display="flex" justifyContent="center" alignItems="center" mt={3}>
+                        <Pagination
+                          count={totalPages}
+                          page={currentPage}
+                          onChange={handlePageChange}
+                          color="primary"
+                          size="small"
+                          showFirstButton
+                          showLastButton
+                          sx={{
+                            '& .MuiPaginationItem-root': {
+                              ...unifiedButtonSx,
+                              minWidth: '32px'
+                            },
+                            '& .MuiPaginationItem-root.Mui-selected': {
+                              bgcolor: 'var(--bg-primary)',
+                              color: '#ffffff'
+                            }
+                          }}
+                        />
+                      </Box>
+                    )}
+                    
+                    <Box mt={1} textAlign="center">
+                      <Typography variant="caption" color="textSecondary">
+                        Affichage des demandes {indexDebut + 1} à {Math.min(indexFin, filteredDemandes.length)} sur {filteredDemandes.length}
+                      </Typography>
+                    </Box>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          )}
+        </>
       )}
 
       <Dialog

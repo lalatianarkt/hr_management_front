@@ -10,7 +10,6 @@ import {
   Table,
   Button,
   Form,
-  InputGroup,
   Spinner,
   Alert,
   Badge,
@@ -56,9 +55,6 @@ import {
   FaBuilding
 } from 'react-icons/fa';
 
-// Correction: Importer correctement FaCalendarCheck
-// Si FaCalendarCheck n'existe pas, on utilise FaCalendarAlt
-// ou on importe depuis react-feather
 import { Calendar as CalendarIcon } from 'react-feather';
 
 import AddEmployeeModal from './AddEmployee';
@@ -568,7 +564,21 @@ function Employees() {
       setError("Erreur lors de l'export Excel");
     }
   };
-  const handleAddSuccess = () => fetchEmployees();
+  const handleAddSuccess = (createdEmployee) => {
+    fetchEmployees();
+
+    const employeeData = createdEmployee?.employe || createdEmployee;
+    const nom = employeeData?.nom?.trim();
+    const prenom = employeeData?.prenom?.trim();
+
+    if (nom || prenom) {
+      setSuccessMessage(`Employé ajouté : ${(nom || '').toString()} ${(prenom || '').toString()}`.trim());
+    } else {
+      setSuccessMessage('Employé ajouté avec succès');
+    }
+
+    setTimeout(() => setSuccessMessage(''), 3000);
+  };
 
   const formatSalaire = (salaire) => {
     if (!salaire) return '-';
@@ -846,33 +856,24 @@ function Employees() {
             </div>
           </Card.Header>
           <Card.Body className="py-3">
-            <Row className="g-3">
+            <Row className="g-3 flex-wrap flex-lg-nowrap overflow-auto pb-1">
               <Col xs={12} sm={6} md={4} lg={2}>
                 <Form.Group>
                   <Form.Label className="small fw-medium mb-1">Matricule</Form.Label>
-                  <InputGroup size="sm">
-                    <InputGroup.Text className="bg-light">
-                      <Hash size={14} />
-                    </InputGroup.Text>
-                    <Form.Control
-                      type="text"
-                      placeholder="Ex: EMP001"
-                      value={filters.matricule || ''}
-                      onChange={(e) => handleFilterChange('matricule', e.target.value)}
-                      size="sm"
-                    />
-                  </InputGroup>
+                  <Form.Control
+                    type="text"
+                    placeholder="Ex: EMP001"
+                    value={filters.matricule || ''}
+                    onChange={(e) => handleFilterChange('matricule', e.target.value)}
+                    size="sm"
+                  />
                 </Form.Group>
               </Col>
 
               <Col xs={12} sm={6} md={4} lg={2}>
                 <Form.Group>
                   <Form.Label className="small fw-medium mb-1">Département</Form.Label>
-                  <InputGroup size="sm">
-                    <InputGroup.Text className="bg-light">
-                      <Briefcase size={14} />
-                    </InputGroup.Text>
-                    <Form.Select
+                  <Form.Select
                       value={filters.departement || ''}
                       onChange={(e) => handleFilterChange('departement', e.target.value)}
                       size="sm"
@@ -883,55 +884,40 @@ function Employees() {
                           {dept.nom}
                         </option>
                       ))}
-                    </Form.Select>
-                  </InputGroup>
+                  </Form.Select>
                 </Form.Group>
               </Col>
 
               <Col xs={12} sm={6} md={4} lg={2}>
                 <Form.Group>
                   <Form.Label className="small fw-medium mb-1">Nom</Form.Label>
-                  <InputGroup size="sm">
-                    <InputGroup.Text className="bg-light">
-                      <User size={14} />
-                    </InputGroup.Text>
-                    <Form.Control
+                  <Form.Control
                       type="text"
                       placeholder="Nom de famille"
                       value={filters.nom || ''}
                       onChange={(e) => handleFilterChange('nom', e.target.value)}
                       size="sm"
                     />
-                  </InputGroup>
                 </Form.Group>
               </Col>
 
               <Col xs={12} sm={6} md={4} lg={2}>
                 <Form.Group>
                   <Form.Label className="small fw-medium mb-1">Prénom</Form.Label>
-                  <InputGroup size="sm">
-                    <InputGroup.Text className="bg-light">
-                      <User size={14} />
-                    </InputGroup.Text>
-                    <Form.Control
+                  <Form.Control
                       type="text"
                       placeholder="Prénom"
                       value={filters.prenom || ''}
                       onChange={(e) => handleFilterChange('prenom', e.target.value)}
                       size="sm"
                     />
-                  </InputGroup>
                 </Form.Group>
               </Col>
 
               <Col xs={12} sm={6} md={4} lg={2}>
                 <Form.Group>
                   <Form.Label className="small fw-medium mb-1">Contrat</Form.Label>
-                  <InputGroup size="sm">
-                    <InputGroup.Text className="bg-light">
-                      <Award size={14} />
-                    </InputGroup.Text>
-                    <Form.Select
+                  <Form.Select
                       value={filters.typeContrat || ''}
                       onChange={(e) => handleFilterChange('typeContrat', e.target.value)}
                       size="sm"
@@ -942,19 +928,14 @@ function Employees() {
                           {typeContrat.intitule}
                         </option>
                       ))}
-                    </Form.Select>
-                  </InputGroup>
+                  </Form.Select>
                 </Form.Group>
               </Col>
 
               <Col xs={12} sm={6} md={4} lg={2}>
                 <Form.Group>
                   <Form.Label className="small fw-medium mb-1">Statut</Form.Label>
-                  <InputGroup size="sm">
-                    <InputGroup.Text className="bg-light">
-                      <FaCheckCircle size={14} />
-                    </InputGroup.Text>
-                    <Form.Select
+                  <Form.Select
                       value={filters.statutId || ''}
                       onChange={(e) => handleFilterChange('statutId', e.target.value)}
                       size="sm"
@@ -962,19 +943,14 @@ function Employees() {
                       <option value="">Tous les statuts</option>
                       <option value="0">Actif</option>
                       <option value="2">Inactif</option>
-                    </Form.Select>
-                  </InputGroup>
+                  </Form.Select>
                 </Form.Group>
               </Col>
 
               <Col xs={12} sm={6} md={4} lg={2}>
                 <Form.Group>
                   <Form.Label className="small fw-medium mb-1">Fonction</Form.Label>
-                  <InputGroup size="sm">
-                    <InputGroup.Text className="bg-light">
-                      <UserCheck size={14} />
-                    </InputGroup.Text>
-                    <Form.Select
+                  <Form.Select
                       value={filters.managerFilter || ''}
                       onChange={(e) => handleFilterChange('managerFilter', e.target.value)}
                       size="sm"
@@ -982,15 +958,13 @@ function Employees() {
                       <option value="">Tous</option>
                       <option value="manager">Manager</option>
                       <option value="employe">Employé</option>
-                    </Form.Select>
-                  </InputGroup>
+                  </Form.Select>
                 </Form.Group>
               </Col>
             </Row>
 
             <div className="d-flex justify-content-between align-items-center mt-3 pt-2 border-top">
               <div className="small text-muted">
-                <Filter size={12} className="me-1" />
                 {pagination.totalItems} employé{pagination.totalItems > 1 ? 's' : ''} trouvé{pagination.totalItems > 1 ? 's' : ''}
                 {filters.managerFilter && (
                   <span className="ms-2 text-primary">

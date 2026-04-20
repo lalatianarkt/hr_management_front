@@ -1,6 +1,6 @@
 // src/pages/RH/Pointage/PointageDashboard.jsx
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import axiosInstance from "../../utils/AxiosInstance"; 
 import {
   Card, Table, Tag, Row, Col, Input, Select, Button,
   Progress, Spin, Alert, Empty, Badge, Tooltip, Modal, Statistic,
@@ -73,7 +73,7 @@ const years = Array.from({ length: 5 }, (_, i) => currentYear - i);
       setLoading(true);
       
       // Charger les données de reporting présence
-      const response = await axios.get("http://localhost:8080/api/reporting-presence");
+      const response = await axiosInstance.get("/api/reporting-presence");
       setReportingData(response.data);
       setFilteredData(response.data);
       
@@ -98,7 +98,7 @@ const years = Array.from({ length: 5 }, (_, i) => currentYear - i);
       console.log("Map département:", deptMap);
       
       // Charger les statistiques
-      const statsResponse = await axios.get("http://localhost:8080/api/reporting-presence/stats-globales");
+      const statsResponse = await axiosInstance.get("/api/reporting-presence/stats-globales");
       setStatistiques(statsResponse.data);
       
     } catch (err) {
@@ -208,8 +208,8 @@ const years = Array.from({ length: 5 }, (_, i) => currentYear - i);
       console.log("Payload envoyé:", filterPayload);
       
       // Utiliser l'endpoint POST qui fonctionne mieux avec les paramètres complexes
-      const response = await axios.post(
-        "http://localhost:8080/api/reporting-presence/export/filtres",
+      const response = await axiosInstance.post(
+        "/api/reporting-presence/export/filtres",
         filterPayload,
         {
           responseType: 'blob'
@@ -297,10 +297,9 @@ const years = Array.from({ length: 5 }, (_, i) => currentYear - i);
 
       console.log("Params GET:", params.toString());
       
-      // Appeler l'API GET
-      const url = `http://localhost:8080/api/reporting-presence/export?${params.toString()}`;
+      const url = `/api/reporting-presence/export?${params.toString()}`;
       
-      const response = await axios.get(url, {
+      const response = await axiosInstance.get(url, {
         responseType: 'blob'
       });
       
@@ -591,7 +590,7 @@ const years = Array.from({ length: 5 }, (_, i) => currentYear - i);
             icon={<EyeOutlined />}
             onClick={() => viewEmployeeDetails(record)}
             size="small"
-            aria-label="Voir détails"
+            // aria-label="Voir détails"
           />
         </div>
       )

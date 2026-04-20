@@ -153,6 +153,7 @@ export default function Sidebar() {
                   <li><Link to="/dashboard-RH/paramétrage/conger-irsa" className={`nav-link small ${isActive('/dashboard-RH/paramétrage/conger-irsa') ? 'active' : ''}`}><Dot size={18} className="me-1" /> <span className="nav-label">Congés & IRSA</span></Link></li>
                   <li><Link to="/dashboard-RH/paramétrage/pointage" className={`nav-link small ${isActive('/dashboard-RH/paramétrage/pointage') ? 'active' : ''}`}><Dot size={18} className="me-1" /> <span className="nav-label">Import</span></Link></li>
                   <li><Link to="/dashboard-RH/paramétrage/export" className={`nav-link small ${isActive('/dashboard-RH/paramétrage/export') ? 'active' : ''}`}><Dot size={18} className="me-1" /> <span className="nav-label">Export</span></Link></li>
+                  <li><Link to="/dashboard-RH/paramétrage/ferie" className={`nav-link small ${isActive('/dashboard-RH/paramétrage/ferie') ? 'active' : ''}`}><Dot size={18} className="me-1" /> <span className="nav-label">Référentiel - Calendrier des congés</span></Link></li>
                 </ul>
               )}
             </li>

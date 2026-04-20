@@ -1,4 +1,4 @@
-// src/pages/RH/Paie/RubriqueFormuleModal.jsx
+﻿// src/pages/RH/Paie/RubriqueFormuleModal.jsx
 import React, { useState, useEffect } from 'react';
 import {
   Table,
@@ -95,7 +95,7 @@ function RubriqueFormuleModal({ show, onHide, rubriqueId, employeId }) {
 
     // CAS 1: Formule avec nombre (même = 1) * taux * base
     if (hasBase && hasTaux && hasNombre) {
-      console.log("Formule: NOMBRE × TAUX × BASE");
+      console.log("Formule: NOMBRE * TAUX * BASE");
       if (modeCalcul === 'AUTO' || modeCalcul === 'CALCULE') {
         newDisabled = {
           nombre: false,
@@ -114,7 +114,7 @@ function RubriqueFormuleModal({ show, onHide, rubriqueId, employeId }) {
     }
     // CAS 2: Formule taux * base seulement
     else if (hasBase && hasTaux && !hasNombre) {
-      console.log("Formule: TAUX × BASE (sans nombre)");
+      console.log("Formule: TAUX * BASE (sans nombre)");
       if (modeCalcul === 'AUTO') {
         newDisabled = {
           nombre: true,
@@ -133,7 +133,7 @@ function RubriqueFormuleModal({ show, onHide, rubriqueId, employeId }) {
     }
     // CAS 3: Formule avec nombre * base
     else if (hasBase && !hasTaux && hasNombre) {
-      console.log("Formule: NOMBRE × BASE");
+      console.log("Formule: NOMBRE * BASE");
       if (modeCalcul === 'AUTO') {
         newDisabled = {
           nombre: false,
@@ -345,17 +345,25 @@ function RubriqueFormuleModal({ show, onHide, rubriqueId, employeId }) {
 
     if (error.response) {
       const { status, data } = error.response;
+      const serverMessage =
+        typeof data === 'string'
+          ? data
+          : (data?.message ? String(data.message) : JSON.stringify(data));
 
       switch (status) {
         case 400:
-          if (data.includes("déja été ajouté")) {
-            showNotification('Rubrique existante', data, 'warning');
-          } else if (data.includes("par ordre")) {
-            showNotification('Erreur de saisie', data, 'warning');
-          } else if (data.includes("obligatoire")) {
-            showNotification('Champs manquants', data, 'warning');
+          if (
+            serverMessage.includes("déjà été ajouté") ||
+            serverMessage.toLowerCase().includes('déjà été ajouté') ||
+            serverMessage.toLowerCase().includes('déjà été ajoutée')
+          ) {
+            showNotification('Rubrique existante', 'Cette rubrique a déjà été ajoutée.', 'warning');
+          } else if (serverMessage.includes("par ordre")) {
+            showNotification('Erreur de saisie', serverMessage, 'warning');
+          } else if (serverMessage.includes("obligatoire")) {
+            showNotification('Champs manquants', serverMessage, 'warning');
           } else {
-            showNotification('Erreur de validation', data, 'danger');
+            showNotification('Erreur de validation', serverMessage, 'danger');
           }
           break;
 
@@ -372,7 +380,7 @@ function RubriqueFormuleModal({ show, onHide, rubriqueId, employeId }) {
           break;
 
         default:
-          showNotification('Erreur', data || 'Une erreur est survenue', 'danger');
+          showNotification('Erreur', serverMessage || 'Une erreur est survenue', 'danger');
       }
     } else if (error.request) {
       showNotification('Connexion échouée', 'Impossible de se connecter au serveur.', 'danger');
@@ -484,13 +492,13 @@ function RubriqueFormuleModal({ show, onHide, rubriqueId, employeId }) {
     }
 
     if (hasBase && hasTaux && hasNombre) {
-      return `NOMBRE × TAUX × BASE`;
+      return `NOMBRE * TAUX * BASE`;
     }
     else if (hasBase && hasTaux && !hasNombre) {
-      return `TAUX × BASE`;
+      return `TAUX * BASE`;
     }
     else if (hasBase && !hasTaux && hasNombre) {
-      return `NOMBRE × BASE`;
+      return `NOMBRE * BASE`;
     }
     else if (hasBase && !hasTaux && !hasNombre) {
       return `BASE`;
@@ -499,7 +507,7 @@ function RubriqueFormuleModal({ show, onHide, rubriqueId, employeId }) {
       return `TAUX`;
     }
     else if (!hasBase && hasTaux && hasNombre) {
-      return `NOMBRE × TAUX`;
+      return `NOMBRE * TAUX`;
     }
 
     return 'FORMULE INCONNUE';
@@ -541,9 +549,9 @@ function RubriqueFormuleModal({ show, onHide, rubriqueId, employeId }) {
           }}>
             {/* Header du modal */}
             <div className="modal-header d-flex justify-content-between align-items-center" style={{
-              background: 'var(--bg-gradient)',
+              background: 'linear-gradient(135deg, #b66ab6 0%, #a05aa8 100%)',
               borderBottom: 'none',
-              padding: '1.25rem 1.5rem'
+              padding: '1.1rem 1.5rem'
             }}>
               <h5 className="modal-title m-0" style={{
                 fontSize: '1.25rem',
@@ -564,20 +572,23 @@ function RubriqueFormuleModal({ show, onHide, rubriqueId, employeId }) {
                 onClick={onHide}
                 aria-label="Fermer"
                 style={{
-                  background: 'rgba(255, 255, 255, 0.2)',
+                  background: 'transparent',
                   border: 'none',
                   borderRadius: '10px',
-                  width: '36px',
-                  height: '36px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   color: 'white',
                   transition: 'all 0.2s ease',
-                  cursor: 'pointer'
+                  cursor: 'pointer',
+                  padding: '0.45rem 0.85rem',
+                  gap: '0.5rem',
+                  fontWeight: 700,
+                  fontSize: '0.95rem',
+                  whiteSpace: 'nowrap'
                 }}
               >
-                <X size={20} fontWeight="bold" />
+                <X size={20} />
               </button>
             </div>
 
@@ -586,7 +597,7 @@ function RubriqueFormuleModal({ show, onHide, rubriqueId, employeId }) {
               maxHeight: '70vh',
               overflowY: 'auto',
               padding: '1rem',
-              background: 'white'
+              background: '#fdf9fc'
             }}>
               {error && (
                 <Alert variant="warning" dismissible onClose={() => setError('')} className="mb-3 border-0 shadow-sm" style={{ backgroundColor: '#fff3cd', color: '#856404' }}>
@@ -599,77 +610,85 @@ function RubriqueFormuleModal({ show, onHide, rubriqueId, employeId }) {
                 <div className="d-flex justify-content-center align-items-center" style={{ height: '150px' }}>
                   <Spinner animation="border" size="sm" />
                   <span className="ms-3" style={{ fontSize: '0.875rem', color: '#5c2458' }}>
-                    Chargement des données...
+                    Chargement des Données...
                   </span>
                 </div>
               ) : (
                 <>
                   {/* Informations de contexte */}
-                  <Card className="mb-4 border-0 shadow-lg" style={{ background: 'var(--bg-gradient)', borderRadius: '16px' }}>
+                  <Card className="mb-4 border-0 shadow-sm rubrique-formule-header-card" style={{
+                    background: 'linear-gradient(135deg, #f6edf7 0%, #f3e6f5 100%)',
+                    borderRadius: '16px',
+                    border: '1px solid #ead7e7'
+                  }}>
                     <Card.Body className="p-4">
                       <div className="row g-4">
                         <div className="col-md-7">
                           <div className="mb-0">
                             <label className="form-label text-uppercase mb-2 d-block" style={{
-                              color: '#ffffff',
+                              color: '#7a3a78',
                               letterSpacing: '1.2px',
                               fontSize: '0.85rem',
                               fontWeight: '800',
-                              textShadow: '0 2px 4px rgba(0,0,0,0.3)',
-                              opacity: 0.95
+                              opacity: 0.9
                             }}>
                               Rubrique de Paie
                             </label>
                             <div className="d-flex align-items-center mb-2">
-                              <h4 className="mb-0 me-3 fw-extrabold text-white">{rubrique?.code || '-'}</h4>
+                              <h4 className="mb-0 me-3 fw-extrabold" style={{ color: '#3a1438' }}>{rubrique?.code || '-'}</h4>
                               <div className="d-flex gap-2">
                                 {rubrique?.type && (
-                                  <Badge bg="white" className="px-3 py-2 text-primary">
+                                  <Badge bg="light" className="px-3 py-2" style={{ color: '#6f2e69' }}>
                                     {rubrique.type.libelle}
                                   </Badge>
                                 )}
                                 {rubrique?.modeCalcul && (
                                   <Badge
                                     bg="light"
-                                    className="px-3 py-2 text-dark"
-                                    style={{ background: 'rgba(255, 255, 255, 0.2)', color: 'white', border: '1px solid rgba(255, 255, 255, 0.5)', fontWeight: 'bold' }}
+                                    className="px-3 py-2"
+                                    style={{ color: '#3a1438', border: '1px solid #e1b2db', fontWeight: 'bold' }}
                                   >
                                     {rubrique.modeCalcul}
                                   </Badge>
                                 )}
                               </div>
                             </div>
-                            <div className="fs-5 fw-extrabold text-white">{rubrique?.libelle}</div>
-                            <div className="mt-3 p-2 px-3 rounded-pill d-inline-flex align-items-center" style={{ background: 'rgba(255, 255, 255, 0.15)', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
-                              <span className="small text-white me-2" style={{ fontWeight: '500' }}>Type de formule: </span>
-                              <span className="small fw-extrabold text-white">
+                            <div className="fs-5 fw-extrabold" style={{ color: '#5c2458' }}>{rubrique?.libelle}</div>
+                            <div className="mt-3 p-2 px-3 rounded-pill d-inline-flex align-items-center" style={{ background: '#f4e8f3', border: '1px solid #e1b2db' }}>
+                              <span className="small me-2" style={{ fontWeight: '600', color: '#5c2458' }}>Type de formule: </span>
+                              <span className="small fw-extrabold" style={{ color: '#3a1438' }}>
                                 {getFormuleType(rubrique?.formule)}
                               </span>
                             </div>
                           </div>
                         </div>
-                        <div className="col-md-5 border-start ps-md-4" style={{ borderColor: 'rgba(255, 255, 255, 0.2) !important' }}>
+                        <div className="col-md-5 border-start ps-md-4" style={{ borderColor: '#ead7e7 !important' }}>
                           <div className="mb-0">
                             <label className="form-label text-uppercase mb-2 d-block" style={{
-                              color: '#ffffff',
+                              color: '#7a3a78',
                               letterSpacing: '1.2px',
                               fontSize: '0.85rem',
                               fontWeight: '800',
-                              textShadow: '0 2px 4px rgba(0,0,0,0.3)',
-                              opacity: 0.95
+                              opacity: 0.9
                             }}>
                               Période de Paie
                             </label>
                             <div className="mt-2">
                               {paie ? (
                                 <>
-                                  <div className="fs-5 fw-extrabold text-white">
-                                    {paie.dateDebutPeriode ? new Date(paie.dateDebutPeriode).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }) : 'Période inconnue'}
+                                  <div className="fs-5 fw-extrabold" style={{ color: '#3a1438' }}>
+                                    {(paie?.periodePaie?.dateDebut || paie?.dateDebutPeriode || paie?.dateDebut || paie?.dateDebutPeriode || paie?.dateDebut)
+                                      ? new Date(paie?.periodePaie?.dateDebut || paie?.dateDebutPeriode || paie?.dateDebut || paie?.dateDebutPeriode || paie?.dateDebut).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
+                                      : 'Période inconnue'}
                                   </div>
-                                  <div className="small text-white mb-0" style={{ fontWeight: '600' }}>
-                                    Du {paie.dateDebutPeriode ? new Date(paie.dateDebutPeriode).toLocaleDateString() : '...'} au {paie.dateFinPeriode ? new Date(paie.dateFinPeriode).toLocaleDateString() : '...'}
+                                  <div className="small mb-0" style={{ fontWeight: '600', color: '#5c2458' }}>
+                                    Du {(paie?.periodePaie?.dateDebut || paie?.dateDebutPeriode || paie?.dateDebut)
+                                      ? new Date(paie?.periodePaie?.dateDebut || paie?.dateDebutPeriode || paie?.dateDebut).toLocaleDateString()
+                                      : '...'} au {(paie?.periodePaie?.dateFin || paie?.dateFinPeriode || paie?.dateFin)
+                                      ? new Date(paie?.periodePaie?.dateFin || paie?.dateFinPeriode || paie?.dateFin).toLocaleDateString()
+                                      : '...'}
                                   </div>
-                                  <div className="mt-2 text-white small fw-bold d-flex align-items-center" style={{ background: 'rgba(255,255,255,0.2)', padding: '4px 10px', borderRadius: '8px', width: 'fit-content' }}>
+                                  <div className="mt-2 small fw-bold d-flex align-items-center" style={{ background: '#efe0ee', color: '#6f2e69', padding: '4px 10px', borderRadius: '8px', width: 'fit-content' }}>
                                     <CheckCircle size={14} className="me-1" /> Statut: {paie.statutCloture === 0 ? 'En cours' : 'Clôturée'}
                                   </div>
                                 </>
@@ -686,10 +705,10 @@ function RubriqueFormuleModal({ show, onHide, rubriqueId, employeId }) {
                     </Card.Body>
                   </Card>
 
-                  {/* Section des valeurs à modifier */}
+                  {/* Section des valeurs à  modifier */}
                   <div className="mb-4">
                     <h6 className="mb-3" style={{ fontSize: '0.9rem', color: '#3a1438' }}>
-                      Valeurs à enregistrer pour cette rubrique
+                      Valeurs à  enregistrer pour cette rubrique
                     </h6>
 
                     <div className="table-responsive">
@@ -791,7 +810,7 @@ function RubriqueFormuleModal({ show, onHide, rubriqueId, employeId }) {
                             </td>
                           </tr>
 
-                          {/* Ligne d'aperçu des valeurs */}
+                          {/* Ligne d'Aperçu des valeurs */}
                           <tr className="bg-light">
                             <td className="py-2">
                               <div className="fw-medium">Aperçu</div>
@@ -904,3 +923,5 @@ function RubriqueFormuleModal({ show, onHide, rubriqueId, employeId }) {
 }
 
 export default RubriqueFormuleModal;
+
+

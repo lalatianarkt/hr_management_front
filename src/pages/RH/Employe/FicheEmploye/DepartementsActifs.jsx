@@ -15,7 +15,9 @@ import {
   Modal,
   Form,
   InputGroup,
-  Dropdown
+  Dropdown,
+  OverlayTrigger,
+  Tooltip
 } from 'react-bootstrap';
 import {
   Home,
@@ -39,6 +41,8 @@ function DepartementsActifs() {
   const [departements, setDepartements] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
+  const [saving, setSaving] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -98,29 +102,47 @@ function DepartementsActifs() {
     e.preventDefault();
     
     try {
+      setSaving(true);
+      setError('');
+      setSuccessMessage('');
+
       if (selectedDepartement) {
         // Édition
-        await axiosInstance.put(`/api/departements/${selectedDepartement.id}`, { 
+        const payload = { 
+          id: selectedDepartement.id,
           nom: formData.nom,
           description: formData.description,
           statut: 0
-        });
+        };
+        const response = await axiosInstance.put(`/api/departements/${selectedDepartement.id}`, payload);
+        const updated = response?.data && typeof response.data === 'object' ? response.data : payload;
+        setDepartements(prev => prev.map(d => (d.id === selectedDepartement.id ? { ...d, ...updated } : d)));
+        setSuccessMessage('Département modifié avec succès');
       } else {
         // Ajout
-        await axiosInstance.post('/api/departements', { 
+        const payload = { 
           nom: formData.nom,
           description: formData.description,
           statut: 0
-        });
+        };
+        const response = await axiosInstance.post('/api/departements', payload);
+        const created = response?.data && typeof response.data === 'object' ? response.data : payload;
+        if (created?.id) {
+          setDepartements(prev => [created, ...prev]);
+        } else {
+          fetchDepartementsActifs();
+        }
+        setSuccessMessage('Département créé avec succès');
       }
       
       setShowAddModal(false);
       setSelectedDepartement(null);
-      fetchDepartementsActifs();
-      setError('');
+      setTimeout(() => setSuccessMessage(''), 3000);
     } catch (err) {
       console.error(err);
       setError(err.response?.data?.message || 'Erreur lors de l\'enregistrement');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -202,6 +224,12 @@ function DepartementsActifs() {
         </Alert>
       )}
 
+      {successMessage && (
+        <Alert variant="success" dismissible onClose={() => setSuccessMessage('')}>
+          {successMessage}
+        </Alert>
+      )}
+
       {/* Statistiques rapides */}
       <Row className="mb-3">
         <Col xs={6} md={4}>
@@ -218,7 +246,7 @@ function DepartementsActifs() {
             <div className="stat-icon"><Filter size={16} /></div>
             <div className="stat-content">
               <div className="stat-value">{filteredDepartements.length}</div>
-              <div className="stat-label">Affiches</div>
+              <div className="stat-label">Affichés</div>
             </div>
           </div>
         </Col>
@@ -280,8 +308,8 @@ function DepartementsActifs() {
                 <tr>
                   <th className="py-3 ps-3">Nom du Département</th>
                   <th className="py-3">Description</th>
-                  <th className="py-3">Date création</th>
-                  <th className="py-3">Statut</th>
+                  {/* <th className="py-3">Date création</th> */}
+                  {/* <th className="py-3">Statut</th> */}
                   <th className="py-3 pe-3 text-end">Actions</th>
                 </tr>
               </thead>
@@ -289,14 +317,14 @@ function DepartementsActifs() {
                 {filteredDepartements.length > 0 ? (
                   filteredDepartements.map((dept) => (
                     <tr key={dept.id}>
-                      <td className="py-3 ps-3">
-                        <div className="d-flex align-items-center gap-2">
+                      <td className="py-3 ps-3 text-start">
+                        <div className="d-flex align-items-center justify-content-start gap-2">
                           <div className="dept-icon">
                             <Home size={16} />
                           </div>
                           <div>
                             <div className="fw-medium">{dept.nom}</div>
-                            <small className="text-muted">ID: {dept.id}</small>
+                            {/* <small className="text-muted">ID: {dept.id}</small> */}
                           </div>
                         </div>
                       </td>
@@ -305,44 +333,49 @@ function DepartementsActifs() {
                           {dept.description || <span className="text-muted fst-italic">Aucune description</span>}
                         </div>
                       </td>
-                      <td className="py-3">
-                        <small>{formatDate(dept.createdAt)}</small>
+                      {/* <td className="py-3">
+                        <div className="fw-medium">{formatDate(dept.createdAt)}</div>
                         {dept.modifiedAt && dept.modifiedAt !== dept.createdAt && (
                           <div>
-                            <small className="text-muted">Modifié: {formatDate(dept.modifiedAt)}</small>
+                            <small className="text-muted">Modifié le {formatDate(dept.modifiedAt)}</small>
                           </div>
                         )}
-                      </td>
-                      <td className="py-3">
+                      </td> */}
+                      {/* <td className="py-3">
                         <Badge bg="success" className="fw-normal">
                           <CheckCircle size={12} className="me-1" />
                           Actif
                         </Badge>
-                      </td>
+                      </td> */}
                       <td className="py-3 pe-3 text-end actions-cell">
                         <div className="d-flex justify-content-end gap-2 action-buttons">
-                          <Button
-                            variant="outline-primary"
-                            size="sm"
-                            onClick={() => openEditModal(dept)}
-                            className="action-btn"
-                            aria-label="Modifier"
-                            title="Modifier"
+                          <OverlayTrigger
+                            placement="top"
+                            overlay={<Tooltip id={`tooltip-edit-dept-${dept.id}`}>Modifier</Tooltip>}
                           >
-                            <Edit2 size={12} />
-                            <span>Modifier</span>
-                          </Button>
-                          <Button
-                            variant="outline-danger"
-                            size="sm"
-                            onClick={() => openDeleteModal(dept)}
-                            className="action-btn"
-                            aria-label="Supprimer"
-                            title="Supprimer"
+                            <Button
+                              variant="outline-primary"
+                              size="sm"
+                              onClick={() => openEditModal(dept)}
+                              className="action-btn"
+                            >
+                              <Edit2 size={12} />
+                            </Button>
+                          </OverlayTrigger>
+
+                          <OverlayTrigger
+                            placement="top"
+                            overlay={<Tooltip id={`tooltip-delete-dept-${dept.id}`}>Supprimer</Tooltip>}
                           >
-                            <Trash2 size={12} />
-                            <span>Supprimer</span>
-                          </Button>
+                            <Button
+                              variant="outline-danger"
+                              size="sm"
+                              onClick={() => openDeleteModal(dept)}
+                              className="action-btn"
+                            >
+                              <Trash2 size={12} />
+                            </Button>
+                          </OverlayTrigger>
                           {/* Menu déroulant supprimé car plus d'options */}
                         </div>
                       </td>
@@ -416,11 +449,12 @@ function DepartementsActifs() {
                   setShowAddModal(false);
                   setSelectedDepartement(null);
                 }}
+                disabled={saving}
               >
                 Annuler
               </Button>
-              <Button type="submit" variant="primary">
-                {selectedDepartement ? 'Enregistrer les modifications' : 'Créer le département'}
+              <Button type="submit" variant="primary" disabled={saving}>
+                {saving ? 'Enregistrement...' : (selectedDepartement ? 'Enregistrer les modifications' : 'Créer le département')}
               </Button>
             </div>
           </Form>

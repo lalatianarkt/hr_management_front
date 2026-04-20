@@ -217,7 +217,7 @@ const ManagerInfoPage = () => {
             </div>
           </div>
         </Col>
-        <Col xs="auto">
+        {/* <Col xs="auto">
           <Button 
             variant="outline-primary" 
             className="d-flex align-items-center gap-2"
@@ -227,7 +227,7 @@ const ManagerInfoPage = () => {
           >
             <Download /> Exporter en PDF
           </Button>
-        </Col>
+        </Col> */}
       </Row>
 
       {/* Messages d'erreur */}
@@ -309,7 +309,7 @@ const ManagerInfoPage = () => {
                     </div>
                   )}
                   
-                  {manager.commentaire && (
+                  {/* {manager.commentaire && (
                     <div className="mb-4">
                       <small className="text-muted d-flex align-items-center gap-1 mb-2">
                         <FileTextFill size={12} />
@@ -317,7 +317,7 @@ const ManagerInfoPage = () => {
                       </small>
                       <p className="mb-0">{manager.commentaire}</p>
                     </div>
-                  )}
+                  )} */}
                 </Col>
               </Row>
             </Card.Body>

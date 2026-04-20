@@ -158,13 +158,25 @@ function AddDocumentModal({ show, onHide, employeeId, onSuccess }) {
               <Upload size={20} className="me-2" />
               Ajouter un document
             </h5>
-            <button
+            <Button
               type="button"
-              className="btn-close btn-close-white"
               onClick={handleClose}
               aria-label="Fermer"
-              style={{ fontSize: '0.8rem', opacity: 0.8 }}
-            ></button>
+              className="d-flex align-items-center justify-content-center"
+              style={{
+                backgroundColor: "rgba(255, 255, 255, 0.18)",
+                border: "none",
+                boxShadow: "none",
+                outline: "none",
+                color: "#ffffff",
+                width: 44,
+                height: 44,
+                borderRadius: 12,
+                padding: 0
+              }}
+            >
+              <X size={22} />
+            </Button>
           </div>
 
           {/* Body du modal */}
@@ -179,7 +191,7 @@ function AddDocumentModal({ show, onHide, employeeId, onSuccess }) {
                 <p className="text-muted">Le document a été uploadé et enregistré.</p>
               </div>
             ) : (
-              <Form onSubmit={handleSubmit}>
+              <Form noValidate onSubmit={handleSubmit}>
                 {/* Zone de dépôt de fichier */}
                 <div className="mb-4">
                   <label className="form-label fw-bold mb-2">Document à uploader</label>
@@ -211,12 +223,12 @@ function AddDocumentModal({ show, onHide, employeeId, onSuccess }) {
                       </div>
                     )}
                     <input
+                      name="file"
                       type="file"
                       ref={fileInputRef}
                       onChange={handleFileChange}
                       accept=".pdf,application/pdf"
                       style={{ display: 'none' }}
-                      required
                     />
                   </div>
                   {selectedFile && (

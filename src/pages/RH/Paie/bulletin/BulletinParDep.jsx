@@ -406,13 +406,38 @@ const BulletinDetails = () => {
   };
 
   const handleExportExcel = async () => {
-    alert('Export Excel à implémenter');
-  };
+  const departementName = location.state?.departementName;
+  if (!departementName) {
+    alert('Nom du département introuvable.');
+    return;
+  }
 
-  const handlePrint = () => {
-    window.print();
-  };
+  try {
+    const response = await axiosInstance.get(
+      `/api/export/bulletin/departement/${encodeURIComponent(departementName)}/excel`,
+      { responseType: 'blob' }
+    );
 
+    const excelBlob = new Blob([response.data], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    });
+
+    const excelUrl = window.URL.createObjectURL(excelBlob);
+    const downloadLink = document.createElement('a');
+    downloadLink.href = excelUrl;
+    downloadLink.download = `etat_paie_${departementName.replace(/[^a-zA-Z0-9-_]/g, '_')}.xlsx`;
+
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+    document.body.removeChild(downloadLink);
+    window.URL.revokeObjectURL(excelUrl);
+  } catch (error) {
+    console.error('Erreur export Excel département:', error);
+    alert("Erreur lors de l'export Excel du département.");
+  }
+};
+
+ 
   const goToBulletinDetail = (paieId, employeInfo, bulletinInfo) => {
     const extractedPaieId = bulletinInfo.paieId || bulletinInfo.idPaie;
     if (!extractedPaieId) {
@@ -465,38 +490,165 @@ const BulletinDetails = () => {
   return (
     <Box sx={{ p: { xs: 2, md: 3 }, display: 'flex', flexDirection: 'column', gap: 3 }}>
 
-      {/* En-tête */}
-      <Card sx={{ borderRadius: '28px', boxShadow: '0 10px 24px rgba(0,0,0,0.06)' }}>
-        <CardContent sx={{ p: { xs: 3, md: 5 } }}>
-          <Grid container alignItems="center" spacing={3}>
-            <Grid item>
-              <Button
-                startIcon={<ArrowBack />}
-                onClick={() => navigate(-1)}
-                variant="contained"
-                sx={{ bgcolor: 'rgba(0,0,0,0.1)', color: '#3a1438', borderRadius: '12px', fontWeight: 'bold' }}
-              >
-                Retour
-              </Button>
-            </Grid>
-            <Grid item xs>
-              <Typography variant="overline">Portail RH • Paie</Typography>
-              <Typography variant="h3" component="h1" fontWeight="900">
-                {location.state?.departementName || 'Département'}
-              </Typography>
-              <Box display="flex" alignItems="center" gap={2} mt={2}>
-                <Box display="flex" alignItems="center" sx={{ bgcolor: 'rgba(0,0,0,0.05)', px: 2, py: 1, borderRadius: '12px' }}>
-                  <DateRange sx={{ mr: 1.5 }} />
-                  <Typography fontWeight="700">{periodeActuelle.dateDebut} — {periodeActuelle.dateFin}</Typography>
+      {/* En-tête harmonisé */}
+      <Card
+        sx={{
+          borderRadius: '24px',
+          border: '1px solid rgba(176, 83, 173, 0.14)',
+          background: 'linear-gradient(135deg, #fff 0%, #fdf7fc 100%)',
+          boxShadow: '0 10px 24px rgba(176, 83, 173, 0.08)'
+        }}
+      >
+        <CardContent sx={{ p: { xs: 3, md: 4 } }}>
+          <Grid container spacing={3} alignItems="center">
+            {/* Partie gauche */}
+            <Grid item xs={12} lg={8}>
+              <Stack spacing={2}>
+                <Box>
+                  <Typography
+                    variant="overline"
+                    sx={{
+                      color: '#8e3a8b',
+                      fontWeight: 700,
+                      letterSpacing: '1px'
+                    }}
+                  >
+                    Portail RH • Paie
+                  </Typography>
+
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      alignItems: 'center',
+                      gap: 1.5,
+                      mt: 0.5
+                    }}
+                  >
+                    <Typography
+                      component="h1"
+                      sx={{
+                        fontSize: { xs: '1.8rem', md: '2.4rem' },
+                        fontWeight: 800,
+                        color: '#4b1f47',
+                        lineHeight: 1.2
+                      }}
+                    >
+                      {location.state?.departementName || 'Département'}
+                    </Typography>
+
+                    <Chip
+                      label={`${totauxDepartement.totalEmployes} employé(s)`}
+                      icon={<AccountCircle sx={{ color: '#8e3a8b !important' }} />}
+                      sx={{
+                        bgcolor: '#f3e2f1',
+                        color: '#8e3a8b',
+                        fontWeight: 700,
+                        border: '1px solid #e1b2db',
+                        borderRadius: '999px'
+                      }}
+                    />
+                  </Box>
                 </Box>
-                <Chip icon={<CalendarMonth />} label={`${totauxDepartement.totalEmployes} employé(s)`} />
-              </Box>
+
+                <Stack
+                  direction={{ xs: 'column', sm: 'row' }}
+                  spacing={1.5}
+                  useFlexGap
+                  flexWrap="wrap"
+                >
+                  <Button
+                    startIcon={<ArrowBack />}
+                    onClick={() => navigate(-1)}
+                    variant="outlined"
+                    sx={{
+                      alignSelf: 'flex-start',
+                      textTransform: 'none',
+                      fontWeight: 700,
+                      color: '#8e3a8b',
+                      borderColor: '#d79ed0',
+                      borderRadius: '999px',
+                      px: 2.2,
+                      py: 1,
+                      '&:hover': {
+                        borderColor: '#b053ad',
+                        backgroundColor: '#f9eef8'
+                      }
+                    }}
+                  >
+                    Retour
+                  </Button>
+
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1,
+                      px: 2,
+                      py: 1,
+                      borderRadius: '999px',
+                      bgcolor: '#f9eef8',
+                      border: '1px solid #efd2ea'
+                    }}
+                  >
+                    <DateRange sx={{ color: '#b053ad', fontSize: 20 }} />
+                    <Typography sx={{ fontWeight: 700, color: '#5c2458' }}>
+                      {periodeActuelle.dateDebut} — {periodeActuelle.dateFin}
+                    </Typography>
+                  </Box>
+                </Stack>
+              </Stack>
             </Grid>
-            <Grid item>
-              <Stack direction="row" spacing={1}>
-                <IconButton onClick={handlePrint} sx={{ bgcolor: '#f0f0f0', borderRadius: '12px' }}><Print /></IconButton>
-                <Button startIcon={<Download />} onClick={handleExportExcel} variant="contained" sx={{ bgcolor: '#3a1438' }}>Excel</Button>
-                <Button startIcon={<PictureAsPdf />} onClick={handleExportPDF} variant="contained" sx={{ bgcolor: '#3a1438' }}>PDF</Button>
+
+            {/* Partie droite */}
+            <Grid item xs={12} lg={4}>
+              <Stack
+                direction="row"
+                spacing={1.2}
+                justifyContent={{ xs: 'flex-start', lg: 'flex-end' }}
+                flexWrap="wrap"
+                useFlexGap
+              >
+
+                <Button
+                  startIcon={<Download />}
+                  onClick={handleExportExcel}
+                  variant="contained"
+                  sx={{
+                    textTransform: 'none',
+                    fontWeight: 700,
+                    borderRadius: '14px',
+                    px: 2.2,
+                    py: 1.2,
+                    background: 'linear-gradient(135deg, #b053ad 0%, #8e3a8b 100%)',
+                    boxShadow: '0 8px 18px rgba(176, 83, 173, 0.22)',
+                    '&:hover': {
+                      background: 'linear-gradient(135deg, #9d469a 0%, #7b3178 100%)'
+                    }
+                  }}
+                >
+                  Excel
+                </Button>
+
+                <Button
+                  startIcon={<PictureAsPdf />}
+                  onClick={handleExportPDF}
+                  variant="contained"
+                  sx={{
+                    textTransform: 'none',
+                    fontWeight: 700,
+                    borderRadius: '14px',
+                    px: 2.2,
+                    py: 1.2,
+                    background: 'linear-gradient(135deg, #6a1b63 0%, #4b1f47 100%)',
+                    boxShadow: '0 8px 18px rgba(75, 31, 71, 0.18)',
+                    '&:hover': {
+                      background: 'linear-gradient(135deg, #581552 0%, #3e183a 100%)'
+                    }
+                  }}
+                >
+                  PDF
+                </Button>
               </Stack>
             </Grid>
           </Grid>
@@ -531,10 +683,25 @@ const BulletinDetails = () => {
       </Card>
 
       {/* Filtres */}
-      <Card sx={{ borderRadius: '24px' }}>
-        <CardContent>
-          <Typography variant="overline" color="textSecondary" fontWeight="800">Recherche & Filtres</Typography>
-          
+      <Card
+        sx={{
+          borderRadius: '24px',
+          border: '1px solid rgba(176, 83, 173, 0.12)',
+          boxShadow: '0 8px 20px rgba(176, 83, 173, 0.06)'
+        }}
+      >
+        <CardContent sx={{ p: { xs: 2.5, md: 3 } }}>
+          <Typography
+            variant="overline"
+            sx={{
+              color: '#7b5177',
+              fontWeight: 800,
+              letterSpacing: '1.2px'
+            }}
+          >
+            Recherche & filtres
+          </Typography>
+
           <Grid container spacing={2} sx={{ mt: 1 }}>
             {/* Recherche */}
             <Grid item xs={12} md={4}>
@@ -543,26 +710,64 @@ const BulletinDetails = () => {
                 placeholder="Rechercher (nom, matricule, fonction)..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
+                size="medium"
                 InputProps={{
-                  startAdornment: <InputAdornment position="start"><Search /></InputAdornment>,
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Search sx={{ color: '#8e3a8b' }} />
+                    </InputAdornment>
+                  ),
                   endAdornment: searchTerm && (
                     <InputAdornment position="end">
-                      <IconButton size="small" onClick={() => setSearchTerm('')}><Clear /></IconButton>
+                      <IconButton size="small" onClick={() => setSearchTerm('')}>
+                        <Clear />
+                      </IconButton>
                     </InputAdornment>
                   )
+                }}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: '14px',
+                    backgroundColor: '#fcf7fb'
+                  }
                 }}
               />
             </Grid>
 
-            {/* Statut - Uniquement Clôturé et Non clôturé */}
-            <Grid item xs={12} md={2}>
-              <FormControl fullWidth size="small">
+            {/* Statut */}
+            <Grid item xs={12} sm={6} md={2}>
+              <FormControl
+                fullWidth
+                size="medium"
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: '14px',
+                    backgroundColor: '#fcf7fb'
+                  }
+                }}
+              >
                 <InputLabel>Statut</InputLabel>
-                <Select value={tempFiltreStatut} label="Statut" onChange={(e) => setTempFiltreStatut(e.target.value)}>
+                <Select
+                  value={tempFiltreStatut}
+                  label="Statut"
+                  onChange={(e) => setTempFiltreStatut(e.target.value)}
+                >
                   {statutOptions.map(opt => (
                     <MenuItem key={opt.value} value={opt.value}>
                       <Box display="flex" alignItems="center" gap={1}>
-                        <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: opt.color === 'warning' ? '#ffc107' : opt.color === 'success' ? '#28a745' : '#6c757d' }} />
+                        <Box
+                          sx={{
+                            width: 10,
+                            height: 10,
+                            borderRadius: '50%',
+                            bgcolor:
+                              opt.color === 'warning'
+                                ? '#f59e0b'
+                                : opt.color === 'success'
+                                ? '#22c55e'
+                                : '#9ca3af'
+                          }}
+                        />
                         {opt.label}
                       </Box>
                     </MenuItem>
@@ -571,149 +776,400 @@ const BulletinDetails = () => {
               </FormControl>
             </Grid>
 
-            {/* Date Début */}
-            <Grid item xs={12} md={2}>
-              <FormGroup>
-                <FormLabel sx={{ fontSize: '0.75rem', color: 'text.secondary', mb: 0.5 }}>Date début</FormLabel>
-                <input
-                  type="date"
-                  className="form-control form-control-sm"
-                  value={tempDateDebut}
-                  onChange={(e) => setTempDateDebut(e.target.value)}
-                  style={{
-                    padding: '8px 12px',
-                    borderRadius: '8px',
-                    border: '1px solid rgba(0,0,0,0.23)',
-                    fontSize: '0.875rem',
-                    width: '100%'
-                  }}
-                />
-              </FormGroup>
+            {/* Date début */}
+            <Grid item xs={12} sm={6} md={2}>
+              <TextField
+                fullWidth
+                label="Date début"
+                type="date"
+                value={tempDateDebut}
+                onChange={(e) => setTempDateDebut(e.target.value)}
+                InputLabelProps={{ shrink: true }}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: '14px',
+                    backgroundColor: '#fcf7fb'
+                  }
+                }}
+              />
             </Grid>
 
-            {/* Date Fin */}
-            <Grid item xs={12} md={2}>
-              <FormGroup>
-                <FormLabel sx={{ fontSize: '0.75rem', color: 'text.secondary', mb: 0.5 }}>Date fin</FormLabel>
-                <input
-                  type="date"
-                  className="form-control form-control-sm"
-                  value={tempDateFin}
-                  onChange={(e) => setTempDateFin(e.target.value)}
-                  style={{
-                    padding: '8px 12px',
-                    borderRadius: '8px',
-                    border: '1px solid rgba(0,0,0,0.23)',
-                    fontSize: '0.875rem',
-                    width: '100%'
-                  }}
-                />
-              </FormGroup>
+            {/* Date fin */}
+            <Grid item xs={12} sm={6} md={2}>
+              <TextField
+                fullWidth
+                label="Date fin"
+                type="date"
+                value={tempDateFin}
+                onChange={(e) => setTempDateFin(e.target.value)}
+                InputLabelProps={{ shrink: true }}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: '14px',
+                    backgroundColor: '#fcf7fb'
+                  }
+                }}
+              />
             </Grid>
 
-            {/* Bouton Appliquer */}
-            <Grid item xs={12} md={2} sx={{ display: 'flex', alignItems: 'flex-end' }}>
+            {/* Bouton appliquer */}
+            <Grid item xs={12} sm={6} md={2}>
               <Button
                 variant="contained"
                 onClick={applyFilters}
                 disabled={!hasTempFiltersChanged()}
-                sx={{ bgcolor: 'var(--bg-primary)', borderRadius: '10px', height: '40px', width: '100%' }}
                 startIcon={<Check />}
+                fullWidth
+                sx={{
+                  height: '56px',
+                  borderRadius: '14px',
+                  textTransform: 'none',
+                  fontWeight: 700,
+                  background: 'linear-gradient(135deg, #b053ad 0%, #8e3a8b 100%)',
+                  boxShadow: '0 8px 18px rgba(176, 83, 173, 0.20)',
+                  '&:hover': {
+                    background: 'linear-gradient(135deg, #9d469a 0%, #7b3178 100%)'
+                  },
+                  '&.Mui-disabled': {
+                    background: '#e7e2e8',
+                    color: '#9b93a1'
+                  }
+                }}
               >
                 Appliquer
               </Button>
             </Grid>
           </Grid>
 
-          {/* Filtres actifs */}
-          {hasActiveFilters() && (
-            <Box mt={2} sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-              <Typography variant="caption" color="textSecondary" fontWeight="700">Filtres actifs:</Typography>
-              {filtreStatut !== 'tous' && (
-                <Chip 
-                  size="small" 
-                  label={`Statut: ${statutOptions.find(opt => opt.value === filtreStatut)?.label}`}
-                  onDelete={resetFilters}
-                  color={statutOptions.find(opt => opt.value === filtreStatut)?.color}
-                />
-              )}
-              {dateDebut && (
-                <Chip size="small" label={`Du: ${formatDateDisplay(dateDebut)}`} onDelete={resetFilters} />
-              )}
-              {dateFin && (
-                <Chip size="small" label={`Au: ${formatDateDisplay(dateFin)}`} onDelete={resetFilters} />
-              )}
-              <Button size="small" variant="outlined" onClick={resetFilters} sx={{ ml: 1 }}>Tout réinitialiser</Button>
-            </Box>
-          )}
+          {/* Ligne du bas */}
+          <Box
+            mt={2.5}
+            sx={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: { xs: 'stretch', md: 'center' },
+              flexDirection: { xs: 'column', md: 'row' },
+              gap: 2
+            }}
+          >
+            {/* Filtres actifs */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+              {hasActiveFilters() && (
+                <>
+                  <Typography variant="caption" sx={{ color: '#6b5a68', fontWeight: 700 }}>
+                    Filtres actifs :
+                  </Typography>
 
-          {/* Taille page */}
-          <Box mt={2} display="flex" justifyContent="flex-end">
-            <FormControl size="small" sx={{ minWidth: 120 }}>
+                  {filtreStatut !== 'tous' && (
+                    <Chip
+                      size="small"
+                      label={`Statut : ${statutOptions.find(opt => opt.value === filtreStatut)?.label}`}
+                      onDelete={resetFilters}
+                      sx={{
+                        bgcolor: '#f3e2f1',
+                        color: '#8e3a8b',
+                        border: '1px solid #e1b2db'
+                      }}
+                    />
+                  )}
+
+                  {dateDebut && (
+                    <Chip
+                      size="small"
+                      label={`Du : ${formatDateDisplay(dateDebut)}`}
+                      onDelete={resetFilters}
+                      sx={{
+                        bgcolor: '#f3e2f1',
+                        color: '#8e3a8b',
+                        border: '1px solid #e1b2db'
+                      }}
+                    />
+                  )}
+
+                  {dateFin && (
+                    <Chip
+                      size="small"
+                      label={`Au : ${formatDateDisplay(dateFin)}`}
+                      onDelete={resetFilters}
+                      sx={{
+                        bgcolor: '#f3e2f1',
+                        color: '#8e3a8b',
+                        border: '1px solid #e1b2db'
+                      }}
+                    />
+                  )}
+
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    onClick={resetFilters}
+                    sx={{
+                      ml: 0.5,
+                      textTransform: 'none',
+                      borderRadius: '999px',
+                      borderColor: '#d8a9d3',
+                      color: '#8e3a8b',
+                      '&:hover': {
+                        borderColor: '#b053ad',
+                        backgroundColor: '#faf1f9'
+                      }
+                    }}
+                  >
+                    Réinitialiser
+                  </Button>
+                </>
+              )}
+            </Box>
+
+            {/* Taille de page */}
+            <FormControl
+              size="small"
+              sx={{
+                minWidth: 130,
+                alignSelf: { xs: 'flex-end', md: 'center' },
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: '12px',
+                  backgroundColor: '#fcf7fb'
+                }
+              }}
+            >
               <Select value={pageSize} onChange={handlePageSizeChange}>
-                {pageSizeOptions.map(size => <MenuItem key={size} value={size}>{size} / page</MenuItem>)}
+                {pageSizeOptions.map(size => (
+                  <MenuItem key={size} value={size}>
+                    {size} / page
+                  </MenuItem>
+                ))}
               </Select>
             </FormControl>
           </Box>
         </CardContent>
       </Card>
 
-      {/* Tableau */}
-      <TableContainer component={Paper} sx={{ borderRadius: '24px', overflow: 'hidden' }}>
+      <TableContainer
+        component={Paper}
+        sx={{
+          borderRadius: '24px',
+          overflow: 'hidden',
+          border: '1px solid rgba(176, 83, 173, 0.12)',
+          boxShadow: '0 10px 24px rgba(176, 83, 173, 0.06)',
+          background: '#fff'
+        }}
+      >
         <Table>
           <TableHead>
-            <TableRow sx={{ bgcolor: 'rgba(176, 83, 173, 0.06)' }}>
-              <TableCell sx={{ fontWeight: '800', cursor: 'pointer' }} onClick={() => handleSort('matricule')}>
+            <TableRow
+              sx={{
+                bgcolor: '#fcf7fb',
+                '& th': {
+                  borderBottom: '1px solid rgba(176, 83, 173, 0.14)',
+                  color: '#5c2458',
+                  fontWeight: 800,
+                  fontSize: '0.95rem',
+                  py: 2.2
+                }
+              }}
+            >
+              <TableCell sx={{ cursor: 'pointer' }} onClick={() => handleSort('matricule')}>
                 Matricule {sortBy === 'matricule' && (sortDirection === 'asc' ? '↑' : '↓')}
               </TableCell>
-              <TableCell sx={{ fontWeight: '800', cursor: 'pointer' }} onClick={() => handleSort('nomComplet')}>
+              <TableCell sx={{ cursor: 'pointer' }} onClick={() => handleSort('nomComplet')}>
                 Collaborateur {sortBy === 'nomComplet' && (sortDirection === 'asc' ? '↑' : '↓')}
               </TableCell>
-              <TableCell align="right" sx={{ fontWeight: '800', cursor: 'pointer' }} onClick={() => handleSort('salaireBrut')}>
+              <TableCell align="right" sx={{ cursor: 'pointer' }} onClick={() => handleSort('salaireBrut')}>
                 Brut {sortBy === 'salaireBrut' && (sortDirection === 'asc' ? '↑' : '↓')}
               </TableCell>
-              <TableCell align="right" sx={{ fontWeight: '800', cursor: 'pointer' }} onClick={() => handleSort('salaireBase')}>
+              <TableCell align="right" sx={{ cursor: 'pointer' }} onClick={() => handleSort('salaireBase')}>
                 Base {sortBy === 'salaireBase' && (sortDirection === 'asc' ? '↑' : '↓')}
               </TableCell>
-              <TableCell align="right" sx={{ fontWeight: '800', cursor: 'pointer' }} onClick={() => handleSort('salaireNet')}>
+              <TableCell align="right" sx={{ cursor: 'pointer' }} onClick={() => handleSort('salaireNet')}>
                 Net {sortBy === 'salaireNet' && (sortDirection === 'asc' ? '↑' : '↓')}
               </TableCell>
               <TableCell align="center">Période</TableCell>
-              <TableCell>Détails</TableCell>
+              <TableCell align="center">Détails</TableCell>
             </TableRow>
           </TableHead>
+
           <TableBody>
             {bulletins.length === 0 ? (
-              <TableRow><TableCell colSpan={7} align="center" sx={{ py: 4 }}><Typography>Aucun bulletin trouvé</Typography></TableCell></TableRow>
+              <TableRow>
+                <TableCell colSpan={7} align="center" sx={{ py: 6 }}>
+                  <Typography sx={{ color: '#7b5177', fontWeight: 600 }}>
+                    Aucun bulletin trouvé
+                  </Typography>
+                </TableCell>
+              </TableRow>
             ) : (
-              bulletins.map((employe) => (
+              bulletins.map((employe, index) => (
                 <React.Fragment key={employe.idEmploye}>
-                  <TableRow hover onClick={() => toggleEmployeeDetails(employe.idEmploye)} sx={{ cursor: 'pointer' }}>
-                    <TableCell><code style={{ padding: '4px 8px', background: '#f9f1f8', borderRadius: '6px' }}>{employe.matricule}</code></TableCell>
+                  <TableRow
+                    hover
+                    onClick={() => toggleEmployeeDetails(employe.idEmploye)}
+                    sx={{
+                      cursor: 'pointer',
+                      transition: 'all 0.25s ease',
+                      bgcolor: expandedEmployees[employe.idEmploye] ? '#fdf9fc' : '#fff',
+                      '& td': {
+                        borderBottom: expandedEmployees[employe.idEmploye]
+                          ? 'none'
+                          : '1px solid rgba(176, 83, 173, 0.08)',
+                        py: 2.4
+                      },
+                      '&:hover': {
+                        bgcolor: '#fcf7fb'
+                      }
+                    }}
+                  >
                     <TableCell>
-                      <Box display="flex" alignItems="center">
-                        <Avatar sx={{ bgcolor: 'rgba(176, 83, 173, 0.12)', mr: 2 }}>{employe.nomComplet?.charAt(0)}</Avatar>
-                        <Box><Typography fontWeight="800">{employe.nomComplet}</Typography><Typography variant="caption">{employe.fonction}</Typography></Box>
+                      <Box
+                        component="span"
+                        sx={{
+                          display: 'inline-block',
+                          px: 1.2,
+                          py: 0.6,
+                          borderRadius: '10px',
+                          bgcolor: '#f9eef8',
+                          color: '#b053ad',
+                          fontWeight: 700,
+                          fontSize: '0.85rem'
+                        }}
+                      >
+                        {employe.matricule}
                       </Box>
                     </TableCell>
-                    <TableCell align="right"><Typography fontWeight="800">{formatCurrency(employe.totalBrut)}</Typography></TableCell>
-                    <TableCell align="right"><Typography fontWeight="700">{formatCurrency(employe.totalSalaireBase)}</Typography></TableCell>
-                    <TableCell align="right"><Typography fontWeight="800" color="success.main">{formatCurrency(employe.totalNet)}</Typography></TableCell>
-                    <TableCell align="center">
-                      {employe.bulletins?.[0] && <Chip label={`${getMonthName(employe.bulletins[0].moisPaie)} ${employe.bulletins[0].anneePaie}`} size="small" />}
+
+                    <TableCell>
+                      <Box display="flex" alignItems="center">
+                        <Avatar
+                          sx={{
+                            width: 44,
+                            height: 44,
+                            bgcolor: '#f3e2f1',
+                            color: '#8e3a8b',
+                            fontWeight: 800,
+                            mr: 2
+                          }}
+                        >
+                          {employe.nomComplet?.charAt(0)}
+                        </Avatar>
+
+                        <Box>
+                          <Typography
+                            sx={{
+                              fontWeight: 800,
+                              color: '#2f172d',
+                              fontSize: '1rem'
+                            }}
+                          >
+                            {employe.nomComplet}
+                          </Typography>
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              color: '#7b6b79',
+                              mt: 0.3
+                            }}
+                          >
+                            {employe.fonction}
+                          </Typography>
+                        </Box>
+                      </Box>
                     </TableCell>
-                    <TableCell><IconButton size="small">{expandedEmployees[employe.idEmploye] ? <KeyboardArrowUp /> : <KeyboardArrowDown />}</IconButton></TableCell>
+
+                    <TableCell align="right">
+                      <Typography sx={{ fontWeight: 800, color: '#2f172d' }}>
+                        {formatCurrency(employe.totalBrut)}
+                      </Typography>
+                    </TableCell>
+
+                    <TableCell align="right">
+                      <Typography sx={{ fontWeight: 800, color: '#5c2458' }}>
+                        {formatCurrency(employe.totalSalaireBase)}
+                      </Typography>
+                    </TableCell>
+
+                    <TableCell align="right">
+                      <Typography sx={{ fontWeight: 800, color: '#2e7d32' }}>
+                        {formatCurrency(employe.totalNet)}
+                      </Typography>
+                    </TableCell>
+
+                    <TableCell align="center">
+                      {employe.bulletins?.[0] && (
+                        <Chip
+                          label={`${getMonthName(employe.bulletins[0].moisPaie)} ${employe.bulletins[0].anneePaie}`}
+                          size="small"
+                          sx={{
+                            bgcolor: '#f5f0f4',
+                            color: '#5c2458',
+                            fontWeight: 600,
+                            borderRadius: '999px'
+                          }}
+                        />
+                      )}
+                    </TableCell>
+
+                    <TableCell align="center">
+                      <IconButton
+                        size="small"
+                        sx={{
+                          width: 36,
+                          height: 36,
+                          bgcolor: expandedEmployees[employe.idEmploye] ? '#f3e2f1' : '#f9f1f8',
+                          color: '#8e3a8b',
+                          '&:hover': {
+                            bgcolor: '#ead1e7'
+                          }
+                        }}
+                      >
+                        {expandedEmployees[employe.idEmploye] ? <KeyboardArrowUp /> : <KeyboardArrowDown />}
+                      </IconButton>
+                    </TableCell>
                   </TableRow>
+
                   <TableRow>
-                    <TableCell colSpan={7} style={{ padding: 0 }}>
-                      <Collapse in={expandedEmployees[employe.idEmploye]}>
-                        <Box p={3} bgcolor="#f9f1f8">
-                          <Typography variant="h6" mb={2}>Historique des bulletins</Typography>
-                          <Table size="small">
+                    <TableCell colSpan={7} sx={{ p: 0, borderBottom: 'none' }}>
+                      <Collapse in={expandedEmployees[employe.idEmploye]} timeout="auto" unmountOnExit>
+                        <Box
+                          sx={{
+                            px: 3,
+                            py: 2.5,
+                            bgcolor: '#fdf7fc',
+                            borderTop: '1px solid rgba(176, 83, 173, 0.08)',
+                            borderBottom: '1px solid rgba(176, 83, 173, 0.08)'
+                          }}
+                        >
+                          <Typography
+                            variant="h6"
+                            sx={{
+                              mb: 2,
+                              fontWeight: 800,
+                              color: '#5c2458'
+                            }}
+                          >
+                            Historique des bulletins
+                          </Typography>
+
+                          <Table
+                            size="small"
+                            sx={{
+                              bgcolor: '#fff',
+                              borderRadius: '16px',
+                              overflow: 'hidden',
+                              '& th': {
+                                bgcolor: '#faf3f9',
+                                color: '#7b5177',
+                                fontWeight: 700,
+                                borderBottom: '1px solid rgba(176, 83, 173, 0.10)'
+                              },
+                              '& td': {
+                                borderBottom: '1px solid rgba(176, 83, 173, 0.07)'
+                              }
+                            }}
+                          >
                             <TableHead>
                               <TableRow>
                                 <TableCell>Période</TableCell>
-                                <TableCell>Catégorie</TableCell>
+                                {/* <TableCell>Catégorie</TableCell> */}
                                 <TableCell align="right">Brut</TableCell>
                                 <TableCell align="right">Base</TableCell>
                                 <TableCell align="right">Net</TableCell>
@@ -721,23 +1177,81 @@ const BulletinDetails = () => {
                                 <TableCell align="right">Action</TableCell>
                               </TableRow>
                             </TableHead>
+
                             <TableBody>
                               {employe.bulletins?.map((bulletin, idx) => (
-                                <TableRow key={idx}>
-                                  <TableCell>{getMonthName(bulletin.moisPaie)} {bulletin.anneePaie}</TableCell>
-                                  <TableCell><Chip label={bulletin.categorieSalaire} size="small" /></TableCell>
+                                <TableRow
+                                  key={idx}
+                                  sx={{
+                                    '&:hover': {
+                                      bgcolor: '#fcf8fb'
+                                    }
+                                  }}
+                                >
+                                  <TableCell>
+                                    <Typography sx={{ fontWeight: 600, color: '#3f223c' }}>
+                                      {getMonthName(bulletin.moisPaie)} {bulletin.anneePaie}
+                                    </Typography>
+                                  </TableCell>
+
+                                  {/* <TableCell>
+                                    <Chip
+                                      label={bulletin.categorieSalaire}
+                                      size="small"
+                                      sx={{
+                                        bgcolor: '#f3e2f1',
+                                        color: '#8e3a8b',
+                                        fontWeight: 600
+                                      }}
+                                    />
+                                  </TableCell> */}
+
                                   <TableCell align="right">{formatCurrency(bulletin.salaireBrut)}</TableCell>
                                   <TableCell align="right">{formatCurrency(bulletin.salaireBase)}</TableCell>
-                                  <TableCell align="right">{formatCurrency(bulletin.salaireNet)}</TableCell>
+                                  <TableCell align="right">
+                                    <Typography sx={{ fontWeight: 700, color: '#2e7d32' }}>
+                                      {formatCurrency(bulletin.salaireNet)}
+                                    </Typography>
+                                  </TableCell>
+
                                   <TableCell align="center">
-                                    <Chip 
-                                      label={getStatutLabel(bulletin.statutCloture)} 
-                                      size="small" 
-                                      color={getStatutColor(bulletin.statutCloture)} 
+                                    <Chip
+                                      label={getStatutLabel(bulletin.statutCloture)}
+                                      size="small"
+                                      sx={{
+                                        fontWeight: 700,
+                                        color:
+                                          bulletin.statutCloture === 1 ? '#1f6f43' : '#b45f06',
+                                        bgcolor:
+                                          bulletin.statutCloture === 1 ? '#e6f4ea' : '#fff1df',
+                                        border:
+                                          bulletin.statutCloture === 1
+                                            ? '1px solid #b7dfc3'
+                                            : '1px solid #ffd59a'
+                                      }}
                                     />
                                   </TableCell>
+
                                   <TableCell align="right">
-                                    <Button size="small" variant="contained" onClick={() => goToBulletinDetail(bulletin.paieId, employe, bulletin)} startIcon={<Info />}>Détail</Button>
+                                    <Button
+                                      size="small"
+                                      variant="contained"
+                                      onClick={() => goToBulletinDetail(bulletin.paieId, employe, bulletin)}
+                                      startIcon={<Info />}
+                                      sx={{
+                                        textTransform: 'none',
+                                        fontWeight: 700,
+                                        borderRadius: '10px',
+                                        px: 1.8,
+                                        background: 'linear-gradient(135deg, #b053ad 0%, #8e3a8b 100%)',
+                                        boxShadow: '0 6px 14px rgba(176, 83, 173, 0.16)',
+                                        '&:hover': {
+                                          background: 'linear-gradient(135deg, #9d469a 0%, #7b3178 100%)'
+                                        }
+                                      }}
+                                    >
+                                      Détail
+                                    </Button>
                                   </TableCell>
                                 </TableRow>
                               ))}

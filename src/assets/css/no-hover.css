@@ -94,6 +94,18 @@ a:active {
   color: #9c479c !important;
 }
 
+/* Sidebar: keep active items readable on colored background */
+.app-sidebar .nav-sidebar .nav-link.active,
+.app-sidebar .submenu .nav-link.active {
+  color: #ffffff !important;
+  background: var(--bg-primary) !important;
+}
+
+.app-sidebar .nav-sidebar .nav-link.active svg,
+.app-sidebar .submenu .nav-link.active svg {
+  color: #ffffff !important;
+}
+
 /* Manager Sidebar: use violet hover background for both <a> and <button> links */
 .app-sidebar .nav-sidebar a.nav-link:hover,
 .app-sidebar .nav-sidebar button.nav-link:hover {
@@ -156,6 +168,46 @@ a.btn[aria-label]:not([title])::after,
   font-weight: 600;
   line-height: 1;
   white-space: nowrap;
+}
+
+/* Close buttons should stay icon-only (avoid rendering the label text). */
+button[aria-label="Fermer"]::after,
+button[title="Fermer"]::after,
+a.btn[aria-label="Fermer"]::after,
+a.btn[title="Fermer"]::after,
+[role="button"][aria-label="Fermer"]::after,
+[role="button"][title="Fermer"]::after,
+.ant-btn[aria-label="Fermer"]::after,
+.ant-btn[title="Fermer"]::after,
+.MuiIconButton-root[aria-label="Fermer"]::after,
+.MuiIconButton-root[title="Fermer"]::after {
+  content: none !important;
+  margin-left: 0 !important;
+}
+
+button[aria-label="Fermer"],
+button[title="Fermer"],
+a.btn[aria-label="Fermer"],
+a.btn[title="Fermer"],
+[role="button"][aria-label="Fermer"],
+[role="button"][title="Fermer"],
+.ant-btn[aria-label="Fermer"],
+.ant-btn[title="Fermer"],
+.MuiIconButton-root[aria-label="Fermer"],
+.MuiIconButton-root[title="Fermer"] {
+  gap: 0 !important;
+}
+
+/* Rubriques actions: keep icon-only, use native title tooltip on hover. */
+.rubriques-table-actions .btn[title]::after,
+.rubriques-ordre-btn[title]::after {
+  content: none !important;
+  margin-left: 0 !important;
+}
+
+.rubriques-table-actions .btn[title],
+.rubriques-ordre-btn[title] {
+  gap: 0 !important;
 }
 
 .MuiIconButton-root[title],

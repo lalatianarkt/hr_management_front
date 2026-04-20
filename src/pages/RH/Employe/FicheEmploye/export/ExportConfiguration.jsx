@@ -200,7 +200,7 @@ function ExportConfiguration() {
       )}
 
       {/* Statistiques */}
-      <Card className="mb-4 border-0 shadow-sm bg-primary bg-opacity-10">
+      <Card className="mb-4 border-0 shadow-sm bg-white">
         <Card.Body className="py-3">
           <Row className="align-items-center">
             <Col md={6}>

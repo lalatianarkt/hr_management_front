@@ -227,13 +227,6 @@ const ClotureModal = ({
                       <Row className="mt-3">
                         <Col md={6}>
                           <div className="mb-3">
-                            <label className="form-label fw-bold">ID de la période</label>
-                            <div className="form-control bg-light">
-                              {periodeActive.id}
-                            </div>
-                          </div>
-
-                          <div className="mb-3">
                             <label className="form-label fw-bold">Statut</label>
                             <div>
                               {periodeActive.statut === 0 ? (
